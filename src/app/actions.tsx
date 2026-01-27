@@ -5,15 +5,20 @@ import { revalidatePath } from "next/cache"
 import { Resend } from 'resend';
 import { BookingEmailTemplate } from '@/components/emails/booking-template';
 import { format } from "date-fns"
+import { stripe } from "@/lib/stripe"
+import { redirect } from "next/navigation"
 
+// ZURÜCK AUF PROFI: Wir laden den Key wieder sicher aus der .env Datei
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// UPDATE: Neuer Parameter am Ende hinzugefügt
 export async function createBooking(
   courtId: string, 
   clubSlug: string,
   date: Date, 
   time: string,
-  price: number
+  price: number,
+  paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash' // Standard ist Cash
 ) {
   // 1. Datum und Zeit kombinieren für den Start
   const [hours, minutes] = time.split(':').map(Number)
@@ -45,7 +50,7 @@ export async function createBooking(
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'confirmed',
-      payment_status: 'paid_cash', 
+      payment_status: paymentMethod, // Hier wird der korrekte Status gesetzt
       guest_name: 'Gast Buchung (Demo)' 
     })
 
@@ -54,11 +59,11 @@ export async function createBooking(
     return { success: false, error: "Datenbankfehler beim Speichern." }
   }
 
-  // 5. E-Mail senden (Verbessertes Debugging)
+  // 5. E-Mail senden
   try {
     const { data, error: resendError } = await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
-      to: ['alexander.kofler06@gmail.com'], // Deine GitHub-Mail
+      to: ['alexander.kofler06@gmail.com'], 
       subject: `Buchungsbestätigung: ${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
       react: <BookingEmailTemplate 
         guestName="Gast Buchung"
@@ -85,6 +90,52 @@ export async function createBooking(
   return { success: true }
 }
 
+// --- STRIPE CHECKOUT SESSION ---
+export async function createCheckoutSession(
+  courtId: string,
+  clubSlug: string,
+  date: Date,
+  time: string,
+  price: number,
+  courtName: string
+) {
+  const bookingData = {
+    courtId,
+    clubSlug,
+    date: date.toISOString(),
+    time,
+    price: price.toString(),
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'], 
+    line_items: [
+      {
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: `Buchung: ${courtName}`,
+            description: `${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
+          },
+          unit_amount: price * 100, 
+        },
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    metadata: bookingData,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+  })
+
+  if (session.url) {
+    return { url: session.url }
+  } else {
+    return { error: "Fehler beim Erstellen der Zahlung." }
+  }
+}
+
+// --- HELPER FUNCTIONS ---
 export async function getBookedSlots(courtId: string, date: Date) {
   const startOfDay = new Date(date)
   startOfDay.setHours(0, 0, 0, 0)

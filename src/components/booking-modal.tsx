@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react" // useEffect ist neu!
+import { useState, useEffect } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
-// Importiere BEIDE Funktionen:
-import { createBooking, getBookedSlots } from "@/app/actions" 
+// NEU: createCheckoutSession importiert
+import { createBooking, getBookedSlots, createCheckoutSession } from "@/app/actions" 
 import { Loader2 } from "lucide-react"
 
 interface BookingModalProps {
@@ -30,18 +30,15 @@ export function BookingModal({ courtId, courtName, price, clubSlug }: BookingMod
   const [isOpen, setIsOpen] = useState(false)
   const [isBooking, setIsBooking] = useState(false)
   
-  // NEU: Hier speichern wir, welche Zeiten schon weg sind
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
   const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
 
-  // NEU: Jedes Mal, wenn sich das Datum ändert, laden wir die belegten Zeiten
   useEffect(() => {
     async function fetchSlots() {
       if (!date) return
       setIsLoadingSlots(true)
-      // Server fragen...
       const slots = await getBookedSlots(courtId, date)
       setBookedSlots(slots)
       setIsLoadingSlots(false)
@@ -50,7 +47,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug }: BookingMod
     if (isOpen) {
       fetchSlots()
     }
-  }, [date, courtId, isOpen]) // Läuft, wenn Datum, Platz oder Modal sich ändert
+  }, [date, courtId, isOpen])
 
 
   const handleBook = async () => {
@@ -63,7 +60,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug }: BookingMod
       alert("✅ Buchung erfolgreich gespeichert!")
       setIsOpen(false)
       setSelectedTime(null)
-      // Optional: Seite neu laden, damit alles frisch ist
       window.location.reload() 
     } else {
       alert("❌ Fehler: " + result.error)
@@ -81,7 +77,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug }: BookingMod
         <DialogHeader>
           <DialogTitle>Buchung: {courtName}</DialogTitle>
           <DialogDescription>
-            {price}€ werden vor Ort bezahlt.
+            Wähle deine bevorzugte Zahlungsart.
           </DialogDescription>
         </DialogHeader>
 
@@ -106,16 +102,14 @@ export function BookingModal({ courtId, courtName, price, clubSlug }: BookingMod
               
               <div className="grid grid-cols-4 gap-2">
                 {timeSlots.map((time) => {
-                  // Prüfen, ob die Zeit in der Liste der gebuchten Slots ist
                   const isBooked = bookedSlots.includes(time)
 
                   return (
                     <Button
                       key={time}
-                      // Wenn gebucht -> 'ghost' (grau), sonst Outline oder Solid
                       variant={isBooked ? "ghost" : (selectedTime === time ? "default" : "outline")}
                       className={`text-xs ${isBooked ? 'text-red-300 decoration-slate-400 line-through cursor-not-allowed bg-slate-50' : ''}`}
-                      disabled={isBooked} // Button sperren!
+                      disabled={isBooked}
                       onClick={() => setSelectedTime(time)}
                     >
                       {time}
@@ -126,17 +120,53 @@ export function BookingModal({ courtId, courtName, price, clubSlug }: BookingMod
             </div>
           )}
 
-          <Button 
-            className="w-full mt-4" 
-            disabled={!date || !selectedTime || isBooking}
-            onClick={handleBook}
-          >
-            {isBooking ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Speichere...</>
-            ) : (
-              `Jetzt verbindlich buchen`
-            )}
-          </Button>
+          {/* DIESER TEIL IST NEU: DIE BEIDEN BUTTONS */}
+          <div className="flex flex-col gap-2 w-full mt-4">
+            {/* OPTION 1: ONLINE ZAHLEN */}
+            <Button 
+              className="w-full bg-slate-900 hover:bg-slate-800" 
+              disabled={!date || !selectedTime || isBooking}
+              onClick={async () => {
+                if (!date || !selectedTime) return
+                setIsBooking(true)
+                
+                // 1. Stripe Session holen
+                const result = await createCheckoutSession(
+                  courtId, 
+                  clubSlug, 
+                  date, 
+                  selectedTime, 
+                  price, 
+                  courtName
+                )
+
+                // 2. Weiterleiten zu Stripe
+                if (result && result.url) {
+                  window.location.href = result.url
+                } else {
+                  alert("Fehler bei der Zahlung")
+                  setIsBooking(false)
+                }
+              }}
+            >
+              {isBooking ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Leite weiter...</>
+              ) : (
+                `💳 Online zahlen (${price}€)`
+              )}
+            </Button>
+
+            {/* OPTION 2: VOR ORT (WIE VORHER) */}
+            <Button 
+              variant="outline"
+              className="w-full"
+              disabled={!date || !selectedTime || isBooking}
+              onClick={handleBook}
+            >
+               Vor Ort bezahlen
+            </Button>
+          </div>
+          
         </div>
       </DialogContent>
     </Dialog>
