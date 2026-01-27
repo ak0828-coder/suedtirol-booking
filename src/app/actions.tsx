@@ -54,14 +54,12 @@ export async function createBooking(
     return { success: false, error: "Datenbankfehler beim Speichern." }
   }
 
-  // 5. E-Mail senden (Neu!)
+  // 5. E-Mail senden (Verbessertes Debugging)
   try {
-    // !!! WICHTIG: Deine Email ist hier eingetragen !!!
-    await resend.emails.send({
+    const { data, error: resendError } = await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
-      to: ['ALEXANDER.KOFLER06@GMAIL.COM'], 
+      to: ['alexander.kofler06@GMAIL.COM'], // Deine GitHub-Mail
       subject: `Buchungsbestätigung: ${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
-      // HIER IST DIE ÄNDERUNG: React-Komponenten-Schreibweise
       react: <BookingEmailTemplate 
         guestName="Gast Buchung"
         courtName="Tennisplatz"
@@ -70,11 +68,15 @@ export async function createBooking(
         price={price}
       />,
     });
-    
-    console.log("E-Mail erfolgreich versendet!")
-  } catch (emailError) {
-    console.error("Fehler beim E-Mail senden:", emailError)
-    // Wir lassen die Funktion trotzdem erfolgreich enden, auch wenn die Mail scheitert
+
+    if (resendError) {
+      console.error("Resend hat die Mail abgelehnt:", resendError);
+    } else {
+      console.log("Resend hat die Mail akzeptiert! ID:", data?.id);
+    }
+
+  } catch (err) {
+    console.error("Kritischer Fehler beim Senden:", err);
   }
 
   // 4. Die Seite aktualisieren
