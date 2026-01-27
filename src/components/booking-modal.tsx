@@ -152,7 +152,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug }: BookingMod
               {isBooking ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Leite weiter...</>
               ) : (
-                `💳 Online zahlen (${price}€)`
+                `💳 Jetzt online zahlen (${price}€)`
               )}
             </Button>
 
