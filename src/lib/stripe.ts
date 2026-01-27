@@ -1,8 +1,10 @@
 import Stripe from 'stripe';
 
-// Wir nutzen das Ausrufezeichen (!), um TypeScript zu sagen: 
-// "Vertrau mir, diese Variable existiert in der .env Datei!"
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Wir nutzen einen "Dummy-Wert" für den Build-Prozess, falls der Key fehlt.
+// Im echten Betrieb (Runtime) ist der Key dann da.
+const stripeKey = process.env.STRIPE_SECRET_KEY || "dummy_key_for_build";
+
+export const stripe = new Stripe(stripeKey, {
   apiVersion: '2024-12-18.acacia',
   typescript: true,
 });
