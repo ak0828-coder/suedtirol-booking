@@ -5,6 +5,6 @@ import Stripe from 'stripe';
 const stripeKey = process.env.STRIPE_SECRET_KEY || "dummy_key_for_build";
 
 export const stripe = new Stripe(stripeKey, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-12-15.clover', // <--- Aktualisiert
   typescript: true,
 });
