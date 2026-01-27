@@ -58,7 +58,7 @@ export async function createBooking(
   try {
     const { data, error: resendError } = await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
-      to: ['alexander.kofler06@GMAIL.COM'], // Deine GitHub-Mail
+      to: ['alexander.kofler06@gmail.com'], // Deine GitHub-Mail
       subject: `Buchungsbestätigung: ${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
       react: <BookingEmailTemplate 
         guestName="Gast Buchung"
