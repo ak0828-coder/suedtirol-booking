@@ -56,18 +56,19 @@ export async function createBooking(
 
   // 5. E-Mail senden (Neu!)
   try {
-    // !!! WICHTIG: Tausche die Email unten gegen DEINE ECHTE E-Mail aus !!!
+    // !!! WICHTIG: Deine Email ist hier eingetragen !!!
     await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
       to: ['alexander.kofler06@GMAIL.COM'], 
       subject: `Buchungsbestätigung: ${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
-      react: BookingEmailTemplate({
-        guestName: 'Gast Buchung',
-        courtName: 'Tennisplatz', 
-        date: format(date, 'dd.MM.yyyy'),
-        time: time,
-        price: price
-      }),
+      // HIER IST DIE ÄNDERUNG: React-Komponenten-Schreibweise
+      react: <BookingEmailTemplate 
+        guestName="Gast Buchung"
+        courtName="Tennisplatz"
+        date={format(date, 'dd.MM.yyyy')}
+        time={time}
+        price={price}
+      />,
     });
     
     console.log("E-Mail erfolgreich versendet!")
