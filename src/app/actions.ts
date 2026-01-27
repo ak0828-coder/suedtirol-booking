@@ -59,7 +59,7 @@ export async function createBooking(
     // !!! WICHTIG: Tausche die Email unten gegen DEINE ECHTE E-Mail aus !!!
     await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
-      to: ['DEINE_ECHTE_EMAIL_ADRESSE_HIER_REINSCHREIBEN@GMAIL.COM'], 
+      to: ['alexander.kofler06@GMAIL.COM'], 
       subject: `Buchungsbestätigung: ${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
       react: BookingEmailTemplate({
         guestName: 'Gast Buchung',
