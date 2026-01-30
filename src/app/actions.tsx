@@ -198,7 +198,7 @@ export async function createBooking(
   date: Date, 
   time: string,
   price: number,
-  durationMinutes: number, // <--- NEU: Wir brauchen die Dauer für das Ende!
+  durationMinutes: number, 
   paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash'
 ) {
   const supabase = await createClient()
@@ -209,7 +209,7 @@ export async function createBooking(
   const startTime = new Date(date)
   startTime.setHours(hours, minutes, 0, 0)
   
-  // WICHTIG: Endzeit basierend auf der Dauer berechnen (nicht hartcodiert +1h)
+  // WICHTIG: Endzeit basierend auf der Dauer berechnen
   const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
 
   // 2. Prüfen, ob schon belegt
@@ -249,8 +249,6 @@ export async function createBooking(
   // 5. E-Mail
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000);
-    
-    // Versucht an die Club-Admin Email zu senden, sonst an dich
     const recipient = club.admin_email || SUPER_ADMIN_EMAIL;
 
     await resend.emails.send({
@@ -358,20 +356,29 @@ export async function createCheckoutSession(
   date: Date,
   time: string,
   price: number,
-  courtName: string
+  courtName: string,
+  durationMinutes: number // <--- NEU: Parameter
 ) {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'], 
     line_items: [{
         price_data: {
           currency: 'eur',
-          product_data: { name: `Buchung: ${courtName}` },
+          product_data: { name: `Buchung: ${courtName} (${durationMinutes} Min)` },
           unit_amount: price * 100, 
         },
         quantity: 1,
     }],
     mode: 'payment',
-    metadata: { courtId, clubSlug, date: date.toISOString(), time, price: price.toString() },
+    // Metadata: Hier speichern wir alles, was die Success-Page braucht
+    metadata: { 
+        courtId, 
+        clubSlug, 
+        date: date.toISOString(), 
+        time, 
+        price: price.toString(),
+        durationMinutes: durationMinutes.toString() // <--- NEU: Speichern für später
+    },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
   })

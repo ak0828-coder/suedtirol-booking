@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { redirect } from "next/navigation"
 
 export default async function SuccessPage({
   searchParams,
@@ -17,33 +16,25 @@ export default async function SuccessPage({
     return <div>Fehler: Keine Session ID</div>
   }
 
-  // 1. Wir fragen Stripe: "Wurde wirklich bezahlt?"
   const session = await stripe.checkout.sessions.retrieve(session_id)
 
   if (session.payment_status !== 'paid') {
     return <div>Zahlung noch nicht bestätigt.</div>
   }
 
-  // 2. Daten aus den Metadata holen (die wir vorhin gespeichert haben)
   const meta = session.metadata as any
   
-  // 3. JETZT die Buchung wirklich erstellen!
-  // Wir rufen unsere existierende createBooking Funktion auf, aber manipulieren den payment_status
-  // Achtung: Wir müssen createBooking leicht anpassen oder hier direkt Supabase nutzen.
-  // Der Einfachheit halber rufen wir createBooking auf.
-  
-  // ACHTUNG: Das hier führt die Buchung jedes Mal aus, wenn man die Seite neu lädt.
-  // Für die Demo ist das okay. In Produktion prüfen wir erst, ob die Session schon verarbeitet wurde.
-
-  const result = await createBooking(
+  // HIER DER FIX: Wir nutzen die Dauer aus der Session und setzen payment_status explizit
+  await createBooking(
     meta.courtId,
     meta.clubSlug,
-    new Date(meta.date), // Datum String wieder zu Date machen
+    new Date(meta.date),
     meta.time,
-    parseFloat(meta.price) // Preis String zu Zahl
+    parseFloat(meta.price),
+    parseInt(meta.durationMinutes || '60'), // <--- Dauer nutzen (Default 60 falls fehlt)
+    'paid_stripe' // <--- WICHTIG: Als bezahlt markieren!
   )
 
-  // Wenn alles geklappt hat:
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">

@@ -158,7 +158,16 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                 disabled={isBooking}
                 onClick={async () => {
                    setIsBooking(true)
-                   const result = await createCheckoutSession(courtId, clubSlug, date!, selectedTime, price, courtName)
+                   // FIX: durationMinutes wird jetzt auch an Stripe übergeben
+                   const result = await createCheckoutSession(
+                      courtId, 
+                      clubSlug, 
+                      date!, 
+                      selectedTime, 
+                      price, 
+                      courtName, 
+                      durationMinutes // <--- NEU
+                   )
                    if (result?.url) window.location.href = result.url
                    else { alert("Fehler"); setIsBooking(false); }
                 }}
