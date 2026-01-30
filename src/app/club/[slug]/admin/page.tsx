@@ -1,14 +1,12 @@
-import { supabase } from "@/lib/supabase"
-import { notFound } from "next/navigation"
+import { createClient } from "@/lib/supabase/server" // WICHTIG: Server Client!
+import { notFound, redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
-import { AdminGuard } from "@/components/auth/admin-guard"
-import { LogOut } from "lucide-react"
+import { LogOut, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-// NEU: Import für den Court Manager
 import { CourtManager } from "@/components/admin/court-manager"
 
 // Kein Cache, immer live Daten
@@ -16,8 +14,13 @@ export const dynamic = 'force-dynamic'
 
 export default async function AdminPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const supabase = await createClient()
 
-  // 1. Club laden
+  // 1. Authentifizierung prüfen
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return redirect("/login")
+
+  // 2. Club laden
   const { data: club } = await supabase
     .from('clubs')
     .select('*')
@@ -26,14 +29,35 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
 
   if (!club) return notFound()
 
-  // 2. Plätze laden (jetzt sortiert nach Name für die Anzeige)
+  // 3. SICHERHEITS-CHECK: Gehört dieser Club dem eingeloggten User?
+  // (Ausnahme: Deine Super-Admin Email darf alles sehen)
+  const isSuperAdmin = user.email?.toLowerCase() === "alexander.kofler06@gmail.com"
+  
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="text-center p-8 bg-white rounded-xl shadow-lg border border-red-100 max-w-md">
+                <h1 className="text-2xl font-bold text-red-600 mb-2">Zugriff verweigert ⛔</h1>
+                <p className="text-slate-600 mb-6">
+                    Du bist nicht der Administrator von "{club.name}".<br/>
+                    Bitte melde dich mit dem richtigen Account an.
+                </p>
+                <Link href="/login">
+                    <Button variant="default" className="w-full">Zum Login</Button>
+                </Link>
+            </div>
+        </div>
+    )
+  }
+
+  // 4. Plätze laden
   const { data: courts } = await supabase
     .from('courts')
     .select('*')
     .eq('club_id', club.id)
     .order('name')
 
-  // 3. Alle Buchungen laden (neueste zuerst)
+  // 5. Buchungen laden
   const { data: bookings } = await supabase
     .from('bookings')
     .select(`
@@ -44,48 +68,42 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
     .order('start_time', { ascending: false })
 
   return (
-    <AdminGuard>
       <div className="min-h-screen bg-slate-50 p-6">
         <div className="max-w-7xl mx-auto space-y-8">
           
-          {/* HEADER MIT LOGOUT */}
-          <div className="flex items-center justify-between">
+          {/* HEADER */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
               <p className="text-slate-500">Übersicht für {club.name}</p>
             </div>
             
             <div className="flex items-center gap-4">
-               {/* Link zur öffentlichen Seite */}
                <Link href={`/club/${slug}`} target="_blank">
-                 <Button variant="outline">Zur Vorschau</Button>
+                 <Button variant="outline" className="gap-2">
+                    <ExternalLink className="w-4 h-4" /> Vorschau
+                 </Button>
                </Link>
                
-               {/* Logout Button */}
-               <form action={async () => {
-                  "use server";
-                  // Wir leiten zur Login-Seite, dort passiert der Logout theoretisch
-               }}>
-                  <Link href="/login">
-                    <Button variant="ghost" size="icon">
+               {/* Logout Button (Link reicht, da Login-Page eh ausloggt) */}
+               <Link href="/login">
+                    <Button variant="ghost" size="icon" title="Abmelden">
                       <LogOut className="h-5 w-5" />
                     </Button>
-                  </Link>
-               </form>
+               </Link>
             </div>
           </div>
 
-          {/* ANALYTICS COCKPIT */}
+          {/* STATS */}
           {bookings && courts && (
             <DashboardStats bookings={bookings} courts={courts} />
           )}
 
-          {/* HAUPTBEREICH: 2 SPALTEN LAYOUT */}
           <div className="grid xl:grid-cols-2 gap-6">
             
-            {/* LINKS: LETZTE BUCHUNGEN */}
+            {/* LINKS: BUCHUNGEN */}
             <div>
-              <Card className="h-full">
+              <Card className="h-full border-none shadow-sm">
                 <CardHeader>
                   <CardTitle>Letzte Aktivitäten</CardTitle>
                 </CardHeader>
@@ -99,7 +117,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                           </div>
                           <div>
                             <div className="font-semibold text-slate-900">
-                              {booking.courts.name}
+                              {booking.courts?.name || "Unbekannter Platz"}
                             </div>
                             <div className="text-sm text-slate-500">
                                {format(new Date(booking.start_time), "HH:mm")} Uhr • {booking.guest_name}
@@ -112,7 +130,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                             <div className="font-medium text-slate-900">
                               {booking.payment_status === 'paid_cash' ? 'Vor Ort' : 'Online'}
                             </div>
-                            <div className="text-xs text-slate-500">Status: {booking.status}</div>
+                            <div className="text-xs text-slate-500 capitalize">{booking.status}</div>
                           </div>
                           <DeleteBookingButton id={booking.id} />
                         </div>
@@ -129,7 +147,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
               </Card>
             </div>
 
-            {/* RECHTS: PLATZ MANAGEMENT (NEU) */}
+            {/* RECHTS: COURT MANAGER */}
             <div>
                <CourtManager initialCourts={courts || []} clubSlug={slug} />
             </div>
@@ -138,6 +156,5 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
 
         </div>
       </div>
-    </AdminGuard>
   )
 }

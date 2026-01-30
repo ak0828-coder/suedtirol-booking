@@ -3,13 +3,13 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
-import { Resend } from 'resend';
-import { BookingEmailTemplate } from '@/components/emails/booking-template';
+import { Resend } from 'resend'
+import { BookingEmailTemplate } from '@/components/emails/booking-template'
 import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const SUPER_ADMIN_EMAIL = "alexander.kofler06@gmail.com";
+const resend = new Resend(process.env.RESEND_API_KEY)
+const SUPER_ADMIN_EMAIL = "alexander.kofler06@gmail.com"
 
 // --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
 export async function getMyClubSlug() {
@@ -20,7 +20,7 @@ export async function getMyClubSlug() {
 
   // 1. Check: Ist es der Super Admin?
   if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-      return "SUPER_ADMIN_MODE"; 
+      return "SUPER_ADMIN_MODE"
   }
 
   // 2. Check: Welcher Club gehört dieser User-ID?
@@ -78,7 +78,7 @@ export async function createClub(formData: FormData) {
         slug: slug,
         primary_color: '#0f172a',
         admin_email: email,      
-        owner_id: authData.user.id 
+        owner_id: authData.user.id // WICHTIG: Verknüpfung für den Login
       }
     ])
 
@@ -91,11 +91,9 @@ export async function createClub(formData: FormData) {
   return { success: true, message: `Verein '${name}' erstellt!` }
 }
 
-// NEU: VEREIN UPDATEN & LOGO UPLOAD
 export async function updateClub(formData: FormData) {
   const supabase = await createClient()
   
-  // 1. Sicherheit Check
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
@@ -105,9 +103,8 @@ export async function updateClub(formData: FormData) {
   const clubId = formData.get("clubId") as string
   const name = formData.get("name") as string
   const primaryColor = formData.get("primary_color") as string
-  const logoFile = formData.get("logo") as File // Das Bild
+  const logoFile = formData.get("logo") as File 
 
-  // Admin Client für Storage-Zugriff
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -116,10 +113,9 @@ export async function updateClub(formData: FormData) {
 
   let logoUrl = null
 
-  // 2. LOGO UPLOAD (Falls ein neues Bild gewählt wurde)
   if (logoFile && logoFile.size > 0) {
     const fileExt = logoFile.name.split('.').pop()
-    const fileName = `${clubId}-${Date.now()}.${fileExt}` // Einzigartiger Name
+    const fileName = `${clubId}-${Date.now()}.${fileExt}`
 
     const arrayBuffer = await logoFile.arrayBuffer()
     const buffer = new Uint8Array(arrayBuffer)
@@ -145,7 +141,6 @@ export async function updateClub(formData: FormData) {
     logoUrl = publicUrl
   }
 
-  // 3. DATENBANK UPDATE
   const updateData: any = {
     name: name,
     primary_color: primaryColor,
@@ -163,12 +158,11 @@ export async function updateClub(formData: FormData) {
   if (error) return { success: false, error: error.message }
 
   revalidatePath('/super-admin')
-  revalidatePath(`/club/${formData.get("slug")}`) // Auch die Clubseite updaten
+  revalidatePath(`/club/${formData.get("slug")}`)
   
-  return { success: true, message: "Verein erfolgreich aktualisiert!" }
+  return { success: true, message: "Verein aktualisiert!" }
 }
 
-// NEU: VEREIN LÖSCHEN
 export async function deleteClub(clubId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -182,15 +176,12 @@ export async function deleteClub(clubId: string) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Zuerst den User des Clubs finden und löschen (optional, aber sauber)
   const { data: club } = await supabaseAdmin.from('clubs').select('owner_id').eq('id', clubId).single()
   
-  // Club löschen
   const { error } = await supabaseAdmin.from('clubs').delete().eq('id', clubId)
 
   if (error) return { success: false, error: error.message }
 
-  // User löschen
   if (club?.owner_id) {
       await supabaseAdmin.auth.admin.deleteUser(club.owner_id)
   }
@@ -207,17 +198,19 @@ export async function createBooking(
   date: Date, 
   time: string,
   price: number,
+  durationMinutes: number, // <--- NEU: Wir brauchen die Dauer für das Ende!
   paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash'
 ) {
   const supabase = await createClient()
   
   // 1. Datum Logik
   const [hours, minutes] = time.split(':').map(Number)
+  
   const startTime = new Date(date)
   startTime.setHours(hours, minutes, 0, 0)
   
-  const endTime = new Date(startTime)
-  endTime.setHours(hours + 1, minutes, 0, 0)
+  // WICHTIG: Endzeit basierend auf der Dauer berechnen (nicht hartcodiert +1h)
+  const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
 
   // 2. Prüfen, ob schon belegt
   const { data: existing } = await supabase
@@ -232,7 +225,7 @@ export async function createBooking(
   }
 
   // 3. Club ID holen
-  const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+  const { data: club } = await supabase.from('clubs').select('id, admin_email').eq('slug', clubSlug).single()
   if(!club) return { success: false, error: "Club nicht gefunden" }
 
   // 4. Speichern
@@ -257,10 +250,13 @@ export async function createBooking(
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000);
     
+    // Versucht an die Club-Admin Email zu senden, sonst an dich
+    const recipient = club.admin_email || SUPER_ADMIN_EMAIL;
+
     await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
-      to: ['alexander.kofler06@gmail.com'], 
-      subject: `Buchung bestätigt: ${format(date, 'dd.MM.yyyy')} um ${time}`,
+      to: [recipient], 
+      subject: `Buchung: ${format(date, 'dd.MM.yyyy')} um ${time}`,
       react: <BookingEmailTemplate 
         guestName="Gast"
         courtName="Tennisplatz"
@@ -349,9 +345,7 @@ export async function createCourt(
 
 export async function deleteCourt(courtId: string) {
   const supabase = await createClient()
-  
   const { error } = await supabase.from('courts').delete().eq('id', courtId)
-  
   if (error) return { error: error.message }
   return { success: true }
 }
@@ -386,7 +380,6 @@ export async function createCheckoutSession(
 }
 
 // --- HELPER FUNCTIONS ---
-// Diese Funktion MUSS exportiert werden, damit sie in der Client Component verwendet werden kann.
 export async function getBookedSlots(courtId: string, date: Date) {
   const supabase = await createClient()
   

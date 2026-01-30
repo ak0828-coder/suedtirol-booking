@@ -2,8 +2,10 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { NewClubForm } from "@/components/admin/new-club-form"
-import { EditClubDialog } from "@/components/admin/edit-club-dialog" // <--- NEU
-import { Building2, TrendingUp, Users, ExternalLink } from "lucide-react"
+import { EditClubDialog } from "@/components/admin/edit-club-dialog"
+import { Building2, TrendingUp, Users, ExternalLink, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { deleteClub } from "@/app/actions"
 
 export default async function SuperAdminPage() {
   const supabase = await createClient()
@@ -17,7 +19,6 @@ export default async function SuperAdminPage() {
   }
 
   // 2. Daten laden
-  // Wir sortieren die Clubs nach Erstellungsdatum (neueste zuerst)
   const { data: clubs } = await supabase.from('clubs').select('*').order('created_at', { ascending: false })
   const { count: bookingsCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true })
 
@@ -65,7 +66,7 @@ export default async function SuperAdminPage() {
 
         <div className="grid lg:grid-cols-3 gap-8">
             
-            {/* LINKE SPALTE: LISTE DER VEREINE (2/3 Breite) */}
+            {/* LINKE SPALTE: LISTE DER VEREINE */}
             <div className="lg:col-span-2">
                 <Card className="h-full">
                 <CardHeader>
@@ -105,7 +106,7 @@ export default async function SuperAdminPage() {
                                     <ExternalLink className="w-4 h-4" />
                                 </a>
 
-                                {/* Link zum Admin Panel des Clubs */}
+                                {/* Link zum Admin Panel */}
                                 <a 
                                     href={`/club/${club.slug}/admin`} 
                                     target="_blank"
@@ -114,8 +115,18 @@ export default async function SuperAdminPage() {
                                     Login als Admin
                                 </a>
 
-                                {/* BEARBEITEN BUTTON (Zahnrad) */}
+                                {/* BEARBEITEN BUTTON */}
                                 <EditClubDialog club={club} />
+
+                                {/* LÖSCHEN BUTTON */}
+                                <form action={async () => {
+                                    "use server"
+                                    await deleteClub(club.id)
+                                }}>
+                                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600">
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </form>
                             </div>
                         </div>
                     ))}
@@ -129,16 +140,13 @@ export default async function SuperAdminPage() {
                 </Card>
             </div>
 
-            {/* RECHTE SPALTE: NEU ERSTELLEN (1/3 Breite) */}
+            {/* RECHTE SPALTE: NEU ERSTELLEN */}
             <div>
                 <Card className="sticky top-8 border-slate-200 shadow-sm bg-slate-900 text-white">
                 <CardHeader>
                     <CardTitle className="text-white">Neuen Verein onboarden</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {/* Wir nutzen hier eine leicht angepasste Version, damit es dunkel passt, 
-                        oder lassen es hell. Für Konsistenz lassen wir deine NewClubForm, 
-                        aber du kannst sie stylen. */}
                     <div className="bg-white p-4 rounded-lg text-slate-900">
                         <NewClubForm />
                     </div>

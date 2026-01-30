@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Auto-Logout beim Betreten der Seite, um "Session-Mischmasch" zu verhindern
+  // Auto-Logout beim Betreten, um Fehler zu vermeiden
   useEffect(() => {
     const signOut = async () => {
       await supabase.auth.signOut()
@@ -31,23 +31,21 @@ export default function LoginPage() {
     setIsLoading(true)
     setErrorMessage(null)
 
-    // 1. Login bei Supabase
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      setErrorMessage(error.message === "Invalid login credentials" ? "Falsche E-Mail oder Passwort" : error.message)
+      setErrorMessage("Falsche E-Mail oder Passwort.")
       setIsLoading(false)
       return
     }
 
-    // 2. Cookies aktualisieren (ganz wichtig!)
     router.refresh()
 
-    // 3. Server fragen: Wohin soll ich?
     try {
+        // Wir fragen den Server, wohin wir gehören
         const slug = await getMyClubSlug()
 
         if (slug === "SUPER_ADMIN_MODE") {
@@ -55,15 +53,14 @@ export default function LoginPage() {
         } else if (slug) {
             router.push(`/club/${slug}/admin`)
         } else {
-            // Login erfolgreich, aber kein Club zugeordnet?
             setErrorMessage("Kein Verein gefunden. Bist du sicher, dass du Admin bist?")
-            await supabase.auth.signOut() // Wieder ausloggen
+            await supabase.auth.signOut()
         }
     } catch (err) {
         console.error(err)
         setErrorMessage("Server-Fehler beim Abrufen der Daten.")
     } finally {
-        setIsLoading(false) // Nur stoppen wenn Fehler oder fertig (bei Redirect egal)
+        setIsLoading(false)
     }
   }
 

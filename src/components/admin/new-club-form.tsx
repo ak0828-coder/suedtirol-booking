@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { createClub } from "@/app/actions" // Importiert jetzt die neue Server Action
+import { createClub } from "@/app/actions" // Importiert die neue Server Action
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"

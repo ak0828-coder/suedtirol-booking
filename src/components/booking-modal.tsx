@@ -33,7 +33,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
-  // HIER BERECHNEN WIR DIE SLOTS JETZT INTERN IM MODAL
+  // Slots berechnen
   const timeSlots = generateTimeSlots(8, 22, durationMinutes)
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
       setIsLoadingSlots(true)
       try {
         const slots = await getBookedSlots(courtId, date)
-        setBookedSlots(slots || []) // Sicherstellen, dass es immer ein Array ist
+        setBookedSlots(slots || []) 
       } catch (error) {
         console.error("Fehler beim Laden der Slots:", error)
         setBookedSlots([])
@@ -60,7 +60,10 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const handleBook = async () => {
     if (!date || !selectedTime) return
     setIsBooking(true)
-    const result = await createBooking(courtId, clubSlug, date, selectedTime, price)
+    
+    // WICHTIG: durationMinutes wird jetzt übergeben!
+    const result = await createBooking(courtId, clubSlug, date, selectedTime, price, durationMinutes)
+    
     setIsBooking(false)
 
     if (result.success) {
@@ -96,7 +99,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
 
         <div className="flex flex-col gap-6 py-4">
           
-          {/* 1. DATUM WÄHLEN */}
           <div className="flex flex-col gap-2">
             <span className="text-sm font-semibold flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" /> Datum wählen
@@ -114,7 +116,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
             </div>
           </div>
 
-          {/* 2. UHRZEIT WÄHLEN */}
           {date && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
@@ -144,7 +145,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
             </div>
           )}
 
-          {/* 3. ABSCHLUSS / BEZAHLEN */}
           {selectedTime && (
             <div className="flex flex-col gap-3 pt-4 border-t mt-2">
                <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-2">
