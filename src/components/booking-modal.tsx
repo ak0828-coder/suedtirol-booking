@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { de } from "date-fns/locale"
 import { createBooking, getBookedSlots, createCheckoutSession } from "@/app/actions" 
-import { generateTimeSlots } from "@/lib/utils" // <--- WICHTIG: Importieren
+import { generateTimeSlots } from "@/lib/utils"
 import { Loader2, Calendar as CalendarIcon, Clock } from "lucide-react"
 
 interface BookingModalProps {
@@ -21,7 +21,7 @@ interface BookingModalProps {
   courtName: string
   price: number
   clubSlug: string
-  durationMinutes: number // <--- NEU: Das Modal muss wissen, wie lang ein Slot ist
+  durationMinutes: number
 }
 
 export function BookingModal({ courtId, courtName, price, clubSlug, durationMinutes }: BookingModalProps) {
@@ -34,16 +34,21 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
   // HIER BERECHNEN WIR DIE SLOTS JETZT INTERN IM MODAL
-  // Basierend auf der durationMinutes, die von der Seite kommt
   const timeSlots = generateTimeSlots(8, 22, durationMinutes)
 
   useEffect(() => {
     async function fetchSlots() {
       if (!date) return
       setIsLoadingSlots(true)
-      const slots = await getBookedSlots(courtId, date)
-      setBookedSlots(slots)
-      setIsLoadingSlots(false)
+      try {
+        const slots = await getBookedSlots(courtId, date)
+        setBookedSlots(slots || []) // Sicherstellen, dass es immer ein Array ist
+      } catch (error) {
+        console.error("Fehler beim Laden der Slots:", error)
+        setBookedSlots([])
+      } finally {
+        setIsLoadingSlots(false)
+      }
     }
 
     if (isOpen) {
@@ -71,7 +76,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {/* HIER IST WIEDER DER EINZELNE BUCHEN BUTTON */}
         <Button className="w-full bg-slate-900 text-white hover:bg-slate-800">
            Platz buchen
         </Button>

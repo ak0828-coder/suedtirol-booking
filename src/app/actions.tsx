@@ -20,14 +20,14 @@ export async function getMyClubSlug() {
 
   // 1. Check: Ist es der Super Admin?
   if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-      return "SUPER_ADMIN_MODE"; // Spezielles Signal für die UI
+      return "SUPER_ADMIN_MODE"; 
   }
 
-  // 2. Check: Welcher Club gehört dieser User-ID? (Viel sicherer als Email!)
+  // 2. Check: Welcher Club gehört dieser User-ID?
   const { data: club } = await supabase
     .from('clubs')
     .select('slug')
-    .eq('owner_id', user.id) // <--- HIER IST DER FIX (ID statt Email)
+    .eq('owner_id', user.id)
     .single()
 
   return club?.slug || null
@@ -51,7 +51,7 @@ export async function createClub(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  // 3. Admin-Client für User-Erstellung (Service Role)
+  // 3. Admin-Client für User-Erstellung
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -69,7 +69,7 @@ export async function createClub(formData: FormData) {
     return { success: false, error: "Fehler beim User-Erstellen: " + authError?.message }
   }
 
-  // 5. Verein erstellen (MIT USER ID!)
+  // 5. Verein erstellen
   const { error: dbError } = await supabaseAdmin
     .from('clubs')
     .insert([
@@ -77,19 +77,126 @@ export async function createClub(formData: FormData) {
         name: name,
         slug: slug,
         primary_color: '#0f172a',
-        admin_email: email,      // Wir speichern die Email zur Info
-        owner_id: authData.user.id // <--- WICHTIG: Die Verknüpfung über ID
+        admin_email: email,      
+        owner_id: authData.user.id 
       }
     ])
 
   if (dbError) {
-    // Aufräumen, falls DB fehlschlägt (User wieder löschen)
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
     return { success: false, error: "Datenbankfehler (Slug schon vergeben?): " + dbError.message }
   }
 
   revalidatePath('/super-admin')
   return { success: true, message: `Verein '${name}' erstellt!` }
+}
+
+// NEU: VEREIN UPDATEN & LOGO UPLOAD
+export async function updateClub(formData: FormData) {
+  const supabase = await createClient()
+  
+  // 1. Sicherheit Check
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+     return { success: false, error: "Nicht autorisiert!" }
+  }
+
+  const clubId = formData.get("clubId") as string
+  const name = formData.get("name") as string
+  const primaryColor = formData.get("primary_color") as string
+  const logoFile = formData.get("logo") as File // Das Bild
+
+  // Admin Client für Storage-Zugriff
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  let logoUrl = null
+
+  // 2. LOGO UPLOAD (Falls ein neues Bild gewählt wurde)
+  if (logoFile && logoFile.size > 0) {
+    const fileExt = logoFile.name.split('.').pop()
+    const fileName = `${clubId}-${Date.now()}.${fileExt}` // Einzigartiger Name
+
+    const arrayBuffer = await logoFile.arrayBuffer()
+    const buffer = new Uint8Array(arrayBuffer)
+
+    const { error: uploadError } = await supabaseAdmin
+      .storage
+      .from('club-logos')
+      .upload(fileName, buffer, {
+        contentType: logoFile.type,
+        upsert: true
+      })
+
+    if (uploadError) {
+      console.error("Upload Fehler:", uploadError)
+      return { success: false, error: "Bild-Upload fehlgeschlagen" }
+    }
+
+    const { data: { publicUrl } } = supabaseAdmin
+      .storage
+      .from('club-logos')
+      .getPublicUrl(fileName)
+    
+    logoUrl = publicUrl
+  }
+
+  // 3. DATENBANK UPDATE
+  const updateData: any = {
+    name: name,
+    primary_color: primaryColor,
+  }
+
+  if (logoUrl) {
+    updateData.logo_url = logoUrl
+  }
+
+  const { error } = await supabaseAdmin
+    .from('clubs')
+    .update(updateData)
+    .eq('id', clubId)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath('/super-admin')
+  revalidatePath(`/club/${formData.get("slug")}`) // Auch die Clubseite updaten
+  
+  return { success: true, message: "Verein erfolgreich aktualisiert!" }
+}
+
+// NEU: VEREIN LÖSCHEN
+export async function deleteClub(clubId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+     return { success: false, error: "Nicht autorisiert!" }
+  }
+  
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Zuerst den User des Clubs finden und löschen (optional, aber sauber)
+  const { data: club } = await supabaseAdmin.from('clubs').select('owner_id').eq('id', clubId).single()
+  
+  // Club löschen
+  const { error } = await supabaseAdmin.from('clubs').delete().eq('id', clubId)
+
+  if (error) return { success: false, error: error.message }
+
+  // User löschen
+  if (club?.owner_id) {
+      await supabaseAdmin.auth.admin.deleteUser(club.owner_id)
+  }
+
+  revalidatePath('/super-admin')
+  return { success: true, message: "Verein gelöscht." }
 }
 
 // --- BOOKING ACTIONS ---
@@ -150,7 +257,6 @@ export async function createBooking(
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000);
     
-    // Hier evtl. die Admin-Email des Clubs holen statt hardcoded
     await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
       to: ['alexander.kofler06@gmail.com'], 
@@ -250,31 +356,6 @@ export async function deleteCourt(courtId: string) {
   return { success: true }
 }
 
-// --- HELPERS ---
-
-export async function getBookedSlots(courtId: string, date: Date) {
-  const supabase = await createClient()
-  
-  const startOfDay = new Date(date)
-  startOfDay.setHours(0, 0, 0, 0)
-  const endOfDay = new Date(date)
-  endOfDay.setHours(23, 59, 59, 999)
-
-  const { data: bookings } = await supabase
-    .from('bookings')
-    .select('start_time')
-    .eq('court_id', courtId)
-    .gte('start_time', startOfDay.toISOString())
-    .lte('start_time', endOfDay.toISOString())
-
-  if (!bookings) return []
-
-  return bookings.map((b) => {
-    const d = new Date(b.start_time)
-    return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  })
-}
-
 // --- STRIPE ---
 
 export async function createCheckoutSession(
@@ -302,4 +383,29 @@ export async function createCheckoutSession(
   })
 
   return { url: session.url }
+}
+
+// --- HELPER FUNCTIONS ---
+// Diese Funktion MUSS exportiert werden, damit sie in der Client Component verwendet werden kann.
+export async function getBookedSlots(courtId: string, date: Date) {
+  const supabase = await createClient()
+  
+  const startOfDay = new Date(date)
+  startOfDay.setHours(0, 0, 0, 0)
+  const endOfDay = new Date(date)
+  endOfDay.setHours(23, 59, 59, 999)
+
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('start_time')
+    .eq('court_id', courtId)
+    .gte('start_time', startOfDay.toISOString())
+    .lte('start_time', endOfDay.toISOString())
+
+  if (!bookings) return []
+
+  return bookings.map((b) => {
+    const d = new Date(b.start_time)
+    return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+  })
 }
