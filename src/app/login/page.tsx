@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
-import { getMyClubSlug } from "@/app/actions" // <--- Importieren
+import { getMyClubSlug } from "@/app/actions"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -16,8 +16,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Sicherheitshalber beim Laden ausloggen (Good Practice)
+  // Auto-Logout beim Betreten der Seite, um "Session-Mischmasch" zu verhindern
   useEffect(() => {
     const signOut = async () => {
       await supabase.auth.signOut()
@@ -28,42 +29,41 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setErrorMessage(null)
 
+    // 1. Login bei Supabase
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      alert("Fehler: " + error.message)
+      setErrorMessage(error.message === "Invalid login credentials" ? "Falsche E-Mail oder Passwort" : error.message)
       setIsLoading(false)
       return
     }
 
+    // 2. Cookies aktualisieren (ganz wichtig!)
     router.refresh()
 
-    // 1. Bist DU es? (Super Admin)
-    if (email.toLowerCase() === "alexander.kofler06@gmail.com") {
-      router.push("/super-admin")
-      return
-    }
-
-    // 2. Ist es ein VEREIN? (Dynamische Suche)
-    // Wir fragen den Server: "Zu welchem Club gehört diese Email?"
+    // 3. Server fragen: Wohin soll ich?
     try {
         const slug = await getMyClubSlug()
 
-        if (slug) {
-          // Treffer! Ab zum richtigen Dashboard
-          router.push(`/club/${slug}/admin`)
+        if (slug === "SUPER_ADMIN_MODE") {
+            router.push("/super-admin")
+        } else if (slug) {
+            router.push(`/club/${slug}/admin`)
         } else {
-          // Kein Verein gefunden? Vielleicht nur ein normaler Spieler oder Fehler
-          router.push("/") 
+            // Login erfolgreich, aber kein Club zugeordnet?
+            setErrorMessage("Kein Verein gefunden. Bist du sicher, dass du Admin bist?")
+            await supabase.auth.signOut() // Wieder ausloggen
         }
     } catch (err) {
-        console.error("Fehler beim Abrufen des Clubs:", err)
-        alert("Ein unerwarteter Fehler ist aufgetreten.")
-        setIsLoading(false)
+        console.error(err)
+        setErrorMessage("Server-Fehler beim Abrufen der Daten.")
+    } finally {
+        setIsLoading(false) // Nur stoppen wenn Fehler oder fertig (bei Redirect egal)
     }
   }
 
@@ -71,8 +71,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <div className="w-full max-w-md space-y-8 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border dark:border-slate-800">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Willkommen zurück</h1>
-          <p className="text-slate-500 mt-2">Bitte melde dich an.</p>
+          <h1 className="text-2xl font-bold">Admin Login</h1>
+          <p className="text-slate-500 mt-2">Südtirol Booking</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -81,7 +81,6 @@ export default function LoginPage() {
             <Input 
               id="email" 
               type="email" 
-              placeholder="name@example.com" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
@@ -98,6 +97,12 @@ export default function LoginPage() {
               required 
             />
           </div>
+
+          {errorMessage && (
+            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">
+                {errorMessage}
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? <Loader2 className="animate-spin mr-2" /> : "Anmelden"}

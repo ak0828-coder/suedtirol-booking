@@ -9,20 +9,25 @@ import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const SUPER_ADMIN_EMAIL = "alexander.kofler06@gmail.com";
 
 // --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
-// Diese Funktion nutzen wir gleich auf der Login-Seite
 export async function getMyClubSlug() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user || !user.email) return null
+  if (!user) return null
 
-  // Wir suchen den Club, wo die admin_email mit der User-Email übereinstimmt
+  // 1. Check: Ist es der Super Admin?
+  if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      return "SUPER_ADMIN_MODE"; // Spezielles Signal für die UI
+  }
+
+  // 2. Check: Welcher Club gehört dieser User-ID? (Viel sicherer als Email!)
   const { data: club } = await supabase
     .from('clubs')
     .select('slug')
-    .eq('admin_email', user.email)
+    .eq('owner_id', user.id) // <--- HIER IST DER FIX (ID statt Email)
     .single()
 
   return club?.slug || null
@@ -35,18 +40,9 @@ export async function createClub(formData: FormData) {
   
   // 1. Sicherheit: Prüfen, wer eingeloggt ist
   const { data: { user } } = await supabase.auth.getUser()
-  const MY_SUPER_EMAIL = "alexander.kofler06@gmail.com" 
 
-  console.log("--- ADMIN CHECK ---")
-  console.log("Server sieht User:", user?.email)
-  console.log("Erwartet:", MY_SUPER_EMAIL)
-  console.log("-------------------")
-
-  if (!user || user.email?.toLowerCase() !== MY_SUPER_EMAIL.toLowerCase()) {
-     return { 
-       success: false, 
-       error: `Nicht autorisiert! Server sieht: ${user?.email || 'Niemanden'}. Bitte neu einloggen.` 
-     }
+  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+     return { success: false, error: "Nicht autorisiert!" }
   }
 
   // 2. Daten aus Formular
@@ -55,16 +51,11 @@ export async function createClub(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  // 3. Admin-Client für User-Erstellung
+  // 3. Admin-Client für User-Erstellung (Service Role)
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
+    { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
   // 4. User erstellen
@@ -74,11 +65,11 @@ export async function createClub(formData: FormData) {
     email_confirm: true
   })
 
-  if (authError) {
-    return { success: false, error: "Fehler beim User-Erstellen: " + authError.message }
+  if (authError || !authData.user) {
+    return { success: false, error: "Fehler beim User-Erstellen: " + authError?.message }
   }
 
-  // 5. Verein erstellen (JETZT MIT ADMIN_EMAIL!)
+  // 5. Verein erstellen (MIT USER ID!)
   const { error: dbError } = await supabaseAdmin
     .from('clubs')
     .insert([
@@ -86,20 +77,19 @@ export async function createClub(formData: FormData) {
         name: name,
         slug: slug,
         primary_color: '#0f172a',
-        admin_email: email // <--- NEU: Wir speichern, wem der Club gehört
+        admin_email: email,      // Wir speichern die Email zur Info
+        owner_id: authData.user.id // <--- WICHTIG: Die Verknüpfung über ID
       }
     ])
 
   if (dbError) {
-    // Aufräumen
-    if (authData.user) {
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-    }
+    // Aufräumen, falls DB fehlschlägt (User wieder löschen)
+    await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
     return { success: false, error: "Datenbankfehler (Slug schon vergeben?): " + dbError.message }
   }
 
   revalidatePath('/super-admin')
-  return { success: true, message: `Verein '${name}' und User '${email}' erstellt!` }
+  return { success: true, message: `Verein '${name}' erstellt!` }
 }
 
 // --- BOOKING ACTIONS ---
@@ -160,6 +150,7 @@ export async function createBooking(
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000);
     
+    // Hier evtl. die Admin-Email des Clubs holen statt hardcoded
     await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
       to: ['alexander.kofler06@gmail.com'], 
