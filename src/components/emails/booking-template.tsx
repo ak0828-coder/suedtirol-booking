@@ -6,34 +6,35 @@ interface BookingEmailProps {
   date: string;
   time: string;
   price: number;
+  orderId?: string; // Optional machen, falls wir es mal vergessen
 }
 
-// Das ist reines HTML/CSS für E-Mails (sieht etwas oldschool aus, muss aber so sein)
 export const BookingEmailTemplate: React.FC<Readonly<BookingEmailProps>> = ({
   guestName,
   courtName,
   date,
   time,
   price,
+  orderId = "Bestellung #" + Math.floor(Math.random() * 100000) // Fallback Random ID
 }) => (
-  <div style={{ fontFamily: 'sans-serif', color: '#333', lineHeight: '1.5' }}>
-    <h1 style={{ color: '#e11d48' }}>Buchungsbestätigung 🎾</h1>
-    <p>Hallo <strong>{guestName}</strong>,</p>
-    <p>Deine Reservierung war erfolgreich! Hier sind die Details:</p>
+  <div style={{ fontFamily: 'sans-serif', padding: '20px', color: '#333' }}>
+    <h1 style={{ color: '#0f172a' }}>Buchung bestätigt! ✅</h1>
+    <p>Hallo {guestName},</p>
+    <p>Deine Platzbuchung war erfolgreich. Hier sind deine Details:</p>
     
-    <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-      <p style={{ margin: '5px 0' }}>📍 <strong>Platz:</strong> {courtName}</p>
-      <p style={{ margin: '5px 0' }}>📅 <strong>Datum:</strong> {date}</p>
-      <p style={{ margin: '5px 0' }}>⏰ <strong>Uhrzeit:</strong> {time}</p>
-      <p style={{ margin: '5px 0' }}>💰 <strong>Preis:</strong> {price}€ (bitte vor Ort zahlen)</p>
+    <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+      <p style={{ margin: '5px 0' }}><strong>📍 Platz:</strong> {courtName}</p>
+      <p style={{ margin: '5px 0' }}><strong>📅 Datum:</strong> {date}</p>
+      <p style={{ margin: '5px 0' }}><strong>⏰ Uhrzeit:</strong> {time} Uhr</p>
+      <p style={{ margin: '5px 0' }}><strong>💶 Preis:</strong> {price}€</p>
+      <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '10px 0' }} />
+      <p style={{ margin: '5px 0', fontSize: '14px', color: '#666' }}>
+        <strong>Bestell-Nr:</strong> {orderId}
+      </p>
     </div>
 
-    <p style={{ marginTop: '20px' }}>
-      Falls du stornieren musst, melde dich bitte rechtzeitig beim Verein.
-    </p>
-    <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '20px 0' }} />
-    <p style={{ fontSize: '12px', color: '#888' }}>
-      Tennis Club Vinschgau • Südtirol Booking System
+    <p style={{ fontSize: '14px', color: '#666' }}>
+      Bitte sei pünktlich vor Ort. Bei Fragen wende dich direkt an den Verein.
     </p>
   </div>
 );

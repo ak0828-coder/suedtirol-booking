@@ -1,35 +1,128 @@
 'use server'
 
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { Resend } from 'resend';
 import { BookingEmailTemplate } from '@/components/emails/booking-template';
 import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
-import { redirect } from "next/navigation"
 
-// ZURÜCK AUF PROFI: Wir laden den Key wieder sicher aus der .env Datei
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// UPDATE: Neuer Parameter am Ende hinzugefügt
+// --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
+// Diese Funktion nutzen wir gleich auf der Login-Seite
+export async function getMyClubSlug() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user || !user.email) return null
+
+  // Wir suchen den Club, wo die admin_email mit der User-Email übereinstimmt
+  const { data: club } = await supabase
+    .from('clubs')
+    .select('slug')
+    .eq('admin_email', user.email)
+    .single()
+
+  return club?.slug || null
+}
+
+// --- SUPER ADMIN ACTIONS ---
+
+export async function createClub(formData: FormData) {
+  const supabase = await createClient()
+  
+  // 1. Sicherheit: Prüfen, wer eingeloggt ist
+  const { data: { user } } = await supabase.auth.getUser()
+  const MY_SUPER_EMAIL = "alexander.kofler06@gmail.com" 
+
+  console.log("--- ADMIN CHECK ---")
+  console.log("Server sieht User:", user?.email)
+  console.log("Erwartet:", MY_SUPER_EMAIL)
+  console.log("-------------------")
+
+  if (!user || user.email?.toLowerCase() !== MY_SUPER_EMAIL.toLowerCase()) {
+     return { 
+       success: false, 
+       error: `Nicht autorisiert! Server sieht: ${user?.email || 'Niemanden'}. Bitte neu einloggen.` 
+     }
+  }
+
+  // 2. Daten aus Formular
+  const name = formData.get("name") as string
+  const slug = formData.get("slug") as string
+  const email = formData.get("email") as string
+  const password = formData.get("password") as string
+
+  // 3. Admin-Client für User-Erstellung
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+
+  // 4. User erstellen
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email: email,
+    password: password,
+    email_confirm: true
+  })
+
+  if (authError) {
+    return { success: false, error: "Fehler beim User-Erstellen: " + authError.message }
+  }
+
+  // 5. Verein erstellen (JETZT MIT ADMIN_EMAIL!)
+  const { error: dbError } = await supabaseAdmin
+    .from('clubs')
+    .insert([
+      { 
+        name: name,
+        slug: slug,
+        primary_color: '#0f172a',
+        admin_email: email // <--- NEU: Wir speichern, wem der Club gehört
+      }
+    ])
+
+  if (dbError) {
+    // Aufräumen
+    if (authData.user) {
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+    }
+    return { success: false, error: "Datenbankfehler (Slug schon vergeben?): " + dbError.message }
+  }
+
+  revalidatePath('/super-admin')
+  return { success: true, message: `Verein '${name}' und User '${email}' erstellt!` }
+}
+
+// --- BOOKING ACTIONS ---
+
 export async function createBooking(
   courtId: string, 
   clubSlug: string,
   date: Date, 
   time: string,
   price: number,
-  paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash' // Standard ist Cash
+  paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash'
 ) {
-  // 1. Datum und Zeit kombinieren für den Start
-  const [hours, minutes] = time.split(':').map(Number)
+  const supabase = await createClient()
   
+  // 1. Datum Logik
+  const [hours, minutes] = time.split(':').map(Number)
   const startTime = new Date(date)
   startTime.setHours(hours, minutes, 0, 0)
   
   const endTime = new Date(startTime)
   endTime.setHours(hours + 1, minutes, 0, 0)
 
-  // 2. Prüfen, ob schon belegt ist
+  // 2. Prüfen, ob schon belegt
   const { data: existing } = await supabase
     .from('bookings')
     .select('id')
@@ -41,129 +134,56 @@ export async function createBooking(
     return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
   }
 
-  // 3. Buchung speichern
+  // 3. Club ID holen
+  const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+  if(!club) return { success: false, error: "Club nicht gefunden" }
+
+  // 4. Speichern
   const { error } = await supabase
     .from('bookings')
     .insert({
       court_id: courtId,
-      club_id: (await supabase.from('clubs').select('id').eq('slug', clubSlug).single()).data?.id,
+      club_id: club.id,
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'confirmed',
-      payment_status: paymentMethod, // Hier wird der korrekte Status gesetzt
-      guest_name: 'Gast Buchung (Demo)' 
+      payment_status: paymentMethod,
+      guest_name: 'Gast Buchung' 
     })
 
   if (error) {
     console.error(error)
-    return { success: false, error: "Datenbankfehler beim Speichern." }
+    return { success: false, error: "Datenbankfehler." }
   }
 
-  // 5. E-Mail senden
+  // 5. E-Mail
   try {
-    const { data, error: resendError } = await resend.emails.send({
+    const orderId = "ORD-" + Math.floor(Math.random() * 100000);
+    
+    await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
       to: ['alexander.kofler06@gmail.com'], 
-      subject: `Buchungsbestätigung: ${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
+      subject: `Buchung bestätigt: ${format(date, 'dd.MM.yyyy')} um ${time}`,
       react: <BookingEmailTemplate 
-        guestName="Gast Buchung"
+        guestName="Gast"
         courtName="Tennisplatz"
         date={format(date, 'dd.MM.yyyy')}
         time={time}
         price={price}
+        orderId={orderId}
       />,
     });
-
-    if (resendError) {
-      console.error("Resend hat die Mail abgelehnt:", resendError);
-    } else {
-      console.log("Resend hat die Mail akzeptiert! ID:", data?.id);
-    }
-
   } catch (err) {
-    console.error("Kritischer Fehler beim Senden:", err);
+    console.error("Mail Fehler:", err);
   }
 
-  // 4. Die Seite aktualisieren
   revalidatePath(`/club/${clubSlug}`)
-  
   return { success: true }
 }
 
-// --- STRIPE CHECKOUT SESSION ---
-export async function createCheckoutSession(
-  courtId: string,
-  clubSlug: string,
-  date: Date,
-  time: string,
-  price: number,
-  courtName: string
-) {
-  const bookingData = {
-    courtId,
-    clubSlug,
-    date: date.toISOString(),
-    time,
-    price: price.toString(),
-  }
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'], 
-    line_items: [
-      {
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: `Buchung: ${courtName}`,
-            description: `${format(date, 'dd.MM.yyyy')} um ${time} Uhr`,
-          },
-          unit_amount: price * 100, 
-        },
-        quantity: 1,
-      },
-    ],
-    mode: 'payment',
-    metadata: bookingData,
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
-  })
-
-  if (session.url) {
-    return { url: session.url }
-  } else {
-    return { error: "Fehler beim Erstellen der Zahlung." }
-  }
-}
-
-// --- HELPER FUNCTIONS ---
-export async function getBookedSlots(courtId: string, date: Date) {
-  const startOfDay = new Date(date)
-  startOfDay.setHours(0, 0, 0, 0)
-  
-  const endOfDay = new Date(date)
-  endOfDay.setHours(23, 59, 59, 999)
-
-  const { data: bookings, error } = await supabase
-    .from('bookings')
-    .select('start_time')
-    .eq('court_id', courtId)
-    .gte('start_time', startOfDay.toISOString())
-    .lte('start_time', endOfDay.toISOString())
-
-  if (error) {
-    console.error("Fehler beim Laden der Slots:", error)
-    return []
-  }
-
-  const bookedHours = bookings.map((b) => {
-    const date = new Date(b.start_time)
-    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  })
-
-  return bookedHours
-}
-
 export async function deleteBooking(bookingId: string) {
+  const supabase = await createClient()
+
   const { data: booking } = await supabase
     .from('bookings')
     .select('*, clubs(slug)') 
@@ -190,4 +210,105 @@ export async function deleteBooking(bookingId: string) {
   }
   
   return { success: true }
+}
+
+// --- CLUB MANAGEMENT (Admin) ---
+
+export async function createCourt(
+  clubSlug: string, 
+  name: string, 
+  price: number,
+  duration: number
+) {
+  const supabase = await createClient()
+  
+  const { data: clubData, error: clubError } = await supabase
+    .from('clubs')
+    .select('id')
+    .eq('slug', clubSlug)
+    .single()
+
+  if (clubError || !clubData) return { error: "Club nicht gefunden." }
+
+  const { data, error } = await supabase
+    .from('courts')
+    .insert([{ 
+        club_id: clubData.id,
+        club_slug: clubSlug,
+        name: name,
+        description: `Platz (${duration} Min)`,
+        price_per_hour: price,
+        duration_minutes: duration,
+        sport_type: 'tennis'
+    }])
+    .select()
+
+  if (error) return { error: error.message }
+  
+  revalidatePath(`/club/${clubSlug}`)
+  revalidatePath(`/club/${clubSlug}/admin`)
+  return { success: true, court: data[0] }
+}
+
+export async function deleteCourt(courtId: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase.from('courts').delete().eq('id', courtId)
+  
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+// --- HELPERS ---
+
+export async function getBookedSlots(courtId: string, date: Date) {
+  const supabase = await createClient()
+  
+  const startOfDay = new Date(date)
+  startOfDay.setHours(0, 0, 0, 0)
+  const endOfDay = new Date(date)
+  endOfDay.setHours(23, 59, 59, 999)
+
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('start_time')
+    .eq('court_id', courtId)
+    .gte('start_time', startOfDay.toISOString())
+    .lte('start_time', endOfDay.toISOString())
+
+  if (!bookings) return []
+
+  return bookings.map((b) => {
+    const d = new Date(b.start_time)
+    return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+  })
+}
+
+// --- STRIPE ---
+
+export async function createCheckoutSession(
+  courtId: string,
+  clubSlug: string,
+  date: Date,
+  time: string,
+  price: number,
+  courtName: string
+) {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'], 
+    line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: { name: `Buchung: ${courtName}` },
+          unit_amount: price * 100, 
+        },
+        quantity: 1,
+    }],
+    mode: 'payment',
+    metadata: { courtId, clubSlug, date: date.toISOString(), time, price: price.toString() },
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+  })
+
+  return { url: session.url }
 }

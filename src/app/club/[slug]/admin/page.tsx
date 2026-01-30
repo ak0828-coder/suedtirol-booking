@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
-// Neue Imports
 import { AdminGuard } from "@/components/auth/admin-guard"
 import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+// NEU: Import für den Court Manager
+import { CourtManager } from "@/components/admin/court-manager"
 
 // Kein Cache, immer live Daten
 export const dynamic = 'force-dynamic'
@@ -25,11 +26,12 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
 
   if (!club) return notFound()
 
-  // 2. Plätze laden (brauchen wir für die Preise im Dashboard)
+  // 2. Plätze laden (jetzt sortiert nach Name für die Anzeige)
   const { data: courts } = await supabase
     .from('courts')
     .select('*')
     .eq('club_id', club.id)
+    .order('name')
 
   // 3. Alle Buchungen laden (neueste zuerst)
   const { data: bookings } = await supabase
@@ -44,7 +46,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   return (
     <AdminGuard>
       <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8">
           
           {/* HEADER MIT LOGOUT */}
           <div className="flex items-center justify-between">
@@ -59,69 +61,80 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                  <Button variant="outline">Zur Vorschau</Button>
                </Link>
                
-               {/* Logout Button (Link zur Login Page) */}
+               {/* Logout Button */}
                <form action={async () => {
                   "use server";
-                  // Wir leiten zur Login-Seite, dort passiert der Logout
+                  // Wir leiten zur Login-Seite, dort passiert der Logout theoretisch
                }}>
-                 <Link href="/login">
-                   <Button variant="ghost" size="icon">
-                     <LogOut className="h-5 w-5" />
-                   </Button>
-                 </Link>
+                  <Link href="/login">
+                    <Button variant="ghost" size="icon">
+                      <LogOut className="h-5 w-5" />
+                    </Button>
+                  </Link>
                </form>
             </div>
           </div>
 
-          {/* DAS NEUE ANALYTICS COCKPIT */}
+          {/* ANALYTICS COCKPIT */}
           {bookings && courts && (
             <DashboardStats bookings={bookings} courts={courts} />
           )}
 
-          {/* DIE LISTE DER LETZTEN BUCHUNGEN */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Letzte Aktivitäten</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {bookings?.map((booking: any) => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-slate-50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-xs">
-                         {format(new Date(booking.start_time), "dd.MM")}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-slate-900">
-                          {booking.courts.name}
+          {/* HAUPTBEREICH: 2 SPALTEN LAYOUT */}
+          <div className="grid xl:grid-cols-2 gap-6">
+            
+            {/* LINKS: LETZTE BUCHUNGEN */}
+            <div>
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Letzte Aktivitäten</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {bookings?.map((booking: any) => (
+                      <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-xs">
+                             {format(new Date(booking.start_time), "dd.MM")}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {booking.courts.name}
+                            </div>
+                            <div className="text-sm text-slate-500">
+                               {format(new Date(booking.start_time), "HH:mm")} Uhr • {booking.guest_name}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-slate-500">
-                           {format(new Date(booking.start_time), "HH:mm")} Uhr • {booking.guest_name}
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-right hidden sm:block">
-                        <div className="font-medium text-slate-900">
-                          {booking.payment_status === 'paid_cash' ? 'Vor Ort' : 'Online'}
+                        <div className="flex items-center gap-4">
+                          <div className="text-right hidden sm:block">
+                            <div className="font-medium text-slate-900">
+                              {booking.payment_status === 'paid_cash' ? 'Vor Ort' : 'Online'}
+                            </div>
+                            <div className="text-xs text-slate-500">Status: {booking.status}</div>
+                          </div>
+                          <DeleteBookingButton id={booking.id} />
                         </div>
-                        <div className="text-xs text-slate-500">Status: {booking.status}</div>
                       </div>
-                      {/* Der Löschen Button */}
-                      <DeleteBookingButton id={booking.id} />
-                    </div>
-                  </div>
-                ))}
+                    ))}
 
-                {bookings?.length === 0 && (
-                  <div className="text-center text-slate-500 py-10">
-                    Noch keine Buchungen vorhanden.
+                    {bookings?.length === 0 && (
+                      <div className="text-center text-slate-500 py-10">
+                        Noch keine Buchungen vorhanden.
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* RECHTS: PLATZ MANAGEMENT (NEU) */}
+            <div>
+               <CourtManager initialCourts={courts || []} clubSlug={slug} />
+            </div>
+
+          </div>
 
         </div>
       </div>

@@ -1,9 +1,9 @@
 import { supabase } from "@/lib/supabase"
 import { notFound } from "next/navigation"
-import { CalendarDays, MapPin } from "lucide-react"
+import { CalendarDays, MapPin, Check } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { BookingModal } from "@/components/booking-modal"
-import { ModeToggle } from "@/components/mode-toggle" // NEU: Import
+import { ModeToggle } from "@/components/mode-toggle"
 
 async function getClubData(slug: string) {
   const { data: club } = await supabase
@@ -18,6 +18,7 @@ async function getClubData(slug: string) {
     .from('courts')
     .select('*')
     .eq('club_id', club.id)
+    .order('name') // Sortiert die Plätze schön nach Namen
 
   return { club, courts }
 }
@@ -33,10 +34,8 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 transition-colors duration-300">
       {/* HEADER */}
-      {/* WICHTIG: 'relative' hinzugefügt, damit der Button sich daran orientiert */}
       <div className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 pb-6 pt-10 px-4 shadow-sm relative transition-colors duration-300">
         
-        {/* NEU: Dark Mode Button oben rechts */}
         <div className="absolute top-4 right-4">
            <ModeToggle />
         </div>
@@ -60,44 +59,57 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
       <div className="max-w-md mx-auto px-4 mt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Unsere Plätze</h2>
-          <span className="text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded-full">
-            Heute geöffnet
+          <span className="text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded-full flex items-center gap-1">
+            <Check className="w-3 h-3" /> Heute geöffnet
           </span>
         </div>
 
-        <div className="space-y-4">
-          {courts?.map((court: any) => (
-            <Card key={court.id} className="overflow-hidden border-none shadow-md dark:bg-slate-900">
-              <CardContent className="p-0">
-                <div className="flex">
-                  <div className="w-24 bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
-                    <CalendarDays className="w-8 h-8 text-slate-400" />
-                  </div>
-                  
-                  <div className="flex-1 p-4 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-slate-100">{court.name}</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">{court.sport_type}</p>
+        <div className="space-y-6">
+          {courts?.map((court: any) => {
+            
+            // Wir holen die Dauer, nutzen sie aber nur, um sie ans Modal weiterzugeben
+            const duration = court.duration_minutes || 60 
+
+            return (
+              <Card key={court.id} className="overflow-hidden border-none shadow-md dark:bg-slate-900">
+                <CardContent className="p-0">
+                  <div className="flex flex-col">
+                    
+                    {/* Header des Platzes */}
+                    <div className="flex p-5">
+                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mr-4 shadow-inner">
+                        <CalendarDays className="w-8 h-8 text-slate-500 dark:text-slate-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">{court.name}</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">{court.sport_type || 'Tennis'}</p>
+                            </div>
+                            <div className="text-right">
+                                <span className="block font-bold text-slate-900 dark:text-slate-100">{court.price_per_hour}€</span>
+                                <span className="text-xs text-slate-400">/ {duration} Min</span>
+                            </div>
+                        </div>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center justify-between mt-4">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-200">
-                        {court.price_per_hour}€ <span className="text-slate-400 font-normal">/ Std.</span>
-                      </span>
-                      
-                      {/* HIER IST DAS AKTUALISIERTE MODAL */}
-                      <BookingModal 
-                        courtId={court.id}
-                        courtName={court.name} 
-                        price={court.price_per_hour} 
-                        clubSlug={club.slug}
-                      />
+                    {/* Footer mit Button */}
+                    <div className="px-5 pb-5">
+                        <BookingModal 
+                            courtId={court.id}
+                            courtName={court.name} 
+                            price={court.price_per_hour} 
+                            clubSlug={club.slug}
+                            durationMinutes={duration} // <--- WICHTIG: Dauer übergeben!
+                        />
                     </div>
+
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </div>

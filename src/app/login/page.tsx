@@ -1,32 +1,33 @@
 "use client"
 
-import { useState, useEffect } from "react" // NEU: useEffect importiert
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
+import { getMyClubSlug } from "@/app/actions" // <--- Importieren
 
 export default function LoginPage() {
   const router = useRouter()
+  const supabase = createClient()
+  
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // NEU: Beim Laden der Seite sicherheitshalber ausloggen
+  // Sicherheitshalber beim Laden ausloggen (Good Practice)
   useEffect(() => {
     const signOut = async () => {
       await supabase.auth.signOut()
     }
     signOut()
-  }, [])
+  }, [supabase])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
+    setIsLoading(true)
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -34,53 +35,75 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError("Falsche E-Mail oder Passwort.")
-      setLoading(false)
-    } else {
-      // Erfolg! Weiter zum Admin-Bereich des Clubs
-      // (Hier hardcoden wir erst mal den Slug, später machen wir das dynamisch)
-      router.push("/club/tc-vinschgau/admin")
+      alert("Fehler: " + error.message)
+      setIsLoading(false)
+      return
+    }
+
+    router.refresh()
+
+    // 1. Bist DU es? (Super Admin)
+    if (email.toLowerCase() === "alexander.kofler06@gmail.com") {
+      router.push("/super-admin")
+      return
+    }
+
+    // 2. Ist es ein VEREIN? (Dynamische Suche)
+    // Wir fragen den Server: "Zu welchem Club gehört diese Email?"
+    try {
+        const slug = await getMyClubSlug()
+
+        if (slug) {
+          // Treffer! Ab zum richtigen Dashboard
+          router.push(`/club/${slug}/admin`)
+        } else {
+          // Kein Verein gefunden? Vielleicht nur ein normaler Spieler oder Fehler
+          router.push("/") 
+        }
+    } catch (err) {
+        console.error("Fehler beim Abrufen des Clubs:", err)
+        alert("Ein unerwarteter Fehler ist aufgetreten.")
+        setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Admin Login</CardTitle>
-          <CardDescription>Bitte melde dich an, um fortzufahren.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="E-Mail Adresse"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Input
-                type="password"
-                placeholder="Passwort"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+      <div className="w-full max-w-md space-y-8 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border dark:border-slate-800">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Willkommen zurück</h1>
+          <p className="text-slate-500 mt-2">Bitte melde dich an.</p>
+        </div>
 
-            {error && (
-              <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
-                {error}
-              </div>
-            )}
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email">E-Mail</Label>
+            <Input 
+              id="email" 
+              type="email" 
+              placeholder="name@example.com" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+            />
+          </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Anmelden"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <div className="space-y-2">
+            <Label htmlFor="password">Passwort</Label>
+            <Input 
+              id="password" 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required 
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <Loader2 className="animate-spin mr-2" /> : "Anmelden"}
+          </Button>
+        </form>
+      </div>
     </div>
   )
 }
