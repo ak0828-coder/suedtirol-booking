@@ -9,14 +9,13 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { CourtManager } from "@/components/admin/court-manager"
 
-// Kein Cache, immer live Daten
 export const dynamic = 'force-dynamic'
 
 export default async function AdminPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const supabase = await createClient()
 
-  // 1. Authentifizierung prüfen
+  // 1. Auth Check
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return redirect("/login")
 
@@ -29,45 +28,24 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
 
   if (!club) return notFound()
 
-  // 3. SICHERHEITS-CHECK
-  // Wir prüfen jetzt gegen die Umgebungsvariable
+  // 3. Security Check
   const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
   const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
   
-  // Zugriff erlauben, wenn User der Owner ist ODER Super Admin
   if (club.owner_id !== user.id && !isSuperAdmin) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
             <div className="text-center p-8 bg-white rounded-xl shadow-lg border border-red-100 max-w-md">
                 <h1 className="text-2xl font-bold text-red-600 mb-2">Zugriff verweigert ⛔</h1>
-                <p className="text-slate-600 mb-6">
-                    Du bist nicht der Administrator von "{club.name}".<br/>
-                    Bitte melde dich mit dem richtigen Account an.
-                </p>
-                <Link href="/login">
-                    <Button variant="default" className="w-full">Zum Login</Button>
-                </Link>
+                <Link href="/login"><Button variant="default">Zum Login</Button></Link>
             </div>
         </div>
     )
   }
 
-  // 4. Plätze laden
-  const { data: courts } = await supabase
-    .from('courts')
-    .select('*')
-    .eq('club_id', club.id)
-    .order('name')
-
-  // 5. Buchungen laden
-  const { data: bookings } = await supabase
-    .from('bookings')
-    .select(`
-      *,
-      courts (name)
-    `)
-    .eq('club_id', club.id)
-    .order('start_time', { ascending: false })
+  // 4. Daten laden
+  const { data: courts } = await supabase.from('courts').select('*').eq('club_id', club.id).order('name')
+  const { data: bookings } = await supabase.from('bookings').select(`*, courts (name)`).eq('club_id', club.id).order('start_time', { ascending: false })
 
   return (
       <div className="min-h-screen bg-slate-50 p-6">
@@ -75,9 +53,25 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
           
           {/* HEADER */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-              <p className="text-slate-500">Übersicht für {club.name}</p>
+            <div className="flex items-center gap-4">
+              
+              {/* --- NEU: LOGO IM ADMIN DASHBOARD --- */}
+              <div 
+                className="w-16 h-16 rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-slate-200"
+                style={{ backgroundColor: club.primary_color || '#0f172a' }}
+              >
+                 {club.logo_url ? (
+                    <img src={club.logo_url} alt={club.name} className="w-full h-full object-cover" />
+                 ) : (
+                    <span className="text-xl">{club.name.substring(0, 2).toUpperCase()}</span>
+                 )}
+              </div>
+              {/* ---------------------------------- */}
+
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+                <p className="text-slate-500">Verwaltung für {club.name}</p>
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
@@ -87,7 +81,6 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                  </Button>
                </Link>
                
-               {/* Logout Link */}
                <Link href="/login">
                     <Button variant="ghost" size="icon" title="Abmelden">
                       <LogOut className="h-5 w-5" />

@@ -1,11 +1,14 @@
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/server" 
 import { notFound } from "next/navigation"
 import { CalendarDays, MapPin, Check } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { BookingModal } from "@/components/booking-modal"
 import { ModeToggle } from "@/components/mode-toggle"
 
+// Helper, um Daten zu holen
 async function getClubData(slug: string) {
+  const supabase = await createClient() 
+  
   const { data: club } = await supabase
     .from('clubs')
     .select('*')
@@ -18,7 +21,7 @@ async function getClubData(slug: string) {
     .from('courts')
     .select('*')
     .eq('club_id', club.id)
-    .order('name') // Sortiert die Plätze schön nach Namen
+    .order('name')
 
   return { club, courts }
 }
@@ -40,14 +43,29 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
            <ModeToggle />
         </div>
 
-        <div className="max-w-md mx-auto text-center">
+        <div className="max-w-md mx-auto text-center flex flex-col items-center">
+          
+          {/* --- LOGO LOGIK --- */}
           <div 
-            className="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-lg"
+            className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg overflow-hidden border-4 border-white dark:border-slate-800"
             style={{ backgroundColor: club.primary_color || '#e11d48' }}
           >
-            {club.name.substring(0, 2).toUpperCase()}
+            {club.logo_url ? (
+                // Wenn Logo da ist -> Bild anzeigen
+                <img 
+                    src={club.logo_url} 
+                    alt={club.name} 
+                    className="w-full h-full object-cover"
+                />
+            ) : (
+                // Sonst -> Initialen anzeigen
+                <span>{club.name.substring(0, 2).toUpperCase()}</span>
+            )}
           </div>
+          {/* ------------------ */}
+
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{club.name}</h1>
+          
           <div className="flex items-center justify-center text-slate-500 dark:text-slate-400 mt-2 text-sm">
             <MapPin className="w-4 h-4 mr-1" />
             <span>Südtirol</span>
@@ -67,7 +85,6 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
         <div className="space-y-6">
           {courts?.map((court: any) => {
             
-            // Wir holen die Dauer, nutzen sie aber nur, um sie ans Modal weiterzugeben
             const duration = court.duration_minutes || 60 
 
             return (
@@ -101,7 +118,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                             courtName={court.name} 
                             price={court.price_per_hour} 
                             clubSlug={club.slug}
-                            durationMinutes={duration} // <--- WICHTIG: Dauer übergeben!
+                            durationMinutes={duration} 
                         />
                     </div>
 
