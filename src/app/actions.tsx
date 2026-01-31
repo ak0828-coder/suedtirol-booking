@@ -28,7 +28,7 @@ export async function updateUserPassword(newPassword: string) {
   return { success: true }
 }
 
-// --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
+// --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER (Legacy / Admin Check) ---
 export async function getMyClubSlug() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -46,6 +46,36 @@ export async function getMyClubSlug() {
     .single()
 
   return club?.slug || null
+}
+
+// --- NEU: HELPER FÜR LOGIN-WEICHE (ROUTING) ---
+export async function getUserRole() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user || !user.email) return null
+
+  // 1. Super Admin?
+  if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL) return { role: 'super_admin' }
+
+  // 2. Club Owner? (Admin Dashboard)
+  const { data: club } = await supabase.from('clubs').select('slug').eq('owner_id', user.id).single()
+  if (club) return { role: 'club_admin', slug: club.slug }
+
+  // 3. Mitglied? (Member Dashboard)
+  // Wir joinen auf die clubs Tabelle, um den Slug zu bekommen
+  const { data: member } = await supabase
+    .from('club_members')
+    .select('club_id, clubs(slug)')
+    .eq('user_id', user.id)
+    .eq('status', 'active') // Nur aktive Mitglieder reinlassen? Optional.
+    .single()
+
+  // @ts-ignore (Supabase Types sind bei Joins manchmal strikt)
+  if (member && member.clubs) return { role: 'member', slug: member.clubs.slug }
+
+  // 4. Eingeloggt, aber nirgendwo zugeordnet
+  return { role: 'user' } 
 }
 
 // --- SUPER ADMIN ACTIONS ---
@@ -336,7 +366,7 @@ export async function createBooking(
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'confirmed',
-      payment_status: finalPaymentStatus, // TypeScript ist jetzt zufrieden
+      payment_status: finalPaymentStatus, 
       guest_name: user ? 'Mitglied' : 'Gast Buchung' 
     })
 

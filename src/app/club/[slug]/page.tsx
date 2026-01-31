@@ -4,6 +4,7 @@ import { CalendarDays, MapPin, Check } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { BookingModal } from "@/components/booking-modal"
 import { ModeToggle } from "@/components/mode-toggle"
+import { MembershipPlans } from "@/components/membership-plans" // <--- NEU IMPORTIERT
 
 // Helper, um Daten zu holen
 async function getClubData(slug: string) {
@@ -23,7 +24,14 @@ async function getClubData(slug: string) {
     .eq('club_id', club.id)
     .order('name')
 
-  return { club, courts }
+  // --- NEU: PLÄNE LADEN ---
+  const { data: plans } = await supabase
+    .from('membership_plans')
+    .select('*')
+    .eq('club_id', club.id)
+    .order('price')
+
+  return { club, courts, plans }
 }
 
 export default async function ClubPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -32,7 +40,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
   if (!data) return notFound()
 
-  const { club, courts } = data
+  const { club, courts, plans } = data
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 transition-colors duration-300">
@@ -119,8 +127,8 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                             price={court.price_per_hour} 
                             clubSlug={club.slug}
                             durationMinutes={duration}
-                            startHour={court.start_hour} // NEU: Aus DB
-                            endHour={court.end_hour}     // NEU: Aus DB
+                            startHour={court.start_hour}
+                            endHour={court.end_hour}
                         />
                     </div>
 
@@ -131,6 +139,11 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           })}
         </div>
       </div>
+
+      {/* --- NEU: MEMBERSHIP PLANS SEKTION --- */}
+      {/* Wir platzieren sie außerhalb des max-w-md Containers, damit sie breiter sein kann */}
+      <MembershipPlans plans={plans || []} clubSlug={slug} />
+
     </div>
   )
 }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
-import { getMyClubSlug } from "@/app/actions"
+import { getUserRole } from "@/app/actions" // <--- Update auf getUserRole
 
 export default function LoginPage() {
   const router = useRouter()
@@ -47,22 +47,35 @@ export default function LoginPage() {
     router.refresh()
 
     try {
-        // 2. Server fragen: "Wer bin ich?" (Nutzt intern process.env.SUPER_ADMIN_EMAIL)
-        const slug = await getMyClubSlug()
+        // 2. Server fragen: "Wer bin ich?" (Nutzt neue getUserRole Action)
+        const result = await getUserRole()
 
-        if (slug === "SUPER_ADMIN_MODE") {
+        if (!result) {
+             setErrorMessage("Benutzer konnte nicht identifiziert werden.")
+             await supabase.auth.signOut()
+             setIsLoading(false)
+             return
+        }
+
+        // 3. Weiche stellen
+        if (result.role === 'super_admin') {
             router.push("/super-admin")
-        } else if (slug) {
-            router.push(`/club/${slug}/admin`)
+        } else if (result.role === 'club_admin' && result.slug) {
+            router.push(`/club/${result.slug}/admin`)
+        } else if (result.role === 'member' && result.slug) {
+            router.push(`/club/${result.slug}/dashboard`) // <--- ZIEL FÜR MITGLIEDER
         } else {
-            setErrorMessage("Kein Verein gefunden. Bist du sicher, dass du Admin bist?")
-            await supabase.auth.signOut()
+            // Benutzer existiert, hat aber keine spezielle Rolle
+            // Leite auf Startseite weiter
+            router.push("/") 
         }
     } catch (err) {
         console.error(err)
         setErrorMessage("Server-Fehler beim Abrufen der Daten.")
     } finally {
-        setIsLoading(false)
+        // isLoading nicht auf false setzen, wenn wir pushen (verhindert Flackern)
+        // nur im Fehlerfall stoppen wir den Spinner hier, 
+        // oder wenn der Router Push sehr lange dauert (Timeout Handling optional)
     }
   }
 
@@ -70,7 +83,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <div className="w-full max-w-md space-y-8 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border dark:border-slate-800">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Admin Login</h1>
+          <h1 className="text-2xl font-bold">Login</h1>
           <p className="text-slate-500 mt-2">Südtirol Booking</p>
         </div>
 
