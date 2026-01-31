@@ -252,7 +252,7 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     if (!user) return { url: `${process.env.NEXT_PUBLIC_BASE_URL}/login` } 
 
     const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
-    if (!club) return { url: "" } // Should not happen
+    if (!club) return { url: "" } 
 
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -290,7 +290,9 @@ export async function createBooking(
   if(!club) return { success: false, error: "Club nicht gefunden" }
 
   let finalPrice = price
-  let finalPaymentStatus = paymentMethod
+  
+  // FIX: Explizite Typisierung, damit 'paid_member' später zugewiesen werden darf
+  let finalPaymentStatus: 'paid_cash' | 'paid_stripe' | 'paid_member' = paymentMethod
 
   if (user) {
       const { data: member } = await supabase
@@ -334,7 +336,7 @@ export async function createBooking(
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'confirmed',
-      payment_status: finalPaymentStatus, 
+      payment_status: finalPaymentStatus, // TypeScript ist jetzt zufrieden
       guest_name: user ? 'Mitglied' : 'Gast Buchung' 
     })
 
@@ -405,8 +407,7 @@ export async function createCourt(
   clubSlug: string, 
   name: string, 
   price: number,
-  duration: number
-) {
+  duration: number) {
   const supabase = await createClient()
   
   const { data: clubData, error: clubError } = await supabase
@@ -453,8 +454,7 @@ export async function createCheckoutSession(
   time: string,
   price: number,
   courtName: string,
-  durationMinutes: number
-) {
+  durationMinutes: number) {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'], 
     line_items: [{
@@ -550,8 +550,7 @@ export async function createBlockedPeriod(
   courtId: string | null, 
   startDate: Date, 
   endDate: Date, 
-  reason: string
-) {
+  reason: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "Auth required" }
@@ -565,7 +564,7 @@ export async function createBlockedPeriod(
   // Club ID & Owner holen
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
   
-  // FIX: Null-Check und danach erst Zugriff auf club.owner_id
+  // FIX: Null-Check
   if (!club) {
       return { success: false, error: "Club nicht gefunden" }
   }
