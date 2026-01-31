@@ -48,6 +48,22 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
   const { club, courts, plans } = data
 
+  // --- NEU: PRÜFEN OB MEMBER ---
+  let isMember = false
+  if (user) {
+      const { data: member } = await supabase.from('club_members')
+        .select('id, status, valid_until')
+        .eq('club_id', club.id)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .single()
+      
+      if (member && member.valid_until && new Date(member.valid_until) > new Date()) {
+          isMember = true
+      }
+  }
+  // -----------------------------
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 transition-colors duration-300">
       
@@ -144,6 +160,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                             durationMinutes={duration} 
                             startHour={court.start_hour}
                             endHour={court.end_hour}
+                            isMember={isMember} // Übergeben des Mitgliederstatus
                         />
                     </div>
                   </div>
@@ -153,8 +170,8 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           })}
         </div>
 
-        {/* SECTION 2: MITGLIEDSCHAFTEN (Anzeige nur, wenn Pläne vorhanden sind) */}
-        {plans && plans.length > 0 && (
+        {/* SECTION 2: MITGLIEDSCHAFTEN (Anzeige nur, wenn Pläne vorhanden sind und User kein Mitglied ist) */}
+        {plans && plans.length > 0 && !isMember && (
             <div className="mt-16 mb-12">
                 <MembershipPlans plans={plans} clubSlug={slug} />
             </div>

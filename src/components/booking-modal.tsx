@@ -14,7 +14,7 @@ import {
 import { de } from "date-fns/locale"
 import { createBooking, getBookedSlots, createCheckoutSession, getBlockedDates } from "@/app/actions" 
 import { generateTimeSlots, isDateBlocked } from "@/lib/utils"
-import { Loader2, Calendar as CalendarIcon, Clock, AlertTriangle } from "lucide-react"
+import { Loader2, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2 } from "lucide-react"
 
 interface BookingModalProps {
   courtId: string
@@ -22,11 +22,12 @@ interface BookingModalProps {
   price: number
   clubSlug: string
   durationMinutes: number
-  startHour?: number // NEU
-  endHour?: number   // NEU
+  startHour?: number 
+  endHour?: number   
+  isMember?: boolean // <--- NEU
 }
 
-export function BookingModal({ courtId, courtName, price, clubSlug, durationMinutes, startHour, endHour }: BookingModalProps) {
+export function BookingModal({ courtId, courtName, price, clubSlug, durationMinutes, startHour, endHour, isMember }: BookingModalProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -37,7 +38,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
   // Dynamische Slots basierend auf Platz-Öffnungszeiten
-  // Wenn startHour/endHour nicht da sind, fallback auf 8 und 22
   const timeSlots = generateTimeSlots(startHour || 8, endHour || 22, durationMinutes)
 
   // 1. Sperrzeiten laden beim Öffnen
@@ -154,7 +154,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                 </span>
                 {isLoadingSlots && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
               </div>
-               
+                
               <div className="grid grid-cols-4 gap-2">
                 {timeSlots.map((time) => {
                   const isBooked = bookedSlots.includes(time)
@@ -181,25 +181,38 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-2">
                   Zusammenfassung: <br/>
                   <strong>{date?.toLocaleDateString('de-DE')}</strong> um <strong>{selectedTime} Uhr</strong><br/>
-                  Preis: <strong>{price}€</strong>
+                  
+                  {/* --- PREIS ANZEIGE --- */}
+                  Preis: {isMember ? <span className="text-green-600 font-bold ml-1">0€ (Mitglied)</span> : <strong>{price}€</strong>}
                </div>
 
-              <Button 
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" 
-                disabled={isBooking}
-                onClick={async () => {
-                   setIsBooking(true)
-                   const result = await createCheckoutSession(courtId, clubSlug, date!, selectedTime, price, courtName, durationMinutes)
-                   if (result?.url) window.location.href = result.url
-                   else { alert("Fehler"); setIsBooking(false); }
-                }}
-              >
-                {isBooking ? <Loader2 className="animate-spin" /> : `💳 Online zahlen (${price}€)`}
-              </Button>
+              {/* --- BUTTONS --- */}
+              {isMember ? (
+                  // MITGLIEDER BUTTON
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2" disabled={isBooking} onClick={handleBook}>
+                     {isBooking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4"/> Jetzt kostenlos buchen</>}
+                  </Button>
+              ) : (
+                  // GAST BUTTONS (Stripe & Cash)
+                  <>
+                    <Button 
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" 
+                        disabled={isBooking}
+                        onClick={async () => {
+                        setIsBooking(true)
+                        const result = await createCheckoutSession(courtId, clubSlug, date!, selectedTime, price, courtName, durationMinutes)
+                        if (result?.url) window.location.href = result.url
+                        else { alert("Fehler"); setIsBooking(false); }
+                        }}
+                    >
+                        {isBooking ? <Loader2 className="animate-spin" /> : `💳 Online zahlen (${price}€)`}
+                    </Button>
 
-              <Button variant="outline" className="w-full" disabled={isBooking} onClick={handleBook}>
-                 Vor Ort bezahlen
-              </Button>
+                    <Button variant="outline" className="w-full" disabled={isBooking} onClick={handleBook}>
+                        Vor Ort bezahlen
+                    </Button>
+                  </>
+              )}
             </div>
           )}
            

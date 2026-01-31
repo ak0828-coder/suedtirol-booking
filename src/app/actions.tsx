@@ -98,14 +98,14 @@ export async function createClub(formData: FormData) {
   )
 
   // FIX: Wir übergeben 'name' und 'full_name' in den Metadaten.
-  // Das verhindert den "Database error creating new user", falls ein Trigger läuft.
+  // Das verhindert den "Database error creating new user", falls ein Trigger (z.B. für public.profiles) läuft.
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
     email_confirm: true,
     user_metadata: { 
         must_change_password: true,
-        name: name,       // FIX: Wichtig für Public Profile Trigger
+        name: name,       // FIX: Wichtig für Profile Trigger
         full_name: name   // FIX: Fallback
     }
   })
@@ -127,7 +127,7 @@ export async function createClub(formData: FormData) {
     ])
 
   if (dbError) {
-    // Rollback
+    // Rollback: User wieder löschen, wenn Club nicht erstellt werden konnte
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
     return { success: false, error: "Datenbankfehler (Slug schon vergeben?): " + dbError.message }
   }

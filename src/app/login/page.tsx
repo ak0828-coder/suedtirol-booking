@@ -47,32 +47,25 @@ export default function LoginPage() {
     router.refresh()
 
     try {
-        // 2. Server fragen: "Wer bin ich?" (Nutzt neue getUserRole Action)
+        // 2. Server fragen: "Wer bin ich?"
         const result = await getUserRole()
 
-        if (!result) {
-             setErrorMessage("Benutzer konnte nicht identifiziert werden.")
-             await supabase.auth.signOut()
-             setIsLoading(false)
-             return
-        }
-
-        // 3. Weiche stellen
-        if (result.role === 'super_admin') {
+        if (result?.role === 'super_admin') {
             router.push("/super-admin")
-        } else if (result.role === 'club_admin' && result.slug) {
+        } else if (result?.role === 'club_admin') {
             router.push(`/club/${result.slug}/admin`)
-        } else if (result.role === 'member' && result.slug) {
-            router.push(`/club/${result.slug}/dashboard`) // Weiterleitung für Mitglieder
+        } else if (result?.role === 'member') {
+            // 3. Weiterleitung zum Member Dashboard
+            router.push(`/club/${result.slug}/dashboard`) 
         } else {
-            // Fallback
-            router.push("/") 
+            setErrorMessage("Kein Account gefunden. Bitte registriere dich zuerst.")
+            await supabase.auth.signOut()
         }
     } catch (err) {
         console.error(err)
-        setErrorMessage("Server-Fehler beim Abrufen der Daten.")
+        setErrorMessage("Login-Fehler.")
     } finally {
-        // Spinner nicht anhalten wenn wir pushen, um UX zu verbessern
+        setIsLoading(false)
     }
   }
 
