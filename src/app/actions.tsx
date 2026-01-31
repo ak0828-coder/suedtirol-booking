@@ -6,11 +6,10 @@ import { revalidatePath } from "next/cache"
 import { Resend } from 'resend'
 import { BookingEmailTemplate } from '@/components/emails/booking-template'
 import { format } from "date-fns"
-import { stripe } from "@/lib/stripe" // WICHTIG: Stripe Import
+import { stripe } from "@/lib/stripe" 
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// HIER DIE ÄNDERUNG: Wir laden die Mail aus der Environment Variable
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase() || "";
 
 if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nicht in .env gesetzt!");
@@ -21,7 +20,7 @@ export async function updateUserPassword(newPassword: string) {
   
   const { error } = await supabase.auth.updateUser({
     password: newPassword,
-    data: { must_change_password: false } // <--- WICHTIG: Flag entfernen!
+    data: { must_change_password: false } 
   })
 
   if (error) return { success: false, error: error.message }
@@ -36,12 +35,10 @@ export async function getMyClubSlug() {
   
   if (!user || !user.email) return null
 
-  // 1. Check: Ist es der Super Admin?
   if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
       return "SUPER_ADMIN_MODE"; 
   }
 
-  // 2. Check: Welcher Club gehört dieser User-ID?
   const { data: club } = await supabase
     .from('clubs')
     .select('slug')
@@ -55,28 +52,23 @@ export async function getMyClubSlug() {
 
 export async function createClub(formData: FormData) {
   const supabase = await createClient()
-  
-  // 1. Sicherheit: Prüfen, wer eingeloggt ist
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user || !user.email || user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
      return { success: false, error: "Nicht autorisiert!" }
   }
 
-  // 2. Daten aus Formular
   const name = formData.get("name") as string
   const slug = formData.get("slug") as string
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  // 3. Admin-Client für User-Erstellung
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // 4. User erstellen (NEU: mit metadata flag!)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
@@ -88,7 +80,6 @@ export async function createClub(formData: FormData) {
     return { success: false, error: "Fehler beim User-Erstellen: " + authError?.message }
   }
 
-  // 5. Verein erstellen
   const { error: dbError } = await supabaseAdmin
     .from('clubs')
     .insert([
@@ -215,27 +206,26 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
 
-  // 1. Club laden
   const { data: club } = await supabase.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
   
+  if (!club) return { error: "Club nicht gefunden" }
+
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
   if (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
       return { error: "Keine Rechte" }
   }
 
-  // 2. Produkt in Stripe erstellen (WICHTIG für Automatisierung!)
   const stripeProduct = await stripe.products.create({
     name: `${club.name} - ${name}`,
   })
 
   const stripePrice = await stripe.prices.create({
     product: stripeProduct.id,
-    unit_amount: price * 100, // Cent
+    unit_amount: price * 100, 
     currency: 'eur',
-    recurring: { interval: 'year' }, // Jährliche Abbuchung
+    recurring: { interval: 'year' }, 
   })
 
-  // 3. In DB speichern
   const { error } = await supabase.from('membership_plans').insert({
     club_id: club.id,
     name: name,
@@ -259,16 +249,15 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
-    if (!user) return { url: `${process.env.NEXT_PUBLIC_BASE_URL}/login` } // User muss eingeloggt sein!
+    if (!user) return { url: `${process.env.NEXT_PUBLIC_BASE_URL}/login` } 
 
-    // Prüfen ob schon Mitglied
     const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
-    
-    // Stripe Session für ABO
+    if (!club) return { url: "" } // Should not happen
+
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{ price: stripePriceId, quantity: 1 }],
-        mode: 'subscription', // <--- WICHTIG: Abo Modus
+        mode: 'subscription', 
         success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?membership_success=true`,
         cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}`,
         customer_email: user.email,
@@ -276,7 +265,7 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
             userId: user.id,
             clubId: club.id,
             planId: planId,
-            type: 'membership_subscription' // Damit der Webhook es erkennt
+            type: 'membership_subscription' 
         }
     })
 
@@ -295,16 +284,14 @@ export async function createBooking(
   paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash'
 ) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser() // Wer bucht?
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // 1. Club & Check, ob User Mitglied ist
   const { data: club } = await supabase.from('clubs').select('id, admin_email').eq('slug', clubSlug).single()
   if(!club) return { success: false, error: "Club nicht gefunden" }
 
   let finalPrice = price
   let finalPaymentStatus = paymentMethod
 
-  // Wenn User eingeloggt ist, prüfen wir Mitgliedschaft
   if (user) {
       const { data: member } = await supabase
         .from('club_members')
@@ -314,12 +301,10 @@ export async function createBooking(
         .eq('status', 'active')
         .single()
 
-      // WENN MITGLIED -> PREIS 0€ & AUTOMATISCH "BEZAHLT"
       if (member) {
-          // Optional: Prüfen ob valid_until > heute
           if (member.valid_until && new Date(member.valid_until) > new Date()) {
               finalPrice = 0
-              finalPaymentStatus = 'paid_member' // Neuer Status für Statistiken
+              finalPaymentStatus = 'paid_member' 
           }
       }
   }
@@ -328,7 +313,6 @@ export async function createBooking(
   const startTime = new Date(date)
   startTime.setHours(hours, minutes, 0, 0)
   
-  // WICHTIG: Endzeit basierend auf der Dauer berechnen
   const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
 
   const { data: existing } = await supabase
@@ -350,7 +334,7 @@ export async function createBooking(
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'confirmed',
-      payment_status: finalPaymentStatus, // <--- Verwende den berechneten Status
+      payment_status: finalPaymentStatus, 
       guest_name: user ? 'Mitglied' : 'Gast Buchung' 
     })
 
@@ -359,10 +343,8 @@ export async function createBooking(
     return { success: false, error: "Datenbankfehler." }
   }
 
-  // 5. E-Mail
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000);
-    // Fallback auf Env Variable, falls Club keine Admin-Email hat
     const recipient = club.admin_email || SUPER_ADMIN_EMAIL || "fallback@example.com";
 
     await resend.emails.send({
@@ -374,7 +356,7 @@ export async function createBooking(
         courtName="Tennisplatz"
         date={format(date, 'dd.MM.yyyy')}
         time={time}
-        price={finalPrice} // <--- Zeige 0€ wenn Mitglied
+        price={finalPrice} 
         orderId={orderId}
       />,
     });
@@ -583,7 +565,7 @@ export async function createBlockedPeriod(
   // Club ID & Owner holen
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
   
-  // FIX: Null-Check
+  // FIX: Null-Check und danach erst Zugriff auf club.owner_id
   if (!club) {
       return { success: false, error: "Club nicht gefunden" }
   }
