@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { createCourt, deleteCourt } from "@/app/actions"
+import { createCourt, deleteCourt, updateCourtHours } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, Plus, MapPin, Clock } from "lucide-react"
@@ -14,6 +15,8 @@ type Court = {
   name: string
   price_per_hour: number
   duration_minutes: number
+  start_hour?: number
+  end_hour?: number
 }
 
 export function CourtManager({ 
@@ -24,12 +27,12 @@ export function CourtManager({
   clubSlug: string 
 }) {
   const router = useRouter()
-  const [courts, setCourts] = useState(initialCourts)
+  const [courts, setCourts] = useState<Court[]>(initialCourts)
   
   // Form States
   const [newCourtName, setNewCourtName] = useState("")
   const [newCourtPrice, setNewCourtPrice] = useState("15")
-  const [newCourtDuration, setNewCourtDuration] = useState("60") // Standard 60 Min
+  const [newCourtDuration, setNewCourtDuration] = useState("60")
   
   const [isLoading, setIsLoading] = useState(false)
 
@@ -37,7 +40,6 @@ export function CourtManager({
     if (!newCourtName) return
     setIsLoading(true)
 
-    // Wir übergeben jetzt auch die Dauer (parseInt macht aus "60" die Zahl 60)
     const result = await createCourt(
       clubSlug, 
       newCourtName, 
@@ -64,6 +66,14 @@ export function CourtManager({
     }
   }
 
+  // NEU: Öffnungszeiten direkt speichern
+  const handleUpdateHours = async (courtId: string, start: number, end: number) => {
+    // Optimistic update
+    setCourts(courts.map(c => c.id === courtId ? { ...c, start_hour: start, end_hour: end } : c))
+    await updateCourtHours(courtId, start, end)
+    router.refresh()
+  }
+
   return (
     <Card className="mt-8">
       <CardHeader>
@@ -76,18 +86,47 @@ export function CourtManager({
         {/* LISTE */}
         <div className="space-y-4 mb-6">
           {courts.map((court) => (
-            <div key={court.id} className="flex items-center justify-between p-3 border rounded-lg bg-slate-50 dark:bg-slate-900">
-              <div>
-                <p className="font-semibold">{court.name}</p>
-                <div className="flex gap-3 text-sm text-muted-foreground">
-                  <span>{court.price_per_hour}€ / Spiel</span>
-                  <span className="flex items-center gap-1"><Clock className="h-3 w-3"/> {court.duration_minutes || 60} Min</span>
-                </div>
-              </div>
-              <Button variant="destructive" size="icon" onClick={() => handleDelete(court.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+            <Card key={court.id} className="bg-slate-50 dark:bg-slate-900 border shadow-sm">
+                <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-lg">{court.name}</h3>
+                    <div className="text-sm text-slate-500 flex gap-3">
+                        <span>{court.price_per_hour}€ / Spiel</span>
+                        <span>⏱ {court.duration_minutes} Min</span>
+                    </div>
+                  </div>
+
+                  {/* ÖFFNUNGSZEITEN EINSTELLUNG */}
+                  <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-md border">
+                     <Clock className="w-4 h-4 text-slate-400" />
+                     <div className="flex items-center gap-1">
+                        <Input 
+                            type="number" 
+                            className="w-16 h-8 text-xs" 
+                            value={court.start_hour || 8} 
+                            onChange={(e) => handleUpdateHours(court.id, parseInt(e.target.value), court.end_hour || 22)}
+                        />
+                        <span className="text-xs text-slate-400">bis</span>
+                        <Input 
+                            type="number" 
+                            className="w-16 h-8 text-xs" 
+                            value={court.end_hour || 22} 
+                            onChange={(e) => handleUpdateHours(court.id, court.start_hour || 8, parseInt(e.target.value))}
+                        />
+                        <span className="text-xs text-slate-400">Uhr</span>
+                     </div>
+                  </div>
+
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => handleDelete(court.id)}
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
           ))}
           {courts.length === 0 && <p className="text-slate-500 italic">Keine Plätze angelegt.</p>}
         </div>
@@ -95,7 +134,7 @@ export function CourtManager({
         {/* NEU ERSTELLEN FORMULAR */}
         <div className="flex flex-col md:flex-row gap-3 items-end border-t pt-4">
           <div className="grid gap-1 flex-1 w-full">
-            <label className="text-xs font-medium">Name</label>
+            <Label className="text-xs font-medium">Name</Label>
             <Input 
               placeholder="Platz Name" 
               value={newCourtName}
@@ -104,7 +143,7 @@ export function CourtManager({
           </div>
           
           <div className="grid gap-1 w-full md:w-32">
-            <label className="text-xs font-medium">Preis (€)</label>
+            <Label className="text-xs font-medium">Preis (€)</Label>
             <Input 
               type="number" 
               value={newCourtPrice}
@@ -114,7 +153,7 @@ export function CourtManager({
 
           {/* NEU: DAUER AUSWAHL */}
           <div className="grid gap-1 w-full md:w-40">
-            <label className="text-xs font-medium">Dauer</label>
+            <Label className="text-xs font-medium">Dauer</Label>
             <Select value={newCourtDuration} onValueChange={setNewCourtDuration}>
               <SelectTrigger>
                 <SelectValue />

@@ -8,6 +8,7 @@ import { LogOut, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { CourtManager } from "@/components/admin/court-manager"
+import { BlockManager } from "@/components/admin/block-manager" // NEU IMPORTIERT
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,9 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   // 4. Daten laden
   const { data: courts } = await supabase.from('courts').select('*').eq('club_id', club.id).order('name')
   const { data: bookings } = await supabase.from('bookings').select(`*, courts (name)`).eq('club_id', club.id).order('start_time', { ascending: false })
+  
+  // NEU: Blocked Periods laden
+  const { data: blockedPeriods } = await supabase.from('blocked_periods').select('*').eq('club_id', club.id).order('start_date', { ascending: true })
 
   return (
       <div className="min-h-screen bg-slate-50 p-6">
@@ -55,7 +59,6 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               
-              {/* --- NEU: LOGO IM ADMIN DASHBOARD --- */}
               <div 
                 className="w-16 h-16 rounded-xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-slate-200"
                 style={{ backgroundColor: club.primary_color || '#0f172a' }}
@@ -66,7 +69,6 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                     <span className="text-xl">{club.name.substring(0, 2).toUpperCase()}</span>
                  )}
               </div>
-              {/* ---------------------------------- */}
 
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
@@ -142,9 +144,10 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
               </Card>
             </div>
 
-            {/* RECHTS: COURT MANAGER */}
-            <div>
+            {/* RECHTS: COURT MANAGER & BLOCK MANAGER */}
+            <div className="space-y-8">
                <CourtManager initialCourts={courts || []} clubSlug={slug} />
+               <BlockManager clubSlug={slug} courts={courts || []} initialBlocks={blockedPeriods || []} />
             </div>
 
           </div>

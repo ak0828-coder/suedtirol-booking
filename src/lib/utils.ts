@@ -25,3 +25,25 @@ export function generateTimeSlots(startHour: number, endHour: number, durationMi
   
   return slots
 }
+
+// --- BLOCKIERUNGS CHECKER ---
+// Prüft, ob 'checkDate' innerhalb von start und end liegt (inklusive)
+export function isDateBlocked(checkDate: Date, blockedPeriods: any[]) {
+  const checkTime = checkDate.getTime()
+  
+  // Wir normalisieren auf Mitternacht, um Zeitprobleme zu vermeiden
+  const d = new Date(checkDate)
+  d.setHours(0,0,0,0)
+
+  const block = blockedPeriods.find(p => {
+    const start = new Date(p.start_date)
+    start.setHours(0,0,0,0)
+    
+    const end = new Date(p.end_date)
+    end.setHours(23,59,59,999) // Ende des Tages
+
+    return d >= start && d <= end
+  })
+
+  return block // Gibt den Block-Grund zurück oder undefined
+}

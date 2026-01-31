@@ -81,7 +81,7 @@ export async function createClub(formData: FormData) {
     email: email,
     password: password,
     email_confirm: true,
-    user_metadata: { must_change_password: true } // <--- HIER IST DIE ÄNDERUNG
+    user_metadata: { must_change_password: true }
   })
 
   if (authError || !authData.user) {
@@ -421,4 +421,82 @@ export async function getBookedSlots(courtId: string, date: Date) {
     const d = new Date(b.start_time)
     return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
   })
+}
+
+// --- NEUE FUNKTIONEN FÜR ÖFFNUNGSZEITEN & SPERREN ---
+
+// 1. Platz-Öffnungszeiten ändern
+export async function updateCourtHours(courtId: string, startHour: number, endHour: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const { error } = await supabase
+    .from('courts')
+    .update({ start_hour: startHour, end_hour: endHour })
+    .eq('id', courtId)
+
+  if (error) return { success: false, error: error.message }
+  
+  return { success: true }
+}
+
+// 2. Sperrzeit erstellen (Turnier, Winterpause)
+export async function createBlockedPeriod(
+  clubSlug: string, 
+  courtId: string | null, // null = ganzer Verein
+  startDate: Date, 
+  endDate: Date, 
+  reason: string
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Auth required" }
+
+  // Club ID holen
+  const { data: club } = await supabase.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
+  
+  // Security Check
+  if (club?.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) {
+      return { success: false, error: "Keine Rechte" }
+  }
+
+  const { error } = await supabase.from('blocked_periods').insert({
+    club_id: club.id,
+    court_id: courtId === "all" ? null : courtId, 
+    start_date: format(startDate, 'yyyy-MM-dd'),
+    end_date: format(endDate, 'yyyy-MM-dd'),
+    reason: reason
+  })
+
+  if (error) return { success: false, error: error.message }
+  
+  revalidatePath(`/club/${clubSlug}`)
+  revalidatePath(`/club/${clubSlug}/admin`)
+  return { success: true }
+}
+
+// 3. Sperrzeit löschen
+export async function deleteBlockedPeriod(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('blocked_periods').delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+// 4. Sperrzeiten abrufen (für den Kalender)
+export async function getBlockedDates(clubSlug: string, courtId: string) {
+  const supabase = await createClient()
+  
+  const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+  if (!club) return []
+
+  const { data } = await supabase
+    .from('blocked_periods')
+    .select('*')
+    .eq('club_id', club.id)
+    .or(`court_id.eq.${courtId},court_id.is.null`) // Entweder dieser Platz oder ALLE
+    .gte('end_date', new Date().toISOString()) // Nur zukünftige/aktuelle Relevanz
+
+  return data || []
 }

@@ -118,7 +118,9 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                             courtName={court.name} 
                             price={court.price_per_hour} 
                             clubSlug={club.slug}
-                            durationMinutes={duration} 
+                            durationMinutes={duration}
+                            startHour={court.start_hour} // NEU: Aus DB
+                            endHour={court.end_hour}     // NEU: Aus DB
                         />
                     </div>
 
