@@ -8,7 +8,9 @@ import { LogOut, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { CourtManager } from "@/components/admin/court-manager"
-import { BlockManager } from "@/components/admin/block-manager" // NEU IMPORTIERT
+import { BlockManager } from "@/components/admin/block-manager" 
+import { PlanManager } from "@/components/admin/plan-manager" // NEU
+import { MemberManager } from "@/components/admin/member-manager" // NEU
 
 export const dynamic = 'force-dynamic'
 
@@ -44,12 +46,17 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
     )
   }
 
-  // 4. Daten laden
+  // 4. Daten laden (Alles parallel für bessere Performance wäre gut, aber so ist übersichtlicher)
   const { data: courts } = await supabase.from('courts').select('*').eq('club_id', club.id).order('name')
   const { data: bookings } = await supabase.from('bookings').select(`*, courts (name)`).eq('club_id', club.id).order('start_time', { ascending: false })
-  
-  // NEU: Blocked Periods laden
   const { data: blockedPeriods } = await supabase.from('blocked_periods').select('*').eq('club_id', club.id).order('start_date', { ascending: true })
+  
+  // 5. NEU: Pläne & Mitglieder laden
+  const { data: plans } = await supabase.from('membership_plans').select('*').eq('club_id', club.id)
+  
+  // Wir holen die Mitglieder. Da Profile evtl. noch nicht sauber verknüpft sind, holen wir erstmal die Raw-Daten.
+  // Idealerweise würdest du hier joinen: .select('*, profiles(first_name, last_name, email)')
+  const { data: members } = await supabase.from('club_members').select('*').eq('club_id', club.id)
 
   return (
       <div className="min-h-screen bg-slate-50 p-6">
@@ -96,9 +103,10 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
             <DashboardStats bookings={bookings} courts={courts} />
           )}
 
+          {/* HAUPT-BEREICH */}
           <div className="grid xl:grid-cols-2 gap-6">
             
-            {/* LINKS: BUCHUNGEN */}
+            {/* SPALTE 1: BUCHUNGEN */}
             <div>
               <Card className="h-full border-none shadow-sm">
                 <CardHeader>
@@ -125,7 +133,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                         <div className="flex items-center gap-4">
                           <div className="text-right hidden sm:block">
                             <div className="font-medium text-slate-900">
-                              {booking.payment_status === 'paid_cash' ? 'Vor Ort' : 'Online'}
+                              {booking.payment_status === 'paid_cash' ? 'Vor Ort' : (booking.payment_status === 'paid_member' ? 'Abo' : 'Online')}
                             </div>
                             <div className="text-xs text-slate-500 capitalize">{booking.status}</div>
                           </div>
@@ -144,10 +152,14 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
               </Card>
             </div>
 
-            {/* RECHTS: COURT MANAGER & BLOCK MANAGER */}
+            {/* SPALTE 2: VERWALTUNG (Plätze, Sperren, Preise, Mitglieder) */}
             <div className="space-y-8">
                <CourtManager initialCourts={courts || []} clubSlug={slug} />
                <BlockManager clubSlug={slug} courts={courts || []} initialBlocks={blockedPeriods || []} />
+               
+               {/* NEU: MITGLIEDER & PLÄNE */}
+               <PlanManager clubSlug={slug} plans={plans || []} />
+               <MemberManager members={members || []} />
             </div>
 
           </div>
