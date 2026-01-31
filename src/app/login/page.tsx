@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
-import { getUserRole } from "@/app/actions" // <--- Update auf getUserRole
+import { getUserRole } from "@/app/actions" 
 
 export default function LoginPage() {
   const router = useRouter()
@@ -63,19 +63,16 @@ export default function LoginPage() {
         } else if (result.role === 'club_admin' && result.slug) {
             router.push(`/club/${result.slug}/admin`)
         } else if (result.role === 'member' && result.slug) {
-            router.push(`/club/${result.slug}/dashboard`) // <--- ZIEL FÜR MITGLIEDER
+            router.push(`/club/${result.slug}/dashboard`) // Weiterleitung für Mitglieder
         } else {
-            // Benutzer existiert, hat aber keine spezielle Rolle
-            // Leite auf Startseite weiter
+            // Fallback
             router.push("/") 
         }
     } catch (err) {
         console.error(err)
         setErrorMessage("Server-Fehler beim Abrufen der Daten.")
     } finally {
-        // isLoading nicht auf false setzen, wenn wir pushen (verhindert Flackern)
-        // nur im Fehlerfall stoppen wir den Spinner hier, 
-        // oder wenn der Router Push sehr lange dauert (Timeout Handling optional)
+        // Spinner nicht anhalten wenn wir pushen, um UX zu verbessern
     }
   }
 

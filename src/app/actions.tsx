@@ -68,7 +68,7 @@ export async function getUserRole() {
     .from('club_members')
     .select('club_id, clubs(slug)')
     .eq('user_id', user.id)
-    .eq('status', 'active') // Nur aktive Mitglieder reinlassen? Optional.
+    // .eq('status', 'active') // Optional: Nur aktive reinlassen. Vorerst auskommentiert, damit auch abgelaufene User ihren Status sehen.
     .single()
 
   // @ts-ignore (Supabase Types sind bei Joins manchmal strikt)
