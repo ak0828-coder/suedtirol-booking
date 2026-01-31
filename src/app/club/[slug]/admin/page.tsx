@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { CourtManager } from "@/components/admin/court-manager"
 import { BlockManager } from "@/components/admin/block-manager" 
-import { PlanManager } from "@/components/admin/plan-manager" // NEU
-import { MemberManager } from "@/components/admin/member-manager" // NEU
+import { PlanManager } from "@/components/admin/plan-manager" 
+import { MemberManager } from "@/components/admin/member-manager" 
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +46,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
     )
   }
 
-  // 4. Daten laden (Alles parallel für bessere Performance wäre gut, aber so ist übersichtlicher)
+  // 4. Daten laden
   const { data: courts } = await supabase.from('courts').select('*').eq('club_id', club.id).order('name')
   const { data: bookings } = await supabase.from('bookings').select(`*, courts (name)`).eq('club_id', club.id).order('start_time', { ascending: false })
   const { data: blockedPeriods } = await supabase.from('blocked_periods').select('*').eq('club_id', club.id).order('start_date', { ascending: true })
@@ -54,8 +54,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   // 5. NEU: Pläne & Mitglieder laden
   const { data: plans } = await supabase.from('membership_plans').select('*').eq('club_id', club.id)
   
-  // Wir holen die Mitglieder. Da Profile evtl. noch nicht sauber verknüpft sind, holen wir erstmal die Raw-Daten.
-  // Idealerweise würdest du hier joinen: .select('*, profiles(first_name, last_name, email)')
+  // Wir holen die Mitglieder (idealerweise später mit Profil-Join)
   const { data: members } = await supabase.from('club_members').select('*').eq('club_id', club.id)
 
   return (

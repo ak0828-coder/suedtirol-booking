@@ -48,7 +48,7 @@ export async function getMyClubSlug() {
   return club?.slug || null
 }
 
-// --- NEU: HELPER FÜR LOGIN-WEICHE (ROUTING) ---
+// --- HELPER FÜR LOGIN-WEICHE (ROUTING) ---
 export async function getUserRole() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -63,12 +63,10 @@ export async function getUserRole() {
   if (club) return { role: 'club_admin', slug: club.slug }
 
   // 3. Mitglied? (Member Dashboard)
-  // Wir joinen auf die clubs Tabelle, um den Slug zu bekommen
   const { data: member } = await supabase
     .from('club_members')
     .select('club_id, clubs(slug)')
     .eq('user_id', user.id)
-    // .eq('status', 'active') // Optional: Nur aktive reinlassen.
     .single()
 
   // @ts-ignore (Supabase Types sind bei Joins manchmal strikt)
@@ -99,16 +97,16 @@ export async function createClub(formData: FormData) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // FIX: Wir übergeben jetzt 'name' und 'full_name' in den Metadaten.
-  // Das verhindert, dass Datenbank-Trigger (z.B. handle_new_user) abstürzen.
+  // FIX: Wir übergeben 'name' und 'full_name' in den Metadaten.
+  // Das verhindert den "Database error creating new user", falls ein Trigger läuft.
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
     email_confirm: true,
     user_metadata: { 
         must_change_password: true,
-        name: name,       // <--- WICHTIG FÜR TRIGGER
-        full_name: name   // <--- WICHTIG FÜR TRIGGER
+        name: name,       // FIX: Wichtig für Public Profile Trigger
+        full_name: name   // FIX: Fallback
     }
   })
 
@@ -129,6 +127,7 @@ export async function createClub(formData: FormData) {
     ])
 
   if (dbError) {
+    // Rollback
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
     return { success: false, error: "Datenbankfehler (Slug schon vergeben?): " + dbError.message }
   }
@@ -242,7 +241,15 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
 
-  const { data: club } = await supabase.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
+  // Admin Client initialisieren (umgeht RLS für Insert)
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+
+  // 1. Club laden & Berechtigung prüfen
+  const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
   
   if (!club) return { error: "Club nicht gefunden" }
 
@@ -251,28 +258,37 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
       return { error: "Keine Rechte" }
   }
 
-  const stripeProduct = await stripe.products.create({
-    name: `${club.name} - ${name}`,
-  })
+  // 2. Produkt in Stripe erstellen
+  try {
+      const stripeProduct = await stripe.products.create({
+        name: `${club.name} - ${name}`,
+      })
 
-  const stripePrice = await stripe.prices.create({
-    product: stripeProduct.id,
-    unit_amount: price * 100, 
-    currency: 'eur',
-    recurring: { interval: 'year' }, 
-  })
+      const stripePrice = await stripe.prices.create({
+        product: stripeProduct.id,
+        unit_amount: price * 100, // Cent
+        currency: 'eur',
+        recurring: { interval: 'year' }, 
+      })
 
-  const { error } = await supabase.from('membership_plans').insert({
-    club_id: club.id,
-    name: name,
-    price: price,
-    stripe_price_id: stripePrice.id
-  })
+      // 3. In DB speichern (mit Admin Client!)
+      const { error } = await supabaseAdmin.from('membership_plans').insert({
+        club_id: club.id,
+        name: name,
+        price: price,
+        stripe_price_id: stripePrice.id
+      })
 
-  if (error) return { error: error.message }
-  
-  revalidatePath(`/club/${clubSlug}/admin`)
-  return { success: true }
+      if (error) return { error: "DB Fehler: " + error.message }
+      
+      revalidatePath(`/club/${clubSlug}/admin`)
+      revalidatePath(`/club/${clubSlug}`)
+      return { success: true }
+
+  } catch (err: any) {
+      console.error(err)
+      return { error: "Stripe Fehler: " + err.message }
+  }
 }
 
 export async function deleteMembershipPlan(id: string) {
@@ -327,7 +343,6 @@ export async function createBooking(
 
   let finalPrice = price
   
-  // FIX: Explizite Typisierung, damit 'paid_member' später zugewiesen werden darf
   let finalPaymentStatus: 'paid_cash' | 'paid_stripe' | 'paid_member' = paymentMethod
 
   if (user) {
@@ -543,22 +558,18 @@ export async function getBookedSlots(courtId: string, date: Date) {
 
 // --- BLOCKIERUNGEN & ÖFFNUNGSZEITEN ---
 
-// 1. Platz-Öffnungszeiten ändern (FIX: Admin-Client nutzen)
 export async function updateCourtHours(courtId: string, startHour: number, endHour: number) {
   const supabase = await createClient()
   
-  // Auth Check
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "Nicht eingeloggt" }
 
-  // Admin Check
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Holen des Clubs über den Court, um Owner zu prüfen
   const { data: court } = await supabaseAdmin.from('courts').select('club_id, clubs(owner_id)').eq('id', courtId).single()
   
   // @ts-ignore
@@ -569,7 +580,6 @@ export async function updateCourtHours(courtId: string, startHour: number, endHo
       return { success: false, error: "Keine Berechtigung" }
   }
 
-  // UPDATE mit Service Role (umgeht RLS Probleme)
   const { error } = await supabaseAdmin
     .from('courts')
     .update({ start_hour: startHour, end_hour: endHour })
@@ -580,7 +590,6 @@ export async function updateCourtHours(courtId: string, startHour: number, endHo
   return { success: true }
 }
 
-// 2. Sperrzeit erstellen (Turnier, Winterpause) (FIX: Admin-Client nutzen)
 export async function createBlockedPeriod(
   clubSlug: string, 
   courtId: string | null, 
@@ -591,27 +600,22 @@ export async function createBlockedPeriod(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "Auth required" }
 
-  // Service Client für DB Operationen
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Club ID & Owner holen
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
   
-  // FIX: Null-Check
   if (!club) {
       return { success: false, error: "Club nicht gefunden" }
   }
 
-  // Security Check: Bist du Owner oder Super Admin?
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
   if (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
       return { success: false, error: "Keine Rechte" }
   }
 
-  // INSERT mit Service Role (Bypassed RLS Policy Error)
   const { error } = await supabaseAdmin.from('blocked_periods').insert({
     club_id: club.id,
     court_id: courtId === "all" ? null : courtId,
@@ -627,7 +631,6 @@ export async function createBlockedPeriod(
   return { success: true }
 }
 
-// 3. Sperrzeit löschen (FIX: Admin-Client nutzen)
 export async function deleteBlockedPeriod(id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -638,7 +641,6 @@ export async function deleteBlockedPeriod(id: string) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Erst prüfen, wem der Eintrag gehört
   const { data: block } = await supabaseAdmin.from('blocked_periods').select('club_id, clubs(owner_id)').eq('id', id).single()
   
   // @ts-ignore
@@ -649,14 +651,12 @@ export async function deleteBlockedPeriod(id: string) {
       return { success: false, error: "Keine Rechte" }
   }
 
-  // Löschen mit Service Role
   const { error } = await supabaseAdmin.from('blocked_periods').delete().eq('id', id)
   
   if (error) return { success: false, error: error.message }
   return { success: true }
 }
 
-// 4. Sperrzeiten abrufen (öffentlich, daher normaler Client ok)
 export async function getBlockedDates(clubSlug: string, courtId: string) {
   const supabase = await createClient()
   
