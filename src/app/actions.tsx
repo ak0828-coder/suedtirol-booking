@@ -68,7 +68,7 @@ export async function getUserRole() {
     .from('club_members')
     .select('club_id, clubs(slug)')
     .eq('user_id', user.id)
-    // .eq('status', 'active') // Optional: Nur aktive reinlassen. Vorerst auskommentiert, damit auch abgelaufene User ihren Status sehen.
+    // .eq('status', 'active') // Optional: Nur aktive reinlassen.
     .single()
 
   // @ts-ignore (Supabase Types sind bei Joins manchmal strikt)
@@ -99,11 +99,17 @@ export async function createClub(formData: FormData) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
+  // FIX: Wir übergeben jetzt 'name' und 'full_name' in den Metadaten.
+  // Das verhindert, dass Datenbank-Trigger (z.B. handle_new_user) abstürzen.
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
     email_confirm: true,
-    user_metadata: { must_change_password: true }
+    user_metadata: { 
+        must_change_password: true,
+        name: name,       // <--- WICHTIG FÜR TRIGGER
+        full_name: name   // <--- WICHTIG FÜR TRIGGER
+    }
   })
 
   if (authError || !authData.user) {
