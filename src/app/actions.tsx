@@ -9,18 +9,36 @@ import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const SUPER_ADMIN_EMAIL = "alexander.kofler06@gmail.com"
+
+// HIER DIE ÄNDERUNG: Wir laden die Mail aus der Environment Variable
+const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase() || "";
+
+if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nicht in .env gesetzt!");
+
+// --- NEU: PASSWORT ÄNDERN (Für den 1. Login) ---
+export async function updateUserPassword(newPassword: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+    data: { must_change_password: false } // <--- WICHTIG: Flag entfernen!
+  })
+
+  if (error) return { success: false, error: error.message }
+  
+  return { success: true }
+}
 
 // --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
 export async function getMyClubSlug() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user) return null
+  if (!user || !user.email) return null
 
   // 1. Check: Ist es der Super Admin?
-  if (user.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-      return "SUPER_ADMIN_MODE"
+  if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
+      return "SUPER_ADMIN_MODE"; 
   }
 
   // 2. Check: Welcher Club gehört dieser User-ID?
@@ -41,7 +59,7 @@ export async function createClub(formData: FormData) {
   // 1. Sicherheit: Prüfen, wer eingeloggt ist
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+  if (!user || !user.email || user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
      return { success: false, error: "Nicht autorisiert!" }
   }
 
@@ -58,11 +76,12 @@ export async function createClub(formData: FormData) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // 4. User erstellen
+  // 4. User erstellen (NEU: mit metadata flag!)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
-    email_confirm: true
+    email_confirm: true,
+    user_metadata: { must_change_password: true } // <--- HIER IST DIE ÄNDERUNG
   })
 
   if (authError || !authData.user) {
@@ -78,7 +97,7 @@ export async function createClub(formData: FormData) {
         slug: slug,
         primary_color: '#0f172a',
         admin_email: email,      
-        owner_id: authData.user.id // WICHTIG: Verknüpfung für den Login
+        owner_id: authData.user.id 
       }
     ])
 
@@ -93,10 +112,9 @@ export async function createClub(formData: FormData) {
 
 export async function updateClub(formData: FormData) {
   const supabase = await createClient()
-  
   const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+  if (!user || !user.email || user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
      return { success: false, error: "Nicht autorisiert!" }
   }
 
@@ -167,7 +185,7 @@ export async function deleteClub(clubId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+  if (!user || !user.email || user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
      return { success: false, error: "Nicht autorisiert!" }
   }
   
@@ -203,16 +221,13 @@ export async function createBooking(
 ) {
   const supabase = await createClient()
   
-  // 1. Datum Logik
   const [hours, minutes] = time.split(':').map(Number)
-  
   const startTime = new Date(date)
   startTime.setHours(hours, minutes, 0, 0)
   
   // WICHTIG: Endzeit basierend auf der Dauer berechnen
   const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
 
-  // 2. Prüfen, ob schon belegt
   const { data: existing } = await supabase
     .from('bookings')
     .select('id')
@@ -224,11 +239,9 @@ export async function createBooking(
     return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
   }
 
-  // 3. Club ID holen
   const { data: club } = await supabase.from('clubs').select('id, admin_email').eq('slug', clubSlug).single()
   if(!club) return { success: false, error: "Club nicht gefunden" }
 
-  // 4. Speichern
   const { error } = await supabase
     .from('bookings')
     .insert({
@@ -249,7 +262,8 @@ export async function createBooking(
   // 5. E-Mail
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000);
-    const recipient = club.admin_email || SUPER_ADMIN_EMAIL;
+    // Fallback auf Env Variable, falls Club keine Admin-Email hat
+    const recipient = club.admin_email || SUPER_ADMIN_EMAIL || "fallback@example.com";
 
     await resend.emails.send({
       from: 'Suedtirol Booking <onboarding@resend.dev>', 
@@ -357,7 +371,7 @@ export async function createCheckoutSession(
   time: string,
   price: number,
   courtName: string,
-  durationMinutes: number // <--- NEU: Parameter
+  durationMinutes: number
 ) {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'], 
@@ -370,14 +384,13 @@ export async function createCheckoutSession(
         quantity: 1,
     }],
     mode: 'payment',
-    // Metadata: Hier speichern wir alles, was die Success-Page braucht
     metadata: { 
         courtId, 
         clubSlug, 
         date: date.toISOString(), 
         time, 
         price: price.toString(),
-        durationMinutes: durationMinutes.toString() // <--- NEU: Speichern für später
+        durationMinutes: durationMinutes.toString() 
     },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,

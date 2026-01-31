@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  // Auto-Logout beim Betreten, um Fehler zu vermeiden
+  // Auto-Logout beim Betreten, um Session-Konflikte zu vermeiden
   useEffect(() => {
     const signOut = async () => {
       await supabase.auth.signOut()
@@ -31,6 +31,7 @@ export default function LoginPage() {
     setIsLoading(true)
     setErrorMessage(null)
 
+    // 1. Supabase Login
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -42,10 +43,11 @@ export default function LoginPage() {
       return
     }
 
+    // Router refresh damit Server Components den neuen Auth-Status mitbekommen
     router.refresh()
 
     try {
-        // Wir fragen den Server, wohin wir gehören
+        // 2. Server fragen: "Wer bin ich?" (Nutzt intern process.env.SUPER_ADMIN_EMAIL)
         const slug = await getMyClubSlug()
 
         if (slug === "SUPER_ADMIN_MODE") {

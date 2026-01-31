@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server" // WICHTIG: Server Client!
+import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format } from "date-fns"
@@ -29,10 +29,12 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
 
   if (!club) return notFound()
 
-  // 3. SICHERHEITS-CHECK: Gehört dieser Club dem eingeloggten User?
-  // (Ausnahme: Deine Super-Admin Email darf alles sehen)
-  const isSuperAdmin = user.email?.toLowerCase() === "alexander.kofler06@gmail.com"
+  // 3. SICHERHEITS-CHECK
+  // Wir prüfen jetzt gegen die Umgebungsvariable
+  const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
   
+  // Zugriff erlauben, wenn User der Owner ist ODER Super Admin
   if (club.owner_id !== user.id && !isSuperAdmin) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -85,7 +87,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                  </Button>
                </Link>
                
-               {/* Logout Button (Link reicht, da Login-Page eh ausloggt) */}
+               {/* Logout Link */}
                <Link href="/login">
                     <Button variant="ghost" size="icon" title="Abmelden">
                       <LogOut className="h-5 w-5" />
