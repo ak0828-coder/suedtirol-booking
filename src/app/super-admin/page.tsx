@@ -3,18 +3,21 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { NewClubForm } from "@/components/admin/new-club-form"
 import { EditClubDialog } from "@/components/admin/edit-club-dialog"
-import { Building2, TrendingUp, Users, ExternalLink, Trash2 } from "lucide-react"
+import { Building2, TrendingUp, Users, ExternalLink } from "lucide-react" 
 import { Button } from "@/components/ui/button"
-import { deleteClub } from "@/app/actions"
+import Link from "next/link"
+import { DeleteClubButton } from "@/components/admin/delete-club-button" 
 
 export default async function SuperAdminPage() {
   const supabase = await createClient()
 
   // 1. Auth Check
   const { data: { user } } = await supabase.auth.getUser()
-  const MY_SUPER_EMAIL = "alexander.kofler06@gmail.com" 
+  
+  // Env Variable nutzen (falls gesetzt), sonst Fallback
+  const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "alexander.kofler06@gmail.com" 
 
-  if (!user || user.email?.toLowerCase() !== MY_SUPER_EMAIL.toLowerCase()) {
+  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
     return redirect("/login")
   }
 
@@ -118,15 +121,8 @@ export default async function SuperAdminPage() {
                                 {/* BEARBEITEN BUTTON */}
                                 <EditClubDialog club={club} />
 
-                                {/* LÖSCHEN BUTTON */}
-                                <form action={async () => {
-                                    "use server"
-                                    await deleteClub(club.id)
-                                }}>
-                                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-600">
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </form>
+                                {/* LÖSCHEN BUTTON (NEU) */}
+                                <DeleteClubButton clubId={club.id} />
                             </div>
                         </div>
                     ))}
