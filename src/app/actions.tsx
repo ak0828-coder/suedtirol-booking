@@ -456,13 +456,18 @@ export async function createBlockedPeriod(
   // Club ID holen
   const { data: club } = await supabase.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
   
+  // FIX: Explizit prüfen, ob der Club existiert, bevor wir drauf zugreifen
+  if (!club) {
+      return { success: false, error: "Club nicht gefunden" }
+  }
+
   // Security Check
-  if (club?.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) {
+  if (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) {
       return { success: false, error: "Keine Rechte" }
   }
 
   const { error } = await supabase.from('blocked_periods').insert({
-    club_id: club.id,
+    club_id: club.id, // Jetzt ist TypeScript zufrieden
     court_id: courtId === "all" ? null : courtId, 
     start_date: format(startDate, 'yyyy-MM-dd'),
     end_date: format(endDate, 'yyyy-MM-dd'),
