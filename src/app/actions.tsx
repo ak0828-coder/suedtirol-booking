@@ -98,15 +98,14 @@ export async function createClub(formData: FormData) {
   )
 
   // FIX: Wir übergeben 'name' und 'full_name' in den Metadaten.
-  // Das verhindert den "Database error creating new user", falls ein Trigger (z.B. für public.profiles) läuft.
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
     email_confirm: true,
     user_metadata: { 
         must_change_password: true,
-        name: name,       // FIX: Wichtig für Profile Trigger
-        full_name: name   // FIX: Fallback
+        name: name,       
+        full_name: name   
     }
   })
 
@@ -127,7 +126,6 @@ export async function createClub(formData: FormData) {
     ])
 
   if (dbError) {
-    // Rollback: User wieder löschen, wenn Club nicht erstellt werden konnte
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
     return { success: false, error: "Datenbankfehler (Slug schon vergeben?): " + dbError.message }
   }
@@ -241,7 +239,7 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
 
-  // Admin Client initialisieren (umgeht RLS für Insert)
+  // Admin Client initialisieren
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -271,7 +269,7 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
         recurring: { interval: 'year' }, 
       })
 
-      // 3. In DB speichern (mit Admin Client!)
+      // 3. In DB speichern
       const { error } = await supabaseAdmin.from('membership_plans').insert({
         club_id: club.id,
         name: name,
@@ -297,14 +295,27 @@ export async function deleteMembershipPlan(id: string) {
     return { success: true }
 }
 
+// FIX: Erlaubt Checkout auch ohne Login (Stripe sammelt Email)
 export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
-    if (!user) return { url: `${process.env.NEXT_PUBLIC_BASE_URL}/login` } 
-
+    // Club holen
     const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
     if (!club) return { url: "" } 
+
+    // Metadaten vorbereiten
+    const metadata: any = {
+        clubId: club.id,
+        planId: planId,
+        type: 'membership_subscription'
+    }
+
+    // Wenn User eingeloggt ist, verknüpfen wir ihn direkt.
+    // Wenn NICHT, lassen wir userId leer -> Webhook erstellt dann den User.
+    if (user) {
+        metadata.userId = user.id
+    }
 
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -312,13 +323,9 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
         mode: 'subscription', 
         success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?membership_success=true`,
         cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}`,
-        customer_email: user.email,
-        metadata: {
-            userId: user.id,
-            clubId: club.id,
-            planId: planId,
-            type: 'membership_subscription' 
-        }
+        // Wenn eingeloggt, E-Mail vorausfüllen. Wenn nicht, muss Kunde sie in Stripe eingeben.
+        customer_email: user?.email, 
+        metadata: metadata
     })
 
     return { url: session.url }
