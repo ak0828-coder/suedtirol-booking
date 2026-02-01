@@ -697,7 +697,8 @@ export async function getBlockedDates(clubSlug: string, courtId: string) {
 export async function requestPasswordReset(email: string) {
   const supabase = await createClient()
   
-  // WICHTIG: Die URL muss auf deine Callback-Route zeigen
+  // WICHTIG: Wir sagen Supabase, es soll nach dem Klick auf /auth/callback gehen
+  // und von dort aus weiter nach /change-password
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/change-password`,
   })

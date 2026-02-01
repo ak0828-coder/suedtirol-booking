@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  // "next" ist die Seite, auf die wir nach dem Login wollen (z.B. /change-password)
+  // Das "next" kommt von der Action, die wir gleich prüfen
   const next = searchParams.get("next") ?? "/"
 
   if (code) {
@@ -12,10 +12,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
+      // Erfolgreich eingeloggt -> Weiterleitung zur Zielseite (z.B. change-password)
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // Bei Fehler zurück zum Login
+  // Fehlerfall
   return NextResponse.redirect(`${origin}/login?error=auth-code-error`)
 }
