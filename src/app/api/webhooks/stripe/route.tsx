@@ -7,8 +7,7 @@ import { WelcomeMemberEmailTemplate } from '@/components/emails/welcome-member-t
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// WICHTIG: Wir nutzen hier den Service Role Key, da Webhooks im Hintergrund laufen
-// und keine aktive User-Session haben. Damit umgehen wir RLS.
+// Service Role Client für Admin-Rechte im Hintergrund
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -33,7 +32,7 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (error: any) {
-    console.error("Webhook Signature Error:", error.message)
+    console.error("❌ Webhook Signature Error:", error.message)
     return new NextResponse("Webhook Error: " + error.message, { status: 400 })
   }
 
@@ -45,66 +44,47 @@ export async function POST(req: Request) {
         let { userId, clubId, planId } = session.metadata
         const customerEmail = session.customer_details?.email
 
-        // FALLS KEIN USER EINGELOGGT WAR: AUTOMATISCH ERSTELLEN
+        let isNewUser = false
+        let tempPassword = ""
+
+        // FALL A: Gast-Bestellung (Kein Account) -> User erstellen
         if (!userId && customerEmail) {
-            console.log(`Creating new user for ${customerEmail}...`)
+            console.log(`👤 Erstelle neuen User für ${customerEmail}...`)
             
-            // Zufälliges Passwort generieren
-            const tempPassword = Math.random().toString(36).slice(-8) + "Aa1!"
+            tempPassword = Math.random().toString(36).slice(-8) + "Aa1!"
+            isNewUser = true
             
-            // 1. User in Supabase anlegen
             const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
                 email: customerEmail,
                 password: tempPassword,
                 email_confirm: true,
                 user_metadata: { 
                     must_change_password: true,
-                    name: 'Neues Mitglied', // Fix für DB Trigger
-                    full_name: 'Neues Mitglied' // Fix für DB Trigger
+                    name: 'Neues Mitglied',
+                    full_name: 'Neues Mitglied'
                 }
             })
 
             if (createError) {
-                // Falls User schon existiert (aber nicht eingeloggt war), holen wir seine ID
-                // Hinweis: Supabase API gibt generischen Fehler bei Duplikaten, wir prüfen via listUsers
+                // Prüfen ob User schon existiert
                 const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers()
                 const found = listUsers.users.find(u => u.email === customerEmail)
                 
                 if (found) {
-                    console.log("User existiert bereits, verknüpfe Abo mit existierendem Account.")
+                    console.log("ℹ️ User existiert bereits, verknüpfe Abo.")
                     userId = found.id
+                    isNewUser = false // Doch kein neuer User
                 } else {
-                    console.error("User Creation Error:", createError)
+                    console.error("❌ User Creation Error:", createError)
                     return new NextResponse("User Creation Failed", { status: 500 })
                 }
             } else {
                 userId = newUser.user.id
-
-                // 2. Willkommens-Mail mit Passwort senden
-                // Club Name holen für Email
-                const { data: club } = await supabaseAdmin.from('clubs').select('name').eq('id', clubId).single()
-                
-                try {
-                    await resend.emails.send({
-                        from: 'Suedtirol Booking <onboarding@resend.dev>',
-                        to: [customerEmail],
-                        subject: `Willkommen im ${club?.name || 'Verein'}!`,
-                        react: <WelcomeMemberEmailTemplate 
-                            clubName={club?.name || 'Verein'} 
-                            email={customerEmail} 
-                            password={tempPassword} 
-                            loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/login`}
-                        />
-                    })
-                } catch (emailError) {
-                    console.error("Fehler beim Senden der Willkommens-Mail:", emailError)
-                }
             }
         }
 
-        // Wenn wir jetzt eine UserID haben (neu oder existierend), tragen wir das Abo ein
+        // FALL B: Abo in DB eintragen (Für neue UND bestehende User)
         if (userId) {
-            // Datum berechnen: Heute + 1 Jahr
             const validUntil = new Date()
             validUntil.setFullYear(validUntil.getFullYear() + 1)
 
@@ -118,14 +98,56 @@ export async function POST(req: Request) {
             }, { onConflict: 'club_id, user_id' })
 
             if(error) {
-                console.error("DB Error Member Upsert:", error)
+                console.error("❌ DB Error Member Upsert:", error)
                 return new NextResponse("DB Error", { status: 500 })
+            }
+
+            // FALL C: E-Mail senden (Endlich für ALLE)
+            const { data: club } = await supabaseAdmin.from('clubs').select('name').eq('id', clubId).single()
+            const clubName = club?.name || 'Verein'
+
+            try {
+                if (isNewUser) {
+                    // 1. Mail für NEUE User (mit Passwort)
+                    await resend.emails.send({
+                        from: 'Suedtirol Booking <onboarding@resend.dev>',
+                        to: [customerEmail],
+                        subject: `Willkommen im ${clubName}!`,
+                        react: <WelcomeMemberEmailTemplate 
+                            clubName={clubName} 
+                            email={customerEmail} 
+                            password={tempPassword} 
+                            loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/login`}
+                        />
+                    })
+                    console.log("📧 Willkommens-Mail (neu) gesendet.")
+                } else {
+                    // 2. Mail für BESTEHENDE User (Bestätigung)
+                    // Da wir kein extra Template haben, senden wir eine einfache HTML Bestätigung
+                    // oder nutzen das Template ohne Passwort (falls das Template das unterstützt).
+                    // Hier ein einfacher Fallback:
+                    await resend.emails.send({
+                        from: 'Suedtirol Booking <onboarding@resend.dev>',
+                        to: [customerEmail],
+                        subject: `Deine Mitgliedschaft im ${clubName} ist aktiv!`,
+                        html: `
+                          <h1>Hallo!</h1>
+                          <p>Vielen Dank. Deine Mitgliedschaft im <strong>${clubName}</strong> wurde erfolgreich aktiviert bzw. verlängert.</p>
+                          <p>Du kannst dich jetzt einloggen und Plätze buchen.</p>
+                          <a href="${process.env.NEXT_PUBLIC_BASE_URL}/login">Zum Login</a>
+                        `
+                    })
+                    console.log("📧 Bestätigungs-Mail (bestand) gesendet.")
+                }
+            } catch (emailError) {
+                console.error("❌ Fehler beim Senden der Mail:", emailError)
+                // Wir werfen hier keinen 500er, damit der Webhook für Stripe trotzdem als "erfolgreich" gilt (DB Eintrag war ja ok)
             }
         }
     }
   }
 
-  // 2. ABO ERFOLGREICH VERLÄNGERT (Passiert automatisch nach einem Jahr)
+  // 2. ABO ERFOLGREICH VERLÄNGERT
   if (event.type === "invoice.payment_succeeded") {
       const subscriptionId = session.subscription
       
@@ -138,26 +160,21 @@ export async function POST(req: Request) {
       if (member) {
           const currentValid = new Date(member.valid_until)
           const now = new Date()
-          
-          // Nimm das spätere Datum (damit man keine Tage verliert)
           const baseDate = currentValid > now ? currentValid : now
           baseDate.setFullYear(baseDate.getFullYear() + 1)
-
-          console.log(`🔄 Abo verlängert für Member ${member.id}`)
 
           await supabaseAdmin.from('club_members').update({
               status: 'active',
               valid_until: baseDate.toISOString()
           }).eq('id', member.id)
+          console.log("🔄 Abo Datenbank verlängert.")
       }
   }
 
   // 3. ZAHLUNG FEHLGESCHLAGEN
   if (event.type === "invoice.payment_failed") {
       const subscriptionId = session.subscription
-      
-      console.log(`❌ Abo Zahlung fehlgeschlagen für Subscription ${subscriptionId}`)
-
+      console.log(`❌ Abo Zahlung fehlgeschlagen: ${subscriptionId}`)
       await supabaseAdmin.from('club_members').update({
           status: 'expired' 
       }).eq('stripe_subscription_id', subscriptionId)
