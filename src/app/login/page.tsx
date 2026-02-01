@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
+import { Loader2, Shield, User, ArrowRight } from "lucide-react"
 import { getUserRole } from "@/app/actions" 
 import Link from "next/link"
 
@@ -18,6 +18,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Für die Auswahl-Ansicht (Portal)
+  const [showSelection, setShowSelection] = useState(false)
+  const [availableRoles, setAvailableRoles] = useState<any[]>([])
 
   // Auto-Logout beim Betreten, um Session-Konflikte zu vermeiden
   useEffect(() => {
@@ -32,7 +36,7 @@ export default function LoginPage() {
     setIsLoading(true)
     setErrorMessage(null)
 
-    // 1. Supabase Login
+    // 1. Supabase Auth Login
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -44,32 +48,97 @@ export default function LoginPage() {
       return
     }
 
-    // Router refresh damit Server Components den neuen Auth-Status mitbekommen
     router.refresh()
 
     try {
-        // 2. Server fragen: "Wer bin ich?"
+        // 2. Server fragen: "Welche Rollen habe ich?"
         const result = await getUserRole()
 
-        if (result?.role === 'super_admin') {
-            router.push("/super-admin")
-        } else if (result?.role === 'club_admin') {
-            router.push(`/club/${result.slug}/admin`)
-        } else if (result?.role === 'member') {
-            // 3. Weiterleitung zum Member Dashboard
-            router.push(`/club/${result.slug}/dashboard`) 
-        } else {
-            setErrorMessage("Kein Account gefunden. Bitte registriere dich zuerst.")
-            await supabase.auth.signOut()
+        if (!result) {
+             setErrorMessage("Fehler beim Laden des Profils.")
+             await supabase.auth.signOut()
+             setIsLoading(false)
+             return
         }
+
+        // A. Super Admin -> Direkt weiter
+        if (result.type === 'super_admin') {
+            router.push("/super-admin")
+            return
+        }
+
+        // B. Normale User prüfen (Multi-Role Check)
+        if (result.type === 'multi') {
+            const roles = result.roles || []
+
+            if (roles.length === 0) {
+                setErrorMessage("Keine Vereine gefunden. Bitte registriere dich erst.")
+                await supabase.auth.signOut()
+                setIsLoading(false)
+            } 
+            else if (roles.length === 1) {
+                // Nur eine Rolle -> Direkt weiterleiten (kein Auswahl-Screen nötig)
+                const r = roles[0]
+                if (r.role === 'club_admin') router.push(`/club/${r.slug}/admin`)
+                else router.push(`/club/${r.slug}/dashboard`)
+            } 
+            else {
+                // C. MEHRERE ROLLEN -> PORTAL-AUSWAHL ANZEIGEN
+                setAvailableRoles(roles)
+                setShowSelection(true)
+                setIsLoading(false) // Spinner stoppen, damit User wählen kann
+            }
+        }
+
     } catch (err) {
         console.error(err)
         setErrorMessage("Login-Fehler.")
-    } finally {
         setIsLoading(false)
     }
   }
 
+  // --- AUSWAHL SCREEN (Portal: Wenn User mehrere Rollen hat) ---
+  if (showSelection) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+            <div className="w-full max-w-md space-y-6 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border dark:border-slate-800">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold">Willkommen zurück! 👋</h1>
+                    <p className="text-slate-500 mt-2">Wähle, wohin du möchtest:</p>
+                </div>
+
+                <div className="space-y-3">
+                    {availableRoles.map((role, index) => (
+                        <div 
+                            key={index}
+                            onClick={() => {
+                                setIsLoading(true)
+                                if (role.role === 'club_admin') router.push(`/club/${role.slug}/admin`)
+                                else router.push(`/club/${role.slug}/dashboard`)
+                            }}
+                            className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-full ${role.role === 'club_admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-green-100 text-green-700'}`}>
+                                    {role.role === 'club_admin' ? <Shield className="w-5 h-5"/> : <User className="w-5 h-5"/>}
+                                </div>
+                                <div>
+                                    <div className="font-semibold">{role.name}</div>
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">
+                                        {role.role === 'club_admin' ? 'Administrator' : 'Mitglied'}
+                                    </div>
+                                </div>
+                            </div>
+                            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-slate-600" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+      )
+  }
+
+  // --- STANDARD LOGIN SCREEN ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <div className="w-full max-w-md space-y-8 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border dark:border-slate-800">

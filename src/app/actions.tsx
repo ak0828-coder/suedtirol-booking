@@ -48,32 +48,45 @@ export async function getMyClubSlug() {
   return club?.slug || null
 }
 
-// --- HELPER FÜR LOGIN-WEICHE (ROUTING) ---
+// --- NEU: HILFSFUNKTION FÜR DAS LOGIN SYSTEM (MULTI-ROLE) ---
 export async function getUserRole() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user || !user.email) return null
 
-  // 1. Super Admin?
-  if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL) return { role: 'super_admin' }
+  // 1. Super Admin Check
+  if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      return { type: 'super_admin' }
+  }
 
-  // 2. Club Owner? (Admin Dashboard)
-  const { data: club } = await supabase.from('clubs').select('slug').eq('owner_id', user.id).single()
-  if (club) return { role: 'club_admin', slug: club.slug }
+  // 2. Sammle alle Admin-Rollen (Wo bin ich Besitzer?)
+  const { data: ownedClubs } = await supabase
+    .from('clubs')
+    .select('slug, name')
+    .eq('owner_id', user.id)
 
-  // 3. Mitglied? (Member Dashboard)
-  const { data: member } = await supabase
+  // 3. Sammle alle Mitgliedschaften (Wo bin ich Mitglied?)
+  const { data: memberships } = await supabase
     .from('club_members')
-    .select('club_id, clubs(slug)')
+    .select('clubs(slug, name)')
     .eq('user_id', user.id)
-    .single()
+    // .eq('status', 'active') // Optional: Nur aktive anzeigen?
 
-  // @ts-ignore (Supabase Types sind bei Joins manchmal strikt)
-  if (member && member.clubs) return { role: 'member', slug: member.clubs.slug }
+  // Daten aufbereiten
+  const adminRoles = ownedClubs?.map(c => ({ role: 'club_admin', slug: c.slug, name: c.name })) || []
+  
+  // @ts-ignore
+  const memberRoles = memberships?.map(m => ({ role: 'member', slug: m.clubs?.slug, name: m.clubs?.name })) || []
 
-  // 4. Eingeloggt, aber nirgendwo zugeordnet
-  return { role: 'user' } 
+  const allRoles = [...adminRoles, ...memberRoles]
+
+  // Ergebnis zurückgeben
+  return { 
+      type: 'multi', 
+      roles: allRoles,
+      userEmail: user.email
+  }
 }
 
 // --- SUPER ADMIN ACTIONS ---
