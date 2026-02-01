@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { getUserRole } from "@/app/actions" 
+import Link from "next/link"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -90,7 +91,12 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
+            <div className="flex justify-between items-center">
+                <Label htmlFor="password">Passwort</Label>
+                <Link href="/forgot-password" className="text-xs text-indigo-600 hover:underline">
+                    Vergessen?
+                </Link>
+            </div>
             <Input 
               id="password" 
               type="password" 
