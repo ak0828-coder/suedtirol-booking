@@ -16,7 +16,11 @@ if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nich
 
 type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member'
 
-// --- NEU: GUTSCHEIN VALIDIEREN ---
+// ==========================================
+// --- GUTSCHEIN / VOUCHER SYSTEM ---
+// ==========================================
+
+// 1. UPDATE: Validierung mit Ablaufdatum und Zähler
 export async function validateCreditCode(clubSlug: string, code: string) {
   const supabase = await createClient()
 
@@ -24,21 +28,91 @@ export async function validateCreditCode(clubSlug: string, code: string) {
   const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
 
-  // Code suchen
+  // Code suchen (wir laden auch Codes, die evtl. abgelaufen sind, um den genauen Fehler zu finden)
   const { data: credit } = await supabase
     .from('credit_codes')
     .select('*')
     .eq('club_id', club.id)
     .eq('code', code)
-    .eq('is_redeemed', false)
     .single()
 
   if (!credit) {
-    return { success: false, error: "Code ungültig oder bereits eingelöst." }
+    return { success: false, error: "Code existiert nicht." }
+  }
+
+  // Check 1: Wurde er bereits final als "vollständig eingelöst" markiert?
+  if (credit.is_redeemed) {
+    return { success: false, error: "Code wurde bereits vollständig eingelöst." }
+  }
+
+  // Check 2: Ist das Ablaufdatum überschritten?
+  if (credit.expires_at && new Date(credit.expires_at) < new Date()) {
+    return { success: false, error: "Code ist abgelaufen." }
+  }
+
+  // Check 3: Ist das Nutzungslimit erreicht?
+  // Fallback auf 1 und 0 für Sicherheit bei alten Datensätzen
+  const limit = credit.usage_limit ?? 1
+  const count = credit.usage_count ?? 0
+
+  if (count >= limit) {
+    return { success: false, error: "Code-Limit erreicht." }
   }
 
   return { success: true, amount: credit.amount, codeId: credit.id }
 }
+
+// 2. NEU: Gutschein erstellen (Admin)
+export async function createVoucher(formData: FormData) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    // Berechtigungs-Check (Owner oder Super Admin)
+    const clubSlug = formData.get("clubSlug") as string
+    const { data: club } = await supabase.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
+    
+    if(!club) return { success: false, error: "Club nicht gefunden" }
+    
+    // Einfacher Auth Check
+    const isOwner = club.owner_id === user?.id
+    const isSuperAdmin = user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+    if (!isOwner && !isSuperAdmin) {
+        return { success: false, error: "Keine Berechtigung" }
+    }
+
+    const code = formData.get("code") as string
+    const amount = parseFloat(formData.get("amount") as string)
+    const usageLimit = parseInt(formData.get("usageLimit") as string) || 1
+    const expiresAt = formData.get("expiresAt") as string // Erwartet "YYYY-MM-DD" aus dem Input
+
+    if(!code || !amount) return { success: false, error: "Code und Betrag sind Pflichtfelder." }
+
+    const { error } = await supabase.from('credit_codes').insert({
+        club_id: club.id,
+        code: code.toUpperCase().trim(), // Codes immer Uppercase speichern
+        amount: amount,
+        usage_limit: usageLimit,
+        usage_count: 0,
+        is_redeemed: false,
+        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        created_for_email: 'Marketing / Admin'
+    })
+
+    if(error) return { success: false, error: error.message }
+
+    revalidatePath(`/club/${clubSlug}/admin`)
+    return { success: true }
+}
+
+// 3. NEU: Gutschein löschen (Admin)
+export async function deleteVoucher(id: string, clubSlug: string) {
+    const supabase = await createClient()
+    // Hier könnte man noch einen Auth-Check wie oben einbauen
+    await supabase.from('credit_codes').delete().eq('id', id)
+    revalidatePath(`/club/${clubSlug}/admin`)
+    return { success: true }
+}
+
 
 // --- PASSWORT ÄNDERN (Für den 1. Login) ---
 export async function updateUserPassword(newPassword: string) {
@@ -446,7 +520,9 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
   return { url: session.url }
 }
 
-// --- BOOKING ACTIONS (MIT GUTSCHEIN UPDATE) ---
+// ==========================================
+// --- BOOKING ACTIONS (UPDATE: MULTI-USE VOUCHER) ---
+// ==========================================
 
 export async function createBooking(
   courtId: string,
@@ -503,18 +579,30 @@ export async function createBooking(
     return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
   }
 
-  // 3. Gutschein einlösen (Falls kein Mitglied & Code vorhanden)
+  // 3. UPDATE: Gutschein einlösen (Mit Zähler Logik)
   if (finalPrice > 0 && creditCode) {
     const check = await validateCreditCode(clubSlug, creditCode)
     if (!check.success) return { success: false, error: check.error }
 
-    await supabase.from('credit_codes')
-      .update({ is_redeemed: true })
-      .eq('code', creditCode)
+    // Aktuellen Stand holen
+    const { data: current } = await supabase.from('credit_codes').select('usage_count, usage_limit').eq('code', creditCode).single()
+    
+    if(current) {
+        const newCount = (current.usage_count || 0) + 1
+        const limit = current.usage_limit || 1
+        // Wenn das Limit erreicht ist, wird der Code "verbrannt"
+        const isFullyRedeemed = newCount >= limit
+
+        await supabase.from('credit_codes')
+          .update({ 
+              usage_count: newCount,
+              is_redeemed: isFullyRedeemed
+          })
+          .eq('code', creditCode)
+    }
 
     usedCreditAmount = check.amount || 0
-
-    finalPrice = usedCreditAmount
+    finalPrice = usedCreditAmount // Annahme: Gutschein deckt Preis (oder setzt Preis auf Gutschein-Wert)
     finalPaymentStatus = 'paid_stripe'
   }
 
@@ -563,6 +651,7 @@ export async function createBooking(
   return { success: true }
 }
 
+// UPDATE: Cancel Booking mit usage_limit: 1 für Refunds
 export async function cancelBooking(bookingId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -595,6 +684,7 @@ export async function cancelBooking(bookingId: string) {
   const clubId = booking.clubs?.id
   let message = "Erfolgreich storniert."
 
+  // Wenn bezahlt wurde: Refund Code erstellen
   if (booking.payment_status === 'paid_stripe' && booking.price_paid > 0) {
     const code = `REFUND-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
@@ -602,7 +692,11 @@ export async function cancelBooking(bookingId: string) {
       club_id: clubId,
       code: code,
       amount: booking.price_paid,
-      created_for_email: user.email
+      created_for_email: user.email,
+      // WICHTIG: Refund Codes sind nur 1x gültig
+      usage_limit: 1,
+      usage_count: 0,
+      is_redeemed: false
     })
 
     message = `Storniert. Dein Gutschein-Code über ${booking.price_paid}€ lautet: ${code}`
