@@ -151,6 +151,36 @@ export async function deleteVoucher(id: string, clubSlug: string) {
     return { success: true }
 }
 
+// 4. NEU: GUTSCHEINE LADEN (Admin Dashboard List)
+// Umgeht RLS, damit der Club-Admin seine Codes sehen kann
+export async function getClubVouchers(clubSlug: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const supabaseAdmin = getAdminClient()
+    
+    // 1. Club ID holen
+    const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
+    
+    if(!club) return []
+    
+    // 2. Security Check: Nur Owner oder Super Admin darf sehen
+    const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+    if (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
+        return []
+    }
+
+    // 3. Fetch mit Admin Rechten
+    const { data } = await supabaseAdmin
+        .from('credit_codes')
+        .select('*')
+        .eq('club_id', club.id)
+        .order('created_at', { ascending: false })
+    
+    return data || []
+}
+
 // --- PASSWORT ÄNDERN (Für den 1. Login) ---
 export async function updateUserPassword(newPassword: string) {
   const supabase = await createClient()

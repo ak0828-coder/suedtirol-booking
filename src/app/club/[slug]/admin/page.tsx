@@ -12,8 +12,9 @@ import { BlockManager } from "@/components/admin/block-manager"
 import { PlanManager } from "@/components/admin/plan-manager" 
 import { MemberManager } from "@/components/admin/member-manager" 
 import { ClubSettings } from "@/components/admin/club-settings"
-// NEU: Import für VoucherManager
 import { VoucherManager } from "@/components/admin/voucher-manager"
+// NEU: Import der Server Action
+import { getClubVouchers } from "@/app/actions"
 
 export const dynamic = 'force-dynamic'
 
@@ -56,12 +57,8 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   const { data: plans } = await supabase.from('membership_plans').select('*').eq('club_id', club.id)
   const { data: members } = await supabase.from('club_members').select('*').eq('club_id', club.id)
   
-  // NEU: Gutscheine laden
-  const { data: vouchers } = await supabase
-        .from('credit_codes')
-        .select('*')
-        .eq('club_id', club.id)
-        .order('created_at', { ascending: false })
+  // NEU: Gutscheine über Server Action laden (nutzt Admin Client für RLS Bypass)
+  const vouchers = await getClubVouchers(slug)
 
   return (
       <div className="min-h-screen bg-slate-50 p-6">
@@ -161,7 +158,8 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
             <div className="space-y-8">
                <ClubSettings club={club} />
 
-               {/* NEU: GUTSCHEIN MANAGER */}
+               {/* GUTSCHEIN MANAGER */}
+               {/* Hier werden nun die über die Action geladenen Vouchers übergeben */}
                <VoucherManager vouchers={vouchers || []} clubSlug={slug} />
 
                <CourtManager initialCourts={courts || []} clubSlug={slug} />
