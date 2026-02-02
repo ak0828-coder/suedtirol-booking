@@ -16,24 +16,37 @@ if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nich
 
 type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member'
 
+// --- HELPER: ADMIN CLIENT ---
+// Wird benötigt, um Gutscheine zu validieren (für Gäste ohne Account) 
+// oder Updates zu machen, die RLS verbietet.
+function getAdminClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
+
 // ==========================================
 // --- GUTSCHEIN / VOUCHER SYSTEM ---
 // ==========================================
 
-// 1. UPDATE: Validierung mit Ablaufdatum und Zähler
+// 1. UPDATE: Validierung mit Admin Client (damit auch Gäste checken können)
 export async function validateCreditCode(clubSlug: string, code: string) {
-  const supabase = await createClient()
+  // Wir nutzen hier den Admin Client, damit auch normale Mitglieder/Gäste
+  // prüfen können, ob ein Code existiert (bypassed RLS).
+  const supabaseAdmin = getAdminClient()
 
   // Club ID holen
-  const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+  const { data: club } = await supabaseAdmin.from('clubs').select('id').eq('slug', clubSlug).single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
 
-  // Code suchen (wir laden auch Codes, die evtl. abgelaufen sind, um den genauen Fehler zu finden)
-  const { data: credit } = await supabase
+  // Code suchen
+  const { data: credit } = await supabaseAdmin
     .from('credit_codes')
     .select('*')
     .eq('club_id', club.id)
-    .eq('code', code)
+    .eq('code', code.toUpperCase()) // Case insensitive search
     .single()
 
   if (!credit) {
@@ -51,7 +64,6 @@ export async function validateCreditCode(clubSlug: string, code: string) {
   }
 
   // Check 3: Ist das Nutzungslimit erreicht?
-  // Fallback auf 1 und 0 für Sicherheit bei alten Datensätzen
   const limit = credit.usage_limit ?? 1
   const count = credit.usage_count ?? 0
 
@@ -62,57 +74,82 @@ export async function validateCreditCode(clubSlug: string, code: string) {
   return { success: true, amount: credit.amount, codeId: credit.id }
 }
 
-// 2. NEU: Gutschein erstellen (Admin)
+// 2. UPDATE: Gutschein erstellen (Admin Logic)
 export async function createVoucher(formData: FormData) {
-    const supabase = await createClient()
+    const supabase = await createClient() // Normaler Client für Auth Check
     const { data: { user } } = await supabase.auth.getUser()
     
-    // Berechtigungs-Check (Owner oder Super Admin)
-    const clubSlug = formData.get("clubSlug") as string
-    const { data: club } = await supabase.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
-    
-    if(!club) return { success: false, error: "Club nicht gefunden" }
-    
-    // Einfacher Auth Check
-    const isOwner = club.owner_id === user?.id
-    const isSuperAdmin = user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL
-    if (!isOwner && !isSuperAdmin) {
-        return { success: false, error: "Keine Berechtigung" }
-    }
+    if (!user) return { success: false, error: "Nicht eingeloggt" }
 
+    const clubSlug = formData.get("clubSlug") as string
     const code = formData.get("code") as string
     const amount = parseFloat(formData.get("amount") as string)
     const usageLimit = parseInt(formData.get("usageLimit") as string) || 1
-    const expiresAt = formData.get("expiresAt") as string // Erwartet "YYYY-MM-DD" aus dem Input
+    const expiresAt = formData.get("expiresAt") as string 
 
-    if(!code || !amount) return { success: false, error: "Code und Betrag sind Pflichtfelder." }
+    if(!code || !amount) return { success: false, error: "Code und Betrag fehlen." }
 
-    const { error } = await supabase.from('credit_codes').insert({
+    const supabaseAdmin = getAdminClient()
+
+    // 1. Club laden & Berechtigung prüfen (Ist der User der Owner?)
+    const { data: club } = await supabaseAdmin
+        .from('clubs')
+        .select('id, owner_id')
+        .eq('slug', clubSlug)
+        .single()
+    
+    if(!club) return { success: false, error: "Club Fehler" }
+
+    const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+    const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN
+
+    if (club.owner_id !== user.id && !isSuperAdmin) {
+        return { success: false, error: "Keine Berechtigung" }
+    }
+
+    // 2. Code erstellen (Mit Admin Rechten)
+    const { error } = await supabaseAdmin.from('credit_codes').insert({
         club_id: club.id,
-        code: code.toUpperCase().trim(), // Codes immer Uppercase speichern
+        code: code.toUpperCase().trim(), // Immer Uppercase speichern
         amount: amount,
         usage_limit: usageLimit,
         usage_count: 0,
         is_redeemed: false,
         expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-        created_for_email: 'Marketing / Admin'
+        created_for_email: 'Admin Generated'
     })
 
-    if(error) return { success: false, error: error.message }
+    if(error) {
+        // Unique Constraint Fehler abfangen
+        if (error.code === '23505') return { success: false, error: "Code existiert bereits!" }
+        return { success: false, error: error.message }
+    }
 
     revalidatePath(`/club/${clubSlug}/admin`)
     return { success: true }
 }
 
-// 3. NEU: Gutschein löschen (Admin)
+// 3. UPDATE: Gutschein löschen (Admin Logic)
 export async function deleteVoucher(id: string, clubSlug: string) {
     const supabase = await createClient()
-    // Hier könnte man noch einen Auth-Check wie oben einbauen
-    await supabase.from('credit_codes').delete().eq('id', id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: "Auth required" }
+
+    const supabaseAdmin = getAdminClient()
+
+    // Berechtigungs-Check
+    const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
+    const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+    
+    if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+        return { success: false, error: "Keine Rechte" }
+    }
+
+    await supabaseAdmin.from('credit_codes').delete().eq('id', id)
+    
     revalidatePath(`/club/${clubSlug}/admin`)
     return { success: true }
 }
-
 
 // --- PASSWORT ÄNDERN (Für den 1. Login) ---
 export async function updateUserPassword(newPassword: string) {
@@ -286,11 +323,7 @@ export async function createClub(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseAdmin = getAdminClient()
 
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
@@ -345,11 +378,7 @@ export async function updateClub(formData: FormData) {
     ? parseInt(formData.get("cancellation_buffer_hours") as string)
     : 24
 
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseAdmin = getAdminClient()
 
   let logoUrl = null
 
@@ -412,10 +441,7 @@ export async function deleteClub(clubId: string) {
     return { success: false, error: "Nicht autorisiert!" }
   }
 
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabaseAdmin = getAdminClient()
 
   const { data: club } = await supabaseAdmin.from('clubs').select('owner_id').eq('id', clubId).single()
 
@@ -438,11 +464,7 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
 
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseAdmin = getAdminClient()
 
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
 
@@ -579,34 +601,40 @@ export async function createBooking(
     return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
   }
 
-  // 3. UPDATE: Gutschein einlösen (Mit Zähler Logik)
+  // 3. UPDATE: Gutschein einlösen (Mit Zähler Logik & Admin Client für RLS Bypass)
   if (finalPrice > 0 && creditCode) {
     const check = await validateCreditCode(clubSlug, creditCode)
     if (!check.success) return { success: false, error: check.error }
 
-    // Aktuellen Stand holen
-    const { data: current } = await supabase.from('credit_codes').select('usage_count, usage_limit').eq('code', creditCode).single()
+    const supabaseAdmin = getAdminClient()
+
+    // Aktuellen Stand holen (Via Admin Client)
+    const { data: current } = await supabaseAdmin
+        .from('credit_codes')
+        .select('usage_count, usage_limit')
+        .eq('code', creditCode.toUpperCase()) // Uppercase
+        .single()
     
     if(current) {
         const newCount = (current.usage_count || 0) + 1
         const limit = current.usage_limit || 1
-        // Wenn das Limit erreicht ist, wird der Code "verbrannt"
+        // Wenn das Limit erreicht ist, wird der Code "vollständig eingelöst"
         const isFullyRedeemed = newCount >= limit
 
-        await supabase.from('credit_codes')
+        await supabaseAdmin.from('credit_codes')
           .update({ 
               usage_count: newCount,
               is_redeemed: isFullyRedeemed
           })
-          .eq('code', creditCode)
+          .eq('code', creditCode.toUpperCase())
     }
 
     usedCreditAmount = check.amount || 0
-    finalPrice = usedCreditAmount // Annahme: Gutschein deckt Preis (oder setzt Preis auf Gutschein-Wert)
+    finalPrice = usedCreditAmount 
     finalPaymentStatus = 'paid_stripe'
   }
 
-  // 4. Buchung speichern
+  // 4. Buchung speichern (Via normalem Client, da wir die User-ID brauchen, falls vorhanden)
   const { error } = await supabase
     .from('bookings')
     .insert({
@@ -687,8 +715,9 @@ export async function cancelBooking(bookingId: string) {
   // Wenn bezahlt wurde: Refund Code erstellen
   if (booking.payment_status === 'paid_stripe' && booking.price_paid > 0) {
     const code = `REFUND-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+    const supabaseAdmin = getAdminClient() // Falls Credit Codes Tabelle restricted ist
 
-    await supabase.from('credit_codes').insert({
+    await supabaseAdmin.from('credit_codes').insert({
       club_id: clubId,
       code: code,
       amount: booking.price_paid,
@@ -866,11 +895,7 @@ export async function updateCourtHours(courtId: string, startHour: number, endHo
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "Nicht eingeloggt" }
 
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  const supabaseAdmin = getAdminClient()
 
   const { data: court } = await supabaseAdmin.from('courts').select('club_id, clubs(owner_id)').eq('id', courtId).single()
 
@@ -903,10 +928,7 @@ export async function createBlockedPeriod(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "Auth required" }
 
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabaseAdmin = getAdminClient()
 
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
 
@@ -939,10 +961,7 @@ export async function deleteBlockedPeriod(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "Auth required" }
 
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabaseAdmin = getAdminClient()
 
   const { data: block } = await supabaseAdmin.from('blocked_periods').select('club_id, clubs(owner_id)').eq('id', id).single()
 
