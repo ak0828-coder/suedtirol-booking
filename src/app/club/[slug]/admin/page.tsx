@@ -11,6 +11,8 @@ import { CourtManager } from "@/components/admin/court-manager"
 import { BlockManager } from "@/components/admin/block-manager" 
 import { PlanManager } from "@/components/admin/plan-manager" 
 import { MemberManager } from "@/components/admin/member-manager" 
+// NEU: Import
+import { ClubSettings } from "@/components/admin/club-settings"
 
 export const dynamic = 'force-dynamic'
 
@@ -50,11 +52,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
   const { data: courts } = await supabase.from('courts').select('*').eq('club_id', club.id).order('name')
   const { data: bookings } = await supabase.from('bookings').select(`*, courts (name)`).eq('club_id', club.id).order('start_time', { ascending: false })
   const { data: blockedPeriods } = await supabase.from('blocked_periods').select('*').eq('club_id', club.id).order('start_date', { ascending: true })
-  
-  // 5. NEU: Pläne & Mitglieder laden
   const { data: plans } = await supabase.from('membership_plans').select('*').eq('club_id', club.id)
-  
-  // Wir holen die Mitglieder (idealerweise später mit Profil-Join)
   const { data: members } = await supabase.from('club_members').select('*').eq('club_id', club.id)
 
   return (
@@ -151,12 +149,13 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
               </Card>
             </div>
 
-            {/* SPALTE 2: VERWALTUNG (Plätze, Sperren, Preise, Mitglieder) */}
+            {/* SPALTE 2: VERWALTUNG */}
             <div className="space-y-8">
+               {/* NEU: CLUB SETTINGS (Jetzt ganz oben rechts) */}
+               <ClubSettings club={club} />
+
                <CourtManager initialCourts={courts || []} clubSlug={slug} />
                <BlockManager clubSlug={slug} courts={courts || []} initialBlocks={blockedPeriods || []} />
-               
-               {/* NEU: MITGLIEDER & PLÄNE */}
                <PlanManager clubSlug={slug} plans={plans || []} />
                <MemberManager members={members || []} />
             </div>

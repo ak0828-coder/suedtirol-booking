@@ -12,9 +12,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { de } from "date-fns/locale"
-import { createBooking, getBookedSlots, createCheckoutSession, getBlockedDates } from "@/app/actions" 
+// NEU: validateCreditCode importieren
+import { createBooking, getBookedSlots, createCheckoutSession, getBlockedDates, validateCreditCode } from "@/app/actions" 
 import { generateTimeSlots, isDateBlocked } from "@/lib/utils"
-import { Loader2, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Loader2, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2, Ticket } from "lucide-react"
 
 interface BookingModalProps {
   courtId: string
@@ -24,7 +25,7 @@ interface BookingModalProps {
   durationMinutes: number
   startHour?: number 
   endHour?: number   
-  isMember?: boolean // <--- NEU
+  isMember?: boolean
 }
 
 export function BookingModal({ courtId, courtName, price, clubSlug, durationMinutes, startHour, endHour, isMember }: BookingModalProps) {
@@ -37,17 +38,56 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const [blockedPeriods, setBlockedPeriods] = useState<any[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
-  // Dynamische Slots basierend auf Platz-Öffnungszeiten
+  // --- NEU: VOUCHER STATES ---
+  const [voucherCode, setVoucherCode] = useState("")
+  const [discount, setDiscount] = useState(0)
+  const [voucherError, setVoucherError] = useState<string | null>(null)
+  const [voucherSuccess, setVoucherSuccess] = useState(false)
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState(false)
+
+  // Reset beim Schließen
+  useEffect(() => {
+      if(!isOpen) {
+          setVoucherCode("")
+          setDiscount(0)
+          setVoucherSuccess(false)
+          setVoucherError(null)
+      }
+  }, [isOpen])
+
+  // --- NEU: VOUCHER CHECK ---
+  async function checkVoucher() {
+      if(!voucherCode) return
+      setIsValidatingVoucher(true)
+      setVoucherError(null)
+      
+      const res = await validateCreditCode(clubSlug, voucherCode)
+      setIsValidatingVoucher(false)
+
+      if (res.success) {
+          setDiscount(res.amount || 0)
+          setVoucherSuccess(true)
+      } else {
+          setVoucherError(res.error || "Ungültiger Code")
+          setDiscount(0)
+          setVoucherSuccess(false)
+      }
+  }
+
+  // --- NEU: PREIS BERECHNUNG ---
+  const finalPrice = Math.max(0, price - discount)
+  const isFullyCovered = discount >= price
+
   const timeSlots = generateTimeSlots(startHour || 8, endHour || 22, durationMinutes)
 
-  // 1. Sperrzeiten laden beim Öffnen
+  // 1. Sperrzeiten laden
   useEffect(() => {
     if(isOpen) {
         getBlockedDates(clubSlug, courtId).then(data => setBlockedPeriods(data))
     }
   }, [isOpen, clubSlug, courtId])
 
-  // 2. Slots laden beim Datumswechsel
+  // 2. Slots laden
   useEffect(() => {
     async function fetchSlots() {
       if (!date) return
@@ -63,7 +103,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
     }
 
     if (isOpen && date) {
-      // Nur laden, wenn Tag nicht komplett gesperrt ist
       const blocked = isDateBlocked(date, blockedPeriods)
       if(!blocked) {
           fetchSlots()
@@ -75,7 +114,21 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const handleBook = async () => {
     if (!date || !selectedTime) return
     setIsBooking(true)
-    const result = await createBooking(courtId, clubSlug, date, selectedTime, price, durationMinutes)
+    
+    // Wenn alles durch Gutschein gedeckt ist, rufen wir direkt createBooking auf
+    // Wir übergeben 'paid_stripe' als status, da es technisch bezahlt ist (via Guthaben)
+    // Und wir übergeben den voucherCode, damit das Backend ihn entwerten kann
+    const result = await createBooking(
+        courtId, 
+        clubSlug, 
+        date, 
+        selectedTime, 
+        price, 
+        durationMinutes, 
+        isFullyCovered ? 'paid_stripe' : 'paid_cash', // Wenn fully covered -> stripe logic
+        isFullyCovered ? voucherCode : undefined 
+    )
+    
     setIsBooking(false)
 
     if (result.success) {
@@ -87,7 +140,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
     }
   }
 
-  // Prüfen, ob der aktuell gewählte Tag gesperrt ist
   const activeBlock = date ? isDateBlocked(date, blockedPeriods) : null
 
   return (
@@ -124,7 +176,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                 selected={date}
                 onSelect={(d) => { setDate(d); setSelectedTime(null); }}
                 locale={de}
-                // Tage deaktivieren, die gesperrt sind (visuell)
                 modifiers={{ blocked: (d) => !!isDateBlocked(d, blockedPeriods) }}
                 modifiersStyles={{ blocked: { color: 'red', textDecoration: 'line-through', opacity: 0.5 } }}
                 disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
@@ -134,7 +185,6 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
             </div>
           </div>
 
-          {/* SPERR-MELDUNG */}
           {activeBlock && (
               <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5" />
@@ -145,7 +195,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
               </div>
           )}
 
-          {/* 2. UHRZEIT WÄHLEN (Nur wenn nicht gesperrt) */}
+          {/* 2. UHRZEIT WÄHLEN */}
           {date && !activeBlock && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
@@ -175,42 +225,114 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
             </div>
           )}
 
-          {/* 3. ABSCHLUSS */}
+          {/* 3. ABSCHLUSS & GUTSCHEIN */}
           {selectedTime && !activeBlock && (
-            <div className="flex flex-col gap-3 pt-4 border-t mt-2">
-               <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 mb-2">
-                  Zusammenfassung: <br/>
-                  <strong>{date?.toLocaleDateString('de-DE')}</strong> um <strong>{selectedTime} Uhr</strong><br/>
+            <div className="flex flex-col gap-4 pt-4 border-t mt-2">
+               
+               {/* --- NEU: GUTSCHEIN EINGABE (Nur für Gäste) --- */}
+               {!isMember && (
+                  <div className="flex flex-col gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <label className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1">
+                          <Ticket className="w-3 h-3" /> Gutschein / Guthaben
+                      </label>
+                      <div className="flex gap-2">
+                          <input 
+                              type="text" 
+                              placeholder="Code eingeben..." 
+                              className="flex-1 border rounded px-3 py-1 text-sm uppercase"
+                              value={voucherCode}
+                              onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                              disabled={voucherSuccess} 
+                          />
+                          {!voucherSuccess ? (
+                              <Button size="sm" variant="outline" onClick={checkVoucher} disabled={isValidatingVoucher || !voucherCode}>
+                                  {isValidatingVoucher ? <Loader2 className="w-3 h-3 animate-spin"/> : "Einlösen"}
+                              </Button>
+                          ) : (
+                              <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => {
+                                  setVoucherSuccess(false); setDiscount(0); setVoucherCode("");
+                              }}>
+                                  Entfernen
+                              </Button>
+                          )}
+                      </div>
+                      {voucherError && <p className="text-xs text-red-500">{voucherError}</p>}
+                      {voucherSuccess && <p className="text-xs text-green-600 font-medium">✅ Gutschein über {discount}€ angewendet!</p>}
+                  </div>
+               )}
+
+               <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600">
+                  <div className="mb-2">
+                    Zusammenfassung: <br/>
+                    <strong>{date?.toLocaleDateString('de-DE')}</strong> um <strong>{selectedTime} Uhr</strong>
+                  </div>
                   
-                  {/* --- PREIS ANZEIGE --- */}
-                  Preis: {isMember ? <span className="text-green-600 font-bold ml-1">0€ (Mitglied)</span> : <strong>{price}€</strong>}
+                  {/* --- NEU: PREIS ANZEIGE --- */}
+                  <div className="flex justify-between items-center border-t pt-2 mt-2">
+                      <span>Zu zahlen:</span>
+                      <div className="text-right">
+                          {isMember ? (
+                              <span className="text-green-600 font-bold">0€ (Mitglied)</span>
+                          ) : (
+                              <>
+                                {discount > 0 && <span className="text-slate-400 line-through mr-2">{price}€</span>}
+                                <span className="font-bold text-lg">{finalPrice}€</span>
+                              </>
+                          )}
+                      </div>
+                  </div>
                </div>
 
               {/* --- BUTTONS --- */}
               {isMember ? (
                   // MITGLIEDER BUTTON
                   <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2" disabled={isBooking} onClick={handleBook}>
-                     {isBooking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4"/> Jetzt kostenlos buchen</>}
+                      {isBooking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4"/> Jetzt kostenlos buchen</>}
                   </Button>
               ) : (
-                  // GAST BUTTONS (Stripe & Cash)
+                  // GAST BUTTONS
                   <>
-                    <Button 
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" 
-                        disabled={isBooking}
-                        onClick={async () => {
-                        setIsBooking(true)
-                        const result = await createCheckoutSession(courtId, clubSlug, date!, selectedTime, price, courtName, durationMinutes)
-                        if (result?.url) window.location.href = result.url
-                        else { alert("Fehler"); setIsBooking(false); }
-                        }}
-                    >
-                        {isBooking ? <Loader2 className="animate-spin" /> : `💳 Online zahlen (${price}€)`}
-                    </Button>
+                    {/* ENTWEDER: Komplett gedeckt -> Kostenlos buchen */}
+                    {isFullyCovered ? (
+                        <Button 
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                            disabled={isBooking}
+                            onClick={handleBook} // Ruft createBooking direkt auf
+                        >
+                             {isBooking ? <Loader2 className="animate-spin" /> : "Jetzt kostenlos buchen"}
+                        </Button>
+                    ) : (
+                        // ODER: Restbetrag via Stripe
+                        <Button 
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" 
+                            disabled={isBooking}
+                            onClick={async () => {
+                                setIsBooking(true)
+                                // WICHTIG: voucherCode übergeben!
+                                const result = await createCheckoutSession(
+                                    courtId, 
+                                    clubSlug, 
+                                    date!, 
+                                    selectedTime, 
+                                    price, 
+                                    courtName, 
+                                    durationMinutes,
+                                    voucherCode // <---
+                                )
+                                if (result?.url) window.location.href = result.url
+                                else { alert("Fehler"); setIsBooking(false); }
+                            }}
+                        >
+                            {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
+                        </Button>
+                    )}
 
-                    <Button variant="outline" className="w-full" disabled={isBooking} onClick={handleBook}>
-                        Vor Ort bezahlen
-                    </Button>
+                    {/* Vor Ort zahlen nur anzeigen, wenn kein Gutschein aktiv ist (oder man könnte es verbieten) */}
+                    {!voucherSuccess && (
+                        <Button variant="outline" className="w-full" disabled={isBooking} onClick={handleBook}>
+                            Vor Ort bezahlen
+                        </Button>
+                    )}
                   </>
               )}
             </div>

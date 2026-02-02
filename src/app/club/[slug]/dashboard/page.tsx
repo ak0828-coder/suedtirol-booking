@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trophy, Calendar, Clock } from "lucide-react"
+import { Trophy, Calendar, Clock, User } from "lucide-react"
 import { format } from "date-fns"
+import { getProfile } from "@/app/actions"
+import { ProfileForm } from "@/components/profile-form"
+// NEU: Import für den Button
+import { CancelBookingButton } from "@/components/cancel-booking-button"
 
 export default async function MemberDashboard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -13,7 +17,6 @@ export default async function MemberDashboard({ params }: { params: Promise<{ sl
   if (!user) return redirect("/login")
 
   // 2. Member Status Check
-  // WICHTIG: Wir holen jetzt auch die 'id' vom Club, um damit die Bookings zu filtern
   const { data: member } = await supabase
     .from('club_members')
     .select('*, clubs!inner(slug, name, id), membership_plans(name)')
@@ -22,7 +25,6 @@ export default async function MemberDashboard({ params }: { params: Promise<{ sl
     .single()
 
   if (!member) {
-      // User ist eingeloggt, aber kein Mitglied -> Zurück zur Public Page
       return redirect(`/club/${slug}`)
   }
 
@@ -30,10 +32,13 @@ export default async function MemberDashboard({ params }: { params: Promise<{ sl
   const { data: myBookings } = await supabase
     .from('bookings')
     .select('*, courts(name)')
-    .eq('club_id', member.clubs.id) // Hier nutzen wir die geladene ID
+    .eq('club_id', member.clubs.id)
     .eq('user_id', user.id)
     .gte('start_time', new Date().toISOString()) // Nur zukünftige
     .order('start_time', { ascending: true })
+
+  // 4. Profil laden
+  const profile = await getProfile()
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -41,7 +46,7 @@ export default async function MemberDashboard({ params }: { params: Promise<{ sl
         
         <header className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border">
             <div>
-                <h1 className="text-2xl font-bold">Hallo! 👋</h1>
+                <h1 className="text-2xl font-bold">Hallo {profile?.first_name || 'Mitglied'}! 👋</h1>
                 <p className="text-slate-500">Willkommen bei {member.clubs.name}</p>
             </div>
             <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-bold border border-green-200">
@@ -61,26 +66,31 @@ export default async function MemberDashboard({ params }: { params: Promise<{ sl
                 </CardContent>
             </Card>
 
-            {/* Buchungs Karte */}
+            {/* Buchungs Karte - UPDATE HIER */}
             <Card>
                 <CardHeader><CardTitle className="flex gap-2"><Calendar className="text-blue-500"/> Deine nächsten Spiele</CardTitle></CardHeader>
                 <CardContent>
                     {myBookings && myBookings.length > 0 ? (
-                        <ul className="space-y-3">
+                        <div className="space-y-4">
                             {myBookings.map((b: any) => (
-                                <li key={b.id} className="flex justify-between items-center border-b pb-2 last:border-0">
+                                <div key={b.id} className="flex items-center justify-between p-3 border rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
                                     <div>
-                                        <div className="font-bold">{format(new Date(b.start_time), 'dd.MM.yyyy')}</div>
-                                        <div className="text-xs text-slate-500 flex items-center gap-1">
-                                            <Clock className="w-3 h-3"/> {format(new Date(b.start_time), 'HH:mm')} Uhr
+                                        <div className="font-bold text-base">
+                                            {format(new Date(b.start_time), 'dd.MM.yyyy')}
+                                        </div>
+                                        <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                                            <Clock className="w-3 h-3"/> 
+                                            {format(new Date(b.start_time), 'HH:mm')} Uhr 
+                                            <span className="mx-1">•</span>
+                                            {b.courts?.name}
                                         </div>
                                     </div>
-                                    <div className="text-right text-sm font-medium bg-slate-100 px-2 py-1 rounded">
-                                        {b.courts?.name}
-                                    </div>
-                                </li>
+                                    
+                                    {/* Client Component Button */}
+                                    <CancelBookingButton bookingId={b.id} />
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     ) : (
                         <div className="text-center py-4">
                             <p className="text-slate-500 italic mb-2">Keine offenen Buchungen.</p>
@@ -89,6 +99,18 @@ export default async function MemberDashboard({ params }: { params: Promise<{ sl
                 </CardContent>
             </Card>
         </div>
+
+        {/* Profil Section */}
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex gap-2">
+                    <User className="text-slate-600" /> Meine Daten
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ProfileForm initialData={profile} />
+            </CardContent>
+        </Card>
 
       </div>
     </div>

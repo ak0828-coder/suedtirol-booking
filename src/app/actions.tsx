@@ -14,7 +14,31 @@ const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase() || "";
 
 if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nicht in .env gesetzt!");
 
-// --- NEU: PASSWORT ÄNDERN (Für den 1. Login) ---
+// --- NEU: GUTSCHEIN VALIDIEREN ---
+export async function validateCreditCode(clubSlug: string, code: string) {
+    const supabase = await createClient()
+    
+    // Club ID holen
+    const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+    if(!club) return { success: false, error: "Club nicht gefunden" }
+
+    // Code suchen
+    const { data: credit } = await supabase
+        .from('credit_codes')
+        .select('*')
+        .eq('club_id', club.id)
+        .eq('code', code)
+        .eq('is_redeemed', false) // Wichtig!
+        .single()
+    
+    if (!credit) {
+        return { success: false, error: "Code ungültig oder bereits eingelöst." }
+    }
+
+    return { success: true, amount: credit.amount, codeId: credit.id }
+}
+
+// --- PASSWORT ÄNDERN (Für den 1. Login) ---
 export async function updateUserPassword(newPassword: string) {
   const supabase = await createClient()
   
@@ -28,7 +52,7 @@ export async function updateUserPassword(newPassword: string) {
   return { success: true }
 }
 
-// --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER (Legacy / Admin Check) ---
+// --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
 export async function getMyClubSlug() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -48,32 +72,27 @@ export async function getMyClubSlug() {
   return club?.slug || null
 }
 
-// --- NEU: HILFSFUNKTION FÜR DAS LOGIN SYSTEM (MULTI-ROLE) ---
+// --- HELPER FÜR DAS LOGIN SYSTEM (MULTI-ROLE) ---
 export async function getUserRole() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user || !user.email) return null
 
-  // 1. Super Admin Check
   if (user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
       return { type: 'super_admin' }
   }
 
-  // 2. Sammle alle Admin-Rollen (Wo bin ich Besitzer?)
   const { data: ownedClubs } = await supabase
     .from('clubs')
     .select('slug, name')
     .eq('owner_id', user.id)
 
-  // 3. Sammle alle Mitgliedschaften (Wo bin ich Mitglied?)
   const { data: memberships } = await supabase
     .from('club_members')
     .select('clubs(slug, name)')
     .eq('user_id', user.id)
-    // .eq('status', 'active') // Optional: Nur aktive anzeigen?
 
-  // Daten aufbereiten
   const adminRoles = ownedClubs?.map(c => ({ role: 'club_admin', slug: c.slug, name: c.name })) || []
   
   // @ts-ignore
@@ -81,12 +100,99 @@ export async function getUserRole() {
 
   const allRoles = [...adminRoles, ...memberRoles]
 
-  // Ergebnis zurückgeben
   return { 
       type: 'multi', 
       roles: allRoles,
       userEmail: user.email
   }
+}
+
+// ==========================================
+// --- PROFIL & MEMBER MANAGEMENT ---
+// ==========================================
+
+export async function updateProfile(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const firstName = formData.get("firstName") as string
+  const lastName = formData.get("lastName") as string
+  const phone = formData.get("phone") as string
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ 
+        id: user.id, 
+        first_name: firstName, 
+        last_name: lastName, 
+        phone: phone,
+        updated_at: new Date().toISOString()
+    })
+
+  if (error) return { success: false, error: error.message }
+  
+  await supabase.auth.updateUser({
+    data: { full_name: `${firstName} ${lastName}` }
+  })
+
+  revalidatePath('/dashboard') 
+  return { success: true, message: "Profil gespeichert!" }
+}
+
+export async function getProfile() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+    
+    return data
+}
+
+export async function updateMemberDetails(memberId: string, clubSlug: string, notes: string, validUntil: string | null) {
+     const supabase = await createClient()
+     const { data: { user } } = await supabase.auth.getUser()
+     if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+     const { error } = await supabase
+        .from('club_members')
+        .update({ 
+            internal_notes: notes,
+            medical_certificate_valid_until: validUntil ? validUntil : null
+        })
+        .eq('id', memberId)
+
+     if(error) return { success: false, error: error.message }
+     
+     revalidatePath(`/club/${clubSlug}/admin/members`)
+     return { success: true }
+}
+
+export async function getClubMembers(clubSlug: string) {
+    const supabase = await createClient()
+    
+    const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+    if(!club) return []
+
+    const { data: members, error } = await supabase
+        .from('club_members')
+        .select(`
+            *,
+            profiles:user_id (first_name, last_name, phone, id)
+        `)
+        .eq('club_id', club.id)
+    
+    if(error) {
+        console.error("Member fetch error:", error)
+        return []
+    }
+
+    return members
 }
 
 // --- SUPER ADMIN ACTIONS ---
@@ -110,7 +216,6 @@ export async function createClub(formData: FormData) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // FIX: Wir übergeben 'name' und 'full_name' in den Metadaten.
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: email,
     password: password,
@@ -159,6 +264,10 @@ export async function updateClub(formData: FormData) {
   const name = formData.get("name") as string
   const primaryColor = formData.get("primary_color") as string
   const logoFile = formData.get("logo") as File 
+  
+  const cancellationHours = formData.get("cancellation_buffer_hours") 
+    ? parseInt(formData.get("cancellation_buffer_hours") as string) 
+    : 24
 
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -199,6 +308,7 @@ export async function updateClub(formData: FormData) {
   const updateData: any = {
     name: name,
     primary_color: primaryColor,
+    cancellation_buffer_hours: cancellationHours
   }
 
   if (logoUrl) {
@@ -252,14 +362,12 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
 
-  // Admin Client initialisieren
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // 1. Club laden & Berechtigung prüfen
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
   
   if (!club) return { error: "Club nicht gefunden" }
@@ -269,7 +377,6 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
       return { error: "Keine Rechte" }
   }
 
-  // 2. Produkt in Stripe erstellen
   try {
       const stripeProduct = await stripe.products.create({
         name: `${club.name} - ${name}`,
@@ -282,7 +389,6 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
         recurring: { interval: 'year' }, 
       })
 
-      // 3. In DB speichern
       const { error } = await supabaseAdmin.from('membership_plans').insert({
         club_id: club.id,
         name: name,
@@ -308,24 +414,19 @@ export async function deleteMembershipPlan(id: string) {
     return { success: true }
 }
 
-// FIX: Erlaubt Checkout auch ohne Login (Stripe sammelt Email)
 export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
-    // Club holen
     const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
     if (!club) return { url: "" } 
 
-    // Metadaten vorbereiten
     const metadata: any = {
         clubId: club.id,
         planId: planId,
         type: 'membership_subscription'
     }
 
-    // Wenn User eingeloggt ist, verknüpfen wir ihn direkt.
-    // Wenn NICHT, lassen wir userId leer -> Webhook erstellt dann den User.
     if (user) {
         metadata.userId = user.id
     }
@@ -336,7 +437,6 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
         mode: 'subscription', 
         success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?membership_success=true`,
         cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}`,
-        // Wenn eingeloggt, E-Mail vorausfüllen. Wenn nicht, muss Kunde sie in Stripe eingeben.
         customer_email: user?.email, 
         metadata: metadata
     })
@@ -344,7 +444,7 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     return { url: session.url }
 }
 
-// --- BOOKING ACTIONS ---
+// --- BOOKING ACTIONS (MIT GUTSCHEIN UPDATE) ---
 
 export async function createBooking(
   courtId: string, 
@@ -353,7 +453,8 @@ export async function createBooking(
   time: string,
   price: number,
   durationMinutes: number, 
-  paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash'
+  paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash',
+  creditCode?: string // <--- NEUER PARAMETER
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -362,9 +463,10 @@ export async function createBooking(
   if(!club) return { success: false, error: "Club nicht gefunden" }
 
   let finalPrice = price
-  
-  let finalPaymentStatus: 'paid_cash' | 'paid_stripe' | 'paid_member' = paymentMethod
+  let finalPaymentStatus = paymentMethod
+  let usedCreditAmount = 0
 
+  // 1. Check: Ist es ein aktives Mitglied?
   if (user) {
       const { data: member } = await supabase
         .from('club_members')
@@ -381,11 +483,11 @@ export async function createBooking(
           }
       }
   }
-  
+
+  // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlösen)
   const [hours, minutes] = time.split(':').map(Number)
   const startTime = new Date(date)
   startTime.setHours(hours, minutes, 0, 0)
-  
   const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
 
   const { data: existing } = await supabase
@@ -398,7 +500,25 @@ export async function createBooking(
   if (existing) {
     return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
   }
+  
+  // 3. Gutschein einlösen (Falls kein Mitglied & Code vorhanden)
+  if (finalPrice > 0 && creditCode) {
+      const check = await validateCreditCode(clubSlug, creditCode)
+      if (!check.success) return { success: false, error: check.error }
+      
+      // Code als eingelöst markieren!
+      await supabase.from('credit_codes')
+        .update({ is_redeemed: true })
+        .eq('code', creditCode)
+        
+      usedCreditAmount = check.amount || 0
+      
+      // Wir setzen den Preis auf den Gutscheinwert (für Rückerstattungen wichtig)
+      finalPrice = usedCreditAmount 
+      finalPaymentStatus = 'paid_stripe' // Technisch wie bezahlt
+  }
 
+  // 4. Buchung speichern
   const { error } = await supabase
     .from('bookings')
     .insert({
@@ -408,7 +528,8 @@ export async function createBooking(
       end_time: endTime.toISOString(),
       status: 'confirmed',
       payment_status: finalPaymentStatus, 
-      guest_name: user ? 'Mitglied' : 'Gast Buchung' 
+      price_paid: finalPrice, 
+      guest_name: user ? 'Mitglied' : 'Gast (Gutschein)' 
     })
 
   if (error) {
@@ -416,6 +537,7 @@ export async function createBooking(
     return { success: false, error: "Datenbankfehler." }
   }
 
+  // Mail versenden
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000);
     const recipient = club.admin_email || SUPER_ADMIN_EMAIL || "fallback@example.com";
@@ -425,7 +547,7 @@ export async function createBooking(
       to: [recipient], 
       subject: `Buchung: ${format(date, 'dd.MM.yyyy')} um ${time}`,
       react: <BookingEmailTemplate 
-        guestName="Gast"
+        guestName={user ? "Mitglied" : "Gast"}
         courtName="Tennisplatz"
         date={format(date, 'dd.MM.yyyy')}
         time={time}
@@ -439,6 +561,62 @@ export async function createBooking(
 
   revalidatePath(`/club/${clubSlug}`)
   return { success: true }
+}
+
+export async function cancelBooking(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+    const { data: booking } = await supabase
+        .from('bookings')
+        .select(`
+            *,
+            clubs (id, slug, cancellation_buffer_hours, name)
+        `)
+        .eq('id', bookingId)
+        .single()
+    
+    if (!booking) return { success: false, error: "Buchung nicht gefunden" }
+
+    const bookingStart = new Date(booking.start_time)
+    const now = new Date()
+    const diffInHours = (bookingStart.getTime() - now.getTime()) / (1000 * 60 * 60)
+    
+    // @ts-ignore
+    const limitHours = booking.clubs?.cancellation_buffer_hours || 24
+
+    if (diffInHours < limitHours) {
+        return { success: false, error: `Stornierung nur bis ${limitHours}h vor Termin möglich.` }
+    }
+
+    // @ts-ignore
+    const clubId = booking.clubs?.id
+    let message = "Erfolgreich storniert."
+
+    if (booking.payment_status === 'paid_stripe' && booking.price_paid > 0) {
+         
+         const code = `REFUND-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+         
+         await supabase.from('credit_codes').insert({
+             club_id: clubId,
+             code: code,
+             amount: booking.price_paid, 
+             created_for_email: user.email
+         })
+
+         message = `Storniert. Dein Gutschein-Code über ${booking.price_paid}€ lautet: ${code}`
+         
+         await supabase.from('bookings').delete().eq('id', bookingId)
+
+    } else {
+        await supabase.from('bookings').delete().eq('id', bookingId)
+    }
+
+    // @ts-ignore
+    revalidatePath(`/club/${booking.clubs?.slug}/dashboard`)
+    return { success: true, message: message }
 }
 
 export async function deleteBooking(bookingId: string) {
@@ -471,8 +649,6 @@ export async function deleteBooking(bookingId: string) {
   
   return { success: true }
 }
-
-// --- CLUB MANAGEMENT (Admin) ---
 
 export async function createCourt(
   clubSlug: string, 
@@ -516,7 +692,7 @@ export async function deleteCourt(courtId: string) {
   return { success: true }
 }
 
-// --- STRIPE ---
+// --- STRIPE CHECKOUT MIT GUTSCHEIN ---
 
 export async function createCheckoutSession(
   courtId: string,
@@ -525,26 +701,42 @@ export async function createCheckoutSession(
   time: string,
   price: number,
   courtName: string,
-  durationMinutes: number) {
+  durationMinutes: number,
+  creditCode?: string // <--- NEUER PARAMETER
+) {
+  let finalPrice = price
+  let metadata: any = { 
+    courtId, clubSlug, 
+    date: date.toISOString(), 
+    time, 
+    price: price.toString(),
+    durationMinutes: durationMinutes.toString() 
+  }
+
+  // Wenn Code dabei ist, validieren und Preis senken
+  if (creditCode) {
+      const check = await validateCreditCode(clubSlug, creditCode)
+      if (check.success && check.amount) {
+          finalPrice = price - check.amount
+          if (finalPrice < 0) finalPrice = 0 // Darf nicht negativ werden
+          
+          // Wir geben den Code an Stripe weiter, damit der Webhook ihn einlösen kann!
+          metadata.creditCode = creditCode 
+      }
+  }
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'], 
     line_items: [{
         price_data: {
           currency: 'eur',
           product_data: { name: `Buchung: ${courtName} (${durationMinutes} Min)` },
-          unit_amount: price * 100, 
+          unit_amount: Math.round(finalPrice * 100), // WICHTIG: Cent Betrag
         },
         quantity: 1,
     }],
     mode: 'payment',
-    metadata: { 
-        courtId, 
-        clubSlug, 
-        date: date.toISOString(), 
-        time, 
-        price: price.toString(),
-        durationMinutes: durationMinutes.toString() 
-    },
+    metadata: metadata,
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
   })
@@ -575,8 +767,6 @@ export async function getBookedSlots(courtId: string, date: Date) {
     return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
   })
 }
-
-// --- BLOCKIERUNGEN & ÖFFNUNGSZEITEN ---
 
 export async function updateCourtHours(courtId: string, startHour: number, endHour: number) {
   const supabase = await createClient()
@@ -693,12 +883,9 @@ export async function getBlockedDates(clubSlug: string, courtId: string) {
   return data || []
 }
 
-// --- PASSWORT RESET ANFORDERN ---
 export async function requestPasswordReset(email: string) {
   const supabase = await createClient()
   
-  // WICHTIG: Wir sagen Supabase, es soll nach dem Klick auf /auth/callback gehen
-  // und von dort aus weiter nach /change-password
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/change-password`,
   })

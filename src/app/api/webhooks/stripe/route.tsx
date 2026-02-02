@@ -38,8 +38,10 @@ export async function POST(req: Request) {
 
   const session = event.data.object as any
 
-  // 1. NEUES ABO ABGESCHLOSSEN
+  // 1. CHECKOUT SESSION COMPLETED (Zahlung erfolgreich)
   if (event.type === "checkout.session.completed") {
+    
+    // --- A) MITGLIEDSCHAFT (ABO) ---
     if (session.metadata?.type === 'membership_subscription') {
         let { userId, clubId, planId } = session.metadata
         const customerEmail = session.customer_details?.email
@@ -123,9 +125,6 @@ export async function POST(req: Request) {
                     console.log("📧 Willkommens-Mail (neu) gesendet.")
                 } else {
                     // 2. Mail für BESTEHENDE User (Bestätigung)
-                    // Da wir kein extra Template haben, senden wir eine einfache HTML Bestätigung
-                    // oder nutzen das Template ohne Passwort (falls das Template das unterstützt).
-                    // Hier ein einfacher Fallback:
                     await resend.emails.send({
                         from: 'Suedtirol Booking <onboarding@resend.dev>',
                         to: [customerEmail],
@@ -143,6 +142,49 @@ export async function POST(req: Request) {
                 console.error("❌ Fehler beim Senden der Mail:", emailError)
                 // Wir werfen hier keinen 500er, damit der Webhook für Stripe trotzdem als "erfolgreich" gilt (DB Eintrag war ja ok)
             }
+        }
+    }
+
+    // --- B) NEU: EINZELBUCHUNG (COURT BOOKING) ---
+    // Wir erkennen das daran, dass 'courtId' in den Metadaten ist
+    if (session.metadata?.courtId) {
+        // HIER NEU: creditCode auslesen
+        const { courtId, clubSlug, date, time, durationMinutes, creditCode } = session.metadata
+        const amountTotal = session.amount_total ? session.amount_total / 100 : 0 // Stripe ist in Cents
+        const customerEmail = session.customer_details?.email
+
+        // Wir brauchen die Club ID
+        const { data: club } = await supabaseAdmin.from('clubs').select('id, admin_email').eq('slug', clubSlug).single()
+        
+        if (club) {
+            // Start/Endzeit berechnen
+            const [hours, minutes] = time.split(':').map(Number)
+            const startTime = new Date(date)
+            startTime.setHours(hours, minutes, 0, 0)
+            const endTime = new Date(startTime.getTime() + parseInt(durationMinutes) * 60000)
+
+            // NEU: Gutschein entwerten, falls einer genutzt wurde
+            if (creditCode) {
+                 console.log(`🎟️ Löse Gutschein ${creditCode} via Webhook ein...`)
+                 await supabaseAdmin.from('credit_codes')
+                    .update({ is_redeemed: true })
+                    .eq('code', creditCode)
+                    .eq('club_id', club.id)
+            }
+
+            // BUCHUNG SPEICHERN
+            await supabaseAdmin.from('bookings').insert({
+                court_id: courtId,
+                club_id: club.id,
+                start_time: startTime.toISOString(),
+                end_time: endTime.toISOString(),
+                status: 'confirmed',
+                payment_status: 'paid_stripe',
+                price_paid: amountTotal, // <--- Hier speichern wir den Stripe-Preis!
+                guest_name: customerEmail || 'Gast (Stripe)'
+            })
+            
+            console.log(`✅ Stripe Buchung angelegt: ${amountTotal}€ für ${time} Uhr`)
         }
     }
   }
