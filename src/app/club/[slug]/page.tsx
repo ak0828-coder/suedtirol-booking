@@ -65,103 +65,118 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   // -----------------------------
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 transition-colors duration-300">
-      
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 pb-20 transition-colors duration-300">
       {/* HEADER */}
-      <div className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 pb-6 pt-6 px-4 shadow-sm relative transition-colors duration-300">
-        
-        {/* Navigation Oben Rechts */}
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-           <ModeToggle />
-           
-           {/* LOGIN / DASHBOARD BUTTON */}
-           {user ? (
-             <Link href="/login">
-               <Button variant="outline" className="gap-2">
-                 <User className="w-4 h-4" /> Mein Bereich
-               </Button>
-             </Link>
-           ) : (
-             <Link href="/login">
-               <Button variant="default" className="gap-2 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
-                 <LogIn className="w-4 h-4" /> Login
-               </Button>
-             </Link>
-           )}
+      <header className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-slate-200/40 blur-3xl dark:bg-slate-700/30" />
+          <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-rose-200/50 blur-3xl dark:bg-rose-900/20" />
         </div>
 
-        <div className="max-w-md mx-auto text-center flex flex-col items-center mt-8">
-          
-          {/* LOGO */}
-          <div 
-            className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg overflow-hidden border-4 border-white dark:border-slate-800"
-            style={{ backgroundColor: club.primary_color || '#e11d48' }}
-          >
-            {club.logo_url ? (
-                <img 
-                    src={club.logo_url} 
-                    alt={club.name} 
-                    className="w-full h-full object-cover"
-                />
+        <div className="relative mx-auto max-w-5xl px-4 py-8">
+          {/* Navigation Oben Rechts */}
+          <div className="flex items-center justify-end gap-2">
+            <ModeToggle />
+
+            {/* LOGIN / DASHBOARD BUTTON */}
+            {user ? (
+              <Link href="/login">
+                <Button variant="outline" className="gap-2 rounded-full">
+                  <User className="w-4 h-4" /> Mein Bereich
+                </Button>
+              </Link>
             ) : (
-                <span>{club.name.substring(0, 2).toUpperCase()}</span>
+              <Link href="/login">
+                <Button variant="default" className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
+                  <LogIn className="w-4 h-4" /> Login
+                </Button>
+              </Link>
             )}
           </div>
 
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{club.name}</h1>
-          
-          <div className="flex items-center justify-center text-slate-500 dark:text-slate-400 mt-2 text-sm">
-            <MapPin className="w-4 h-4 mr-1" />
-            <span>Südtirol</span>
+          <div className="mt-8 flex flex-col items-center text-center">
+            {/* LOGO */}
+            <div
+              className="w-24 h-24 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-xl overflow-hidden border border-white/70 dark:border-slate-800/70 bg-white"
+              style={{ backgroundColor: club.primary_color || '#e11d48' }}
+            >
+              {club.logo_url ? (
+                <img
+                  src={club.logo_url}
+                  alt={club.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>{club.name.substring(0, 2).toUpperCase()}</span>
+              )}
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+              {club.name}
+            </h1>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">
+              Buche deinen Platz in Sekunden. Klar, schnell und ohne Umwege.
+            </p>
+
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 px-3 py-1 text-xs text-slate-600 dark:text-slate-300 shadow-sm">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Südtirol</span>
+              <span className="mx-2 h-3 w-px bg-slate-200 dark:bg-slate-700" />
+              <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+                <Check className="w-3 h-3" /> Heute geöffnet
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-4xl mx-auto px-4 mt-8">
-        
+      <div className="mx-auto max-w-5xl px-4 mt-10">
         {/* SECTION 1: PLÄTZE */}
-        <div className="flex items-center justify-between mb-4 max-w-md mx-auto md:max-w-none">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Unsere Plätze</h2>
-          <span className="text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded-full flex items-center gap-1">
-            <Check className="w-3 h-3" /> Heute geöffnet
-          </span>
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Unsere Plätze</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Wähle Platz und Uhrzeit – fertig.</p>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           {courts?.map((court: any) => {
-            const duration = court.duration_minutes || 60 
+            const duration = court.duration_minutes || 60
             return (
-              <Card key={court.id} className="overflow-hidden border-none shadow-md dark:bg-slate-900">
+              <Card
+                key={court.id}
+                className="group overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 shadow-sm hover:shadow-md transition-shadow"
+              >
                 <CardContent className="p-0">
                   <div className="flex flex-col">
-                    <div className="flex p-5">
-                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mr-4 shadow-inner">
-                        <CalendarDays className="w-8 h-8 text-slate-500 dark:text-slate-400" />
+                    <div className="flex p-6">
+                      <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mr-4">
+                        <CalendarDays className="w-7 h-7 text-slate-500 dark:text-slate-400" />
                       </div>
                       <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">{court.name}</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">{court.sport_type || 'Tennis'}</p>
-                            </div>
-                            <div className="text-right">
-                                <span className="block font-bold text-slate-900 dark:text-slate-100">{court.price_per_hour}€</span>
-                                <span className="text-xs text-slate-400">/ {duration} Min</span>
-                            </div>
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">{court.name}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">{court.sport_type || 'Tennis'}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="block text-lg font-semibold text-slate-900 dark:text-slate-100">{court.price_per_hour}€</span>
+                            <span className="text-xs text-slate-400">/ {duration} Min</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="px-5 pb-5">
-                        <BookingModal 
-                            courtId={court.id}
-                            courtName={court.name} 
-                            price={court.price_per_hour} 
-                            clubSlug={club.slug}
-                            durationMinutes={duration} 
-                            startHour={court.start_hour}
-                            endHour={court.end_hour}
-                            isMember={isMember} // Übergeben des Mitgliederstatus
-                        />
+                    <div className="px-6 pb-6">
+                      <BookingModal
+                        courtId={court.id}
+                        courtName={court.name}
+                        price={court.price_per_hour}
+                        clubSlug={club.slug}
+                        durationMinutes={duration}
+                        startHour={court.start_hour}
+                        endHour={court.end_hour}
+                        isMember={isMember}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -172,11 +187,10 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
         {/* SECTION 2: MITGLIEDSCHAFTEN (Anzeige nur, wenn Pläne vorhanden sind und User kein Mitglied ist) */}
         {plans && plans.length > 0 && !isMember && (
-            <div className="mt-16 mb-12">
-                <MembershipPlans plans={plans} clubSlug={slug} />
-            </div>
+          <div className="mt-16 mb-12">
+            <MembershipPlans plans={plans} clubSlug={slug} />
+          </div>
         )}
-
       </div>
     </div>
   )

@@ -42,11 +42,11 @@ export function EditClubDialog({ club }: { club: any }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="hover:bg-slate-100 text-slate-400 hover:text-slate-700">
+        <Button variant="ghost" size="icon" className="hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-full">
           <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-white text-slate-900">
+      <DialogContent className="sm:max-w-[425px] bg-white text-slate-900 rounded-2xl">
         <DialogHeader>
           <DialogTitle>Verein bearbeiten</DialogTitle>
         </DialogHeader>
@@ -72,7 +72,7 @@ export function EditClubDialog({ club }: { club: any }) {
                         onChange={(e) => setColor(e.target.value)}
                         className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
                     />
-                    <div className="w-10 h-10 rounded-md border shadow-sm" style={{ backgroundColor: color }} />
+                    <div className="w-10 h-10 rounded-lg border shadow-sm" style={{ backgroundColor: color }} />
                 </div>
                 <Input 
                     name="primary_color_text" // Dummy name, wir nutzen state
@@ -91,7 +91,7 @@ export function EditClubDialog({ club }: { club: any }) {
             </Label>
             <Input id="logo" name="logo" type="file" accept="image/*" className="cursor-pointer" />
             {club.logo_url && (
-                <div className="mt-3 p-2 bg-slate-50 rounded border flex items-center gap-3">
+                <div className="mt-3 p-2 bg-slate-50 rounded-lg border flex items-center gap-3">
                     <img src={club.logo_url} alt="Logo" className="w-8 h-8 object-contain" />
                     <span className="text-xs text-slate-500">Aktuelles Logo</span>
                 </div>
@@ -99,8 +99,8 @@ export function EditClubDialog({ club }: { club: any }) {
           </div>
 
           <div className="pt-2 flex justify-end gap-2">
-             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Abbrechen</Button>
-             <Button type="submit" disabled={isLoading} className="bg-slate-900 text-white hover:bg-slate-800">
+             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-full">Abbrechen</Button>
+             <Button type="submit" disabled={isLoading} className="bg-slate-900 text-white hover:bg-slate-800 rounded-full">
                 {isLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : "Speichern"}
              </Button>
           </div>

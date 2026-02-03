@@ -36,7 +36,7 @@ export function InviteMemberDialog({ clubSlug }: { clubSlug: string }) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="rounded-full">
           <Plus className="w-4 h-4 mr-2" />
           Mitglied einladen
         </Button>
@@ -64,7 +64,7 @@ export function InviteMemberDialog({ clubSlug }: { clubSlug: string }) {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full rounded-full" disabled={loading}>
             {loading ? (
               <Loader2 className="animate-spin" />
             ) : (

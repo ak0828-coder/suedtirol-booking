@@ -28,7 +28,7 @@ export function NewClubForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="name">Vereinsname</Label>
           <Input id="name" name="name" placeholder="TC Meran" required />
@@ -39,9 +39,9 @@ export function NewClubForm() {
         </div>
       </div>
       
-      <div className="space-y-2 pt-2 border-t">
+      <div className="space-y-2 pt-2 border-t border-slate-200/60">
         <Label className="text-slate-500">Admin Zugang erstellen</Label>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="email">E-Mail</Label>
             <Input id="email" name="email" type="email" placeholder="admin@tc-meran.it" required />
@@ -53,7 +53,7 @@ export function NewClubForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full bg-slate-900 text-white" disabled={isLoading}>
+      <Button type="submit" className="w-full bg-slate-900 text-white rounded-full" disabled={isLoading}>
         {isLoading ? <Loader2 className="animate-spin mr-2" /> : "Verein & User erstellen"}
       </Button>
     </form>

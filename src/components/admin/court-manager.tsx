@@ -75,7 +75,7 @@ export function CourtManager({
   }
 
   return (
-    <Card className="mt-8">
+    <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
@@ -86,53 +86,53 @@ export function CourtManager({
         {/* LISTE */}
         <div className="space-y-4 mb-6">
           {courts.map((court) => (
-            <Card key={court.id} className="bg-slate-50 dark:bg-slate-900 border shadow-sm">
-                <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold text-lg">{court.name}</h3>
-                    <div className="text-sm text-slate-500 flex gap-3">
-                        <span>{court.price_per_hour}€ / Spiel</span>
-                        <span>⏱ {court.duration_minutes} Min</span>
-                    </div>
+            <Card key={court.id} className="bg-white border border-slate-200/60 rounded-2xl shadow-sm">
+              <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-lg">{court.name}</h3>
+                  <div className="text-sm text-slate-500 flex gap-3">
+                    <span>{court.price_per_hour}€ / Spiel</span>
+                    <span>⏱ {court.duration_minutes} Min</span>
                   </div>
+                </div>
 
-                  {/* ÖFFNUNGSZEITEN EINSTELLUNG */}
-                  <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-md border">
-                     <Clock className="w-4 h-4 text-slate-400" />
-                     <div className="flex items-center gap-1">
-                        <Input 
-                            type="number" 
-                            className="w-16 h-8 text-xs" 
-                            value={court.start_hour || 8} 
-                            onChange={(e) => handleUpdateHours(court.id, parseInt(e.target.value), court.end_hour || 22)}
-                        />
-                        <span className="text-xs text-slate-400">bis</span>
-                        <Input 
-                            type="number" 
-                            className="w-16 h-8 text-xs" 
-                            value={court.end_hour || 22} 
-                            onChange={(e) => handleUpdateHours(court.id, court.start_hour || 8, parseInt(e.target.value))}
-                        />
-                        <span className="text-xs text-slate-400">Uhr</span>
-                     </div>
+                {/* ÖFFNUNGSZEITEN EINSTELLUNG */}
+                <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200/60">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      className="w-16 h-8 text-xs"
+                      value={court.start_hour || 8}
+                      onChange={(e) => handleUpdateHours(court.id, parseInt(e.target.value), court.end_hour || 22)}
+                    />
+                    <span className="text-xs text-slate-400">bis</span>
+                    <Input
+                      type="number"
+                      className="w-16 h-8 text-xs"
+                      value={court.end_hour || 22}
+                      onChange={(e) => handleUpdateHours(court.id, court.start_hour || 8, parseInt(e.target.value))}
+                    />
+                    <span className="text-xs text-slate-400">Uhr</span>
                   </div>
+                </div>
 
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => handleDelete(court.id)}
-                    className="text-red-400 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </CardContent>
-              </Card>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(court.id)}
+                  className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
           ))}
           {courts.length === 0 && <p className="text-slate-500 italic">Keine Plätze angelegt.</p>}
         </div>
 
         {/* NEU ERSTELLEN FORMULAR */}
-        <div className="flex flex-col md:flex-row gap-3 items-end border-t pt-4">
+        <div className="flex flex-col md:flex-row gap-3 items-end border-t border-slate-200/60 pt-4">
           <div className="grid gap-1 flex-1 w-full">
             <Label className="text-xs font-medium">Name</Label>
             <Input 
@@ -167,7 +167,7 @@ export function CourtManager({
             </Select>
           </div>
 
-          <Button onClick={handleAdd} disabled={isLoading} className="w-full md:w-auto">
+          <Button onClick={handleAdd} disabled={isLoading} className="w-full md:w-auto rounded-full">
             {isLoading ? "..." : <Plus className="h-4 w-4" />}
           </Button>
         </div>

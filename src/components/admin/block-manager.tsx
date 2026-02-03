@@ -66,7 +66,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
   }
 
   return (
-    <Card className="mt-8 border-orange-200 bg-orange-50/50">
+    <Card className="rounded-2xl border border-orange-200/70 bg-orange-50/60 shadow-sm">
         <CardHeader>
             <CardTitle className="text-orange-900 flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5"/> Sperrzeiten & Events
@@ -77,7 +77,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
             {/* LISTE DER SPERREN */}
             <div className="space-y-2">
                 {blocks.map(block => (
-                    <div key={block.id} className="bg-white p-3 rounded-md border flex justify-between items-center text-sm shadow-sm">
+                    <div key={block.id} className="bg-white p-3 rounded-xl border border-slate-200/60 flex justify-between items-center text-sm shadow-sm">
                         <div>
                             <span className="font-bold text-slate-800">{block.reason}</span>
                             <span className="mx-2 text-slate-400">|</span>
@@ -92,7 +92,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
                             size="icon" 
                             onClick={() => handleDelete(block.id)} 
                             disabled={isDeletingId === block.id}
-                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full"
                         >
                             {isDeletingId === block.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                         </Button>
@@ -102,7 +102,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
             </div>
 
             {/* NEUE SPERRE */}
-            <div className="grid gap-4 md:grid-cols-4 items-end bg-white p-4 rounded-lg border">
+            <div className="grid gap-4 md:grid-cols-4 items-end bg-white p-4 rounded-xl border border-slate-200/60">
                 <div className="space-y-1">
                     <Label>Grund</Label>
                     <Input placeholder="z.B. Winterpause" value={reason} onChange={e => setReason(e.target.value)} />
@@ -126,7 +126,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
                     </Select>
                 </div>
             </div>
-            <Button onClick={handleAdd} disabled={isLoading} className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+            <Button onClick={handleAdd} disabled={isLoading} className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-full">
                 {isLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
                 {isLoading ? "Speichere..." : "Sperrzeit eintragen"}
             </Button>

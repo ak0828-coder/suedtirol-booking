@@ -29,14 +29,14 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
     }
 
     return (
-        <Card>
+        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                     <Ticket className="w-5 h-5" /> Gutscheine & Codes
                 </CardTitle>
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
                     <DialogTrigger asChild>
-                        <Button size="sm"><Plus className="w-4 h-4 mr-2"/> Code erstellen</Button>
+                        <Button size="sm" className="rounded-full"><Plus className="w-4 h-4 mr-2"/> Code erstellen</Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
@@ -63,7 +63,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                                     <Input name="expiresAt" type="date" />
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full" disabled={loading}>
+                            <Button type="submit" className="w-full rounded-full" disabled={loading}>
                                 {loading ? <Loader2 className="animate-spin" /> : "Erstellen"}
                             </Button>
                         </form>
@@ -73,7 +73,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
             <CardContent>
                 <Table>
                     <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-slate-50/80">
                             <TableHead>Code</TableHead>
                             <TableHead>Wert</TableHead>
                             <TableHead>Nutzung</TableHead>
@@ -88,7 +88,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                             const isUsedUp = (v.usage_count || 0) >= (v.usage_limit || 1)
                             
                             return (
-                                <TableRow key={v.id}>
+                                <TableRow key={v.id} className="hover:bg-slate-50/80">
                                     <TableCell className="font-mono font-bold">{v.code}</TableCell>
                                     <TableCell>{v.amount}€</TableCell>
                                     <TableCell>{v.usage_count || 0} / {v.usage_limit || 1}</TableCell>
@@ -108,7 +108,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="text-red-500 hover:text-red-700"
+                                            className="text-red-500 hover:text-red-700 rounded-full"
                                             onClick={async () => {
                                                 if(confirm("Löschen?")) await deleteVoucher(v.id, clubSlug)
                                             }}

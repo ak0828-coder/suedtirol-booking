@@ -24,7 +24,7 @@ export function ClubSettings({ club }: { club: any }) {
     }
 
     return (
-        <Card>
+        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Settings className="w-5 h-5" /> Vereinseinstellungen
@@ -66,7 +66,7 @@ export function ClubSettings({ club }: { club: any }) {
                     <div className="space-y-2">
                         <Label htmlFor="cancellation">Stornierungsfrist (für Mitglieder)</Label>
                         <Select name="cancellation_buffer_hours" defaultValue={String(club.cancellation_buffer_hours || "24")}>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white">
                                 <SelectValue placeholder="Wähle eine Frist" />
                             </SelectTrigger>
                             <SelectContent>
@@ -90,7 +90,7 @@ export function ClubSettings({ club }: { club: any }) {
                     </div>
 
                     <div className="pt-2">
-                        <Button type="submit" disabled={loading} className="w-full md:w-auto">
+                        <Button type="submit" disabled={loading} className="w-full md:w-auto rounded-full">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Speichern
                         </Button>

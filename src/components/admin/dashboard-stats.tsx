@@ -57,38 +57,37 @@ export function DashboardStats({ bookings, courts }: { bookings: any[], courts: 
 
   return (
     <div className="space-y-4">
-      
       {/* KPI KARTEN */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gesamtumsatz</CardTitle>
             <Euro className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRevenue}€</div>
+            <div className="text-2xl font-semibold">{totalRevenue}€</div>
             <p className="text-xs text-muted-foreground">+20.1% zum Vormonat (Demo)</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Buchungen</CardTitle>
             <CalendarCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalBookings}</div>
+            <div className="text-2xl font-semibold">{totalBookings}</div>
             <p className="text-xs text-muted-foreground">Aktuell im System</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Top Platz</CardTitle>
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bestCourt}</div>
+            <div className="text-2xl font-semibold">{bestCourt}</div>
             <p className="text-xs text-muted-foreground">Am häufigsten gebucht</p>
           </CardContent>
         </Card>
@@ -98,7 +97,7 @@ export function DashboardStats({ bookings, courts }: { bookings: any[], courts: 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         
         {/* BALKENDIAGRAMM (Umsatz) */}
-        <Card className="col-span-4">
+        <Card className="col-span-4 rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle>Umsatz Übersicht</CardTitle>
           </CardHeader>
@@ -132,7 +131,7 @@ export function DashboardStats({ bookings, courts }: { bookings: any[], courts: 
         </Card>
 
         {/* TORTENDIAGRAMM (Plätze) */}
-        <Card className="col-span-3">
+        <Card className="col-span-3 rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle>Platzverteilung</CardTitle>
           </CardHeader>
