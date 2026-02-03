@@ -105,15 +105,18 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
         )}
 
         {/* HAUPT-BEREICH */}
-        <div className="grid xl:grid-cols-2 gap-6">
-          {/* SPALTE 1: BUCHUNGEN */}
-          <div>
-            <Card className="h-full rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
-              <CardHeader>
+        <div className="grid xl:grid-cols-3 gap-6">
+          {/* SPALTE 1-2: BUCHUNGEN */}
+          <div className="xl:col-span-2 space-y-6">
+            <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Letzte Aktivitäten</CardTitle>
+                <span className="text-xs text-slate-500">
+                  {bookings?.length || 0} Einträge
+                </span>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[620px] overflow-auto pr-2">
                   {bookings?.map((booking: any) => (
                     <div key={booking.id} className="flex items-center justify-between p-4 border border-slate-200/60 rounded-xl bg-white hover:shadow-sm transition-shadow">
                       <div className="flex items-center gap-4">
@@ -152,19 +155,36 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
             </Card>
           </div>
 
-          {/* SPALTE 2: VERWALTUNG */}
-          <div className="space-y-8">
-            <ClubSettings club={club} />
-
-            {/* GUTSCHEIN MANAGER */}
-            <VoucherManager vouchers={vouchers || []} clubSlug={slug} />
-
-            <CourtManager initialCourts={courts || []} clubSlug={slug} />
-            <BlockManager clubSlug={slug} courts={courts || []} initialBlocks={blockedPeriods || []} />
-            <PlanManager clubSlug={slug} plans={plans || []} />
-            <MemberManager members={members || []} />
+          {/* SPALTE 3: QUICK ACTIONS */}
+          <div className="space-y-6 xl:sticky xl:top-6 h-fit">
+            <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+              <CardHeader>
+                <CardTitle>Schnellzugriff</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <a href="#club-settings" className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">Einstellungen</a>
+                  <a href="#vouchers" className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">Gutscheine</a>
+                  <a href="#courts" className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">Plätze</a>
+                  <a href="#blocks" className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">Sperrzeiten</a>
+                  <a href="#plans" className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">Abos</a>
+                  <a href="#members" className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">Mitglieder</a>
+                  <a href="#export" className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 col-span-2">CSV Export</a>
+                </div>
+              </CardContent>
+            </Card>
             <ExportManager clubSlug={slug} />
           </div>
+        </div>
+
+        {/* MANAGEMENT GRID */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div id="club-settings"><ClubSettings club={club} /></div>
+          <div id="vouchers"><VoucherManager vouchers={vouchers || []} clubSlug={slug} /></div>
+          <div id="courts"><CourtManager initialCourts={courts || []} clubSlug={slug} /></div>
+          <div id="blocks"><BlockManager clubSlug={slug} courts={courts || []} initialBlocks={blockedPeriods || []} /></div>
+          <div id="plans"><PlanManager clubSlug={slug} plans={plans || []} /></div>
+          <div id="members"><MemberManager members={members || []} /></div>
         </div>
       </div>
     </div>
