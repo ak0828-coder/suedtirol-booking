@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { Resend } from 'resend'
 import { BookingEmailTemplate } from '@/components/emails/booking-template'
+import { WelcomeMemberEmailTemplate } from '@/components/emails/welcome-member-template'
 import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
 
@@ -1034,4 +1035,194 @@ export async function requestPasswordReset(email: string) {
 
   if (error) return { success: false, error: error.message }
   return { success: true }
+}
+
+// --- NEU: MITGLIED EINLADEN (Admin) ---
+export async function inviteMember(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const clubSlug = formData.get("clubSlug") as string
+  const email = formData.get("email") as string
+  const firstName = formData.get("firstName") as string
+  const lastName = formData.get("lastName") as string
+
+  // E-Mail Format Check
+  if (!email || !email.includes('@')) return { success: false, error: "Ungültige E-Mail" }
+
+  const supabaseAdmin = getAdminClient()
+
+  // 1. Club & Rechte Check
+  const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  // 2. User Check / Create
+  let targetUserId = null
+  let isNewUser = false
+  let tempPassword = ""
+
+  // Wir suchen, ob der User global in Supabase schon existiert
+  const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers()
+  // Einfacher Check (in Produktion besser: getUserByEmail, aber listUsers ist hier ok für kleine Mengen)
+  const existingUser = listUsers.users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+
+  if (existingUser) {
+    targetUserId = existingUser.id
+  } else {
+    // User existiert nicht -> Erstellen
+    isNewUser = true
+    tempPassword = Math.random().toString(36).slice(-8) + "Aa1!"
+
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        name: `${firstName} ${lastName}`,
+        full_name: `${firstName} ${lastName}`,
+        must_change_password: true
+      }
+    })
+
+    if (createError) return { success: false, error: "Fehler beim User-Erstellen: " + createError.message }
+    if (!newUser.user) return { success: false, error: "User konnte nicht erstellt werden." }
+
+    targetUserId = newUser.user.id
+
+    // Profil anlegen
+    await supabaseAdmin.from('profiles').upsert({
+      id: targetUserId,
+      first_name: firstName,
+      last_name: lastName,
+      updated_at: new Date().toISOString()
+    })
+  }
+
+  // 3. Member Status setzen (Active)
+  const validUntil = new Date()
+  validUntil.setFullYear(validUntil.getFullYear() + 1) // Standard: 1 Jahr gültig
+
+  const { error: memberError } = await supabaseAdmin.from('club_members').upsert({
+    club_id: club.id,
+    user_id: targetUserId,
+    status: 'active',
+    valid_until: validUntil.toISOString(),
+    internal_notes: 'Vom Admin eingeladen am ' + new Date().toLocaleDateString()
+  }, { onConflict: 'club_id, user_id' })
+
+  if (memberError) return { success: false, error: "Datenbank Fehler: " + memberError.message }
+
+  // 4. E-Mail senden
+  try {
+    if (isNewUser) {
+      await resend.emails.send({
+        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        to: [email],
+        subject: `Willkommen im ${club.name}!`,
+        react: <WelcomeMemberEmailTemplate
+          clubName={club.name}
+          email={email}
+          password={tempPassword}
+          loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/login`}
+        />
+      })
+    } else {
+      // Existierender User: Info Mail
+      await resend.emails.send({
+        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        to: [email],
+        subject: `Du wurdest zu ${club.name} hinzugefügt`,
+        html: `
+          <div style="font-family: sans-serif; color: #333;">
+            <h1>Hallo ${firstName}!</h1>
+            <p>Du wurdest vom Administrator zum Verein <strong>${club.name}</strong> hinzugefügt.</p>
+            <p>Da du bereits einen Account bei uns hast, kannst du dich einfach einloggen und sofort Plätze buchen.</p>
+            <br/>
+            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Zum Verein</a>
+          </div>
+        `
+      })
+    }
+  } catch (err) {
+    console.error("Mail Error", err)
+    // Wir returnen trotzdem success, da der DB Eintrag geklappt hat
+  }
+
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true }
+}
+
+// --- NEU: CSV EXPORT ---
+export async function exportBookingsCsv(clubSlug: string, year: number, month: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 1. Admin Check (Owner oder Super Admin)
+  const supabaseAdmin = getAdminClient() // Wir nutzen den Admin Client für vollen Zugriff
+  const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+
+  if (!club || (club.owner_id !== user?.id && user?.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  // 2. Zeitraum berechnen (Monat)
+  const startDate = new Date(year, month - 1, 1) // Monat ist 0-basiert in JS, aber 1-basiert im UI
+  const endDate = new Date(year, month, 0, 23, 59, 59) // Letzter Tag des Monats
+
+  // 3. Daten holen
+  const { data: bookings } = await supabaseAdmin
+    .from('bookings')
+    .select(`
+            start_time,
+            end_time,
+            payment_status,
+            price_paid,
+            guest_name,
+            status,
+            courts (name)
+        `)
+    .eq('club_id', club.id)
+    .gte('start_time', startDate.toISOString())
+    .lte('start_time', endDate.toISOString())
+    .order('start_time', { ascending: true })
+
+  if (!bookings || bookings.length === 0) {
+    return { success: false, error: "Keine Buchungen in diesem Zeitraum." }
+  }
+
+  // 4. CSV generieren
+  // Header
+  const header = ["Datum", "Uhrzeit", "Platz", "Spieler", "Zahlart", "Betrag", "Status"]
+  const rows = bookings.map((b: any) => {
+    const date = new Date(b.start_time)
+    const dateStr = date.toLocaleDateString('de-DE')
+    const timeStr = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+
+    // Payment Status übersetzen
+    let payStatus = "Unbekannt"
+    if (b.payment_status === 'paid_stripe') payStatus = "Online (Stripe)"
+    if (b.payment_status === 'paid_cash') payStatus = "Bar / Vor Ort"
+    if (b.payment_status === 'paid_member') payStatus = "Mitglied (Kostenlos)"
+
+    return [
+      dateStr,
+      timeStr,
+      b.courts?.name || "Gelöschter Platz",
+      `"${b.guest_name || '-'}"`, // Anführungszeichen für Namen mit Kommas
+      payStatus,
+      (b.price_paid || 0).toString().replace('.', ','), // Deutsches Format für Excel
+      b.status
+    ].join(";") // Semikolon ist besser für Excel in DE
+  })
+
+  const csvContent = [header.join(";"), ...rows].join("\n")
+
+  return { success: true, csv: csvContent, filename: `buchungen_${year}_${month}.csv` }
 }

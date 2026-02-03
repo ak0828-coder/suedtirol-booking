@@ -13,6 +13,7 @@ import { PlanManager } from "@/components/admin/plan-manager"
 import { MemberManager } from "@/components/admin/member-manager" 
 import { ClubSettings } from "@/components/admin/club-settings"
 import { VoucherManager } from "@/components/admin/voucher-manager"
+import { ExportManager } from "@/components/admin/export-manager"
 // NEU: Import der Server Action
 import { getClubVouchers } from "@/app/actions"
 
@@ -166,6 +167,7 @@ export default async function AdminPage({ params }: { params: Promise<{ slug: st
                <BlockManager clubSlug={slug} courts={courts || []} initialBlocks={blockedPeriods || []} />
                <PlanManager clubSlug={slug} plans={plans || []} />
                <MemberManager members={members || []} />
+               <ExportManager clubSlug={slug} />
             </div>
 
           </div>

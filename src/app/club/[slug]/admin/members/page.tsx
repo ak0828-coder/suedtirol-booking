@@ -1,9 +1,9 @@
-import { getClubMembers, getMyClubSlug } from "@/app/actions"
-import { redirect } from "next/navigation"
+import { getClubMembers } from "@/app/actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FileText, Edit } from "lucide-react"
+import { Edit } from "lucide-react"
+import { InviteMemberDialog } from "@/components/admin/invite-member-dialog"
 
 export default async function AdminMembersPage({ params }: { params: { slug: string } }) {
     // Security Check (bestehende Logik nutzen oder getMyClubSlug)
@@ -14,7 +14,7 @@ export default async function AdminMembersPage({ params }: { params: { slug: str
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Mitglieder-Kartei</h1>
-                <Button>Mitglied einladen</Button>
+                <InviteMemberDialog clubSlug={slug} />
             </div>
 
             <div className="border rounded-lg bg-white">
