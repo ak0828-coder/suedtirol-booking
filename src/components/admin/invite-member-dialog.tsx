@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { inviteMember } from "@/app/actions"
@@ -45,7 +45,7 @@ export function InviteMemberDialog({ clubSlug }: { clubSlug: string }) {
         <DialogHeader>
           <DialogTitle>Mitglied einladen</DialogTitle>
           <DialogDescription>
-            Das neue Mitglied erh�lt eine E-Mail mit Zugangsdaten und wird sofort als "Aktiv" freigeschaltet.
+            Das neue Mitglied erhält eine E-Mail mit Zugangsdaten und wird sofort als "Aktiv" freigeschaltet.
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4 mt-2">
