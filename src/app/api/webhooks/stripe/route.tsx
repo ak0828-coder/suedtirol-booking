@@ -4,6 +4,8 @@ import { stripe } from "@/lib/stripe"
 import { createClient } from "@supabase/supabase-js"
 import { Resend } from 'resend'
 import { WelcomeMemberEmailTemplate } from '@/components/emails/welcome-member-template'
+import { BookingEmailTemplate } from '@/components/emails/booking-template'
+import { format } from "date-fns"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -187,6 +189,29 @@ export async function POST(req: Request) {
             })
             
             console.log(`✅ Stripe Buchung angelegt: ${amountTotal}€ für ${time} Uhr`)
+
+            // BUCHUNGSMAIL AN KUNDEN
+            if (customerEmail) {
+                try {
+                    const orderId = "ORD-" + Math.floor(Math.random() * 100000)
+                    await resend.emails.send({
+                        from: 'Suedtirol Booking <onboarding@resend.dev>',
+                        to: [customerEmail],
+                        subject: `Deine Buchung am ${format(startTime, 'dd.MM.yyyy')} um ${time}`,
+                        react: <BookingEmailTemplate
+                            guestName={guestName || customerEmail || "Gast"}
+                            courtName="Tennisplatz"
+                            date={format(startTime, 'dd.MM.yyyy')}
+                            time={time}
+                            price={amountTotal}
+                            orderId={orderId}
+                        />,
+                    })
+                    console.log("📧 Buchungs-Mail (Stripe) gesendet.")
+                } catch (emailError) {
+                    console.error("❌ Buchungs-Mail Fehler:", emailError)
+                }
+            }
         }
     }
   }
