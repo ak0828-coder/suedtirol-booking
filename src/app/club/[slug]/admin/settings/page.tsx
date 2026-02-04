@@ -19,37 +19,50 @@ export default async function AdminSettingsPage({
   return (
     <>
       <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-semibold">Einstellungen & CMS</h2>
-            <p className="text-slate-500 text-sm">
-              Branding, Vereinsdaten und alle Texte der Club-Seite zentral verwalten.
-            </p>
-          </div>
-          <div className="text-xs text-slate-500">
-            Tipp: Änderungen sind sofort live auf der Club-Seite.
-          </div>
+        <h2 className="text-2xl md:text-3xl font-semibold">Einstellungen</h2>
+        <p className="text-slate-500 text-sm">
+          Hier bearbeitest du Vereinsdaten und alle Texte der Club-Seite. Änderungen sind sofort live.
+        </p>
+        <div className="mt-4 rounded-xl border border-slate-200/60 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          So funktioniert’s:
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+          <span className="rounded-full border border-slate-200 bg-white px-2 py-1">1. Vereinsdaten prüfen</span>
+          <span className="rounded-full border border-slate-200 bg-white px-2 py-1">2. Texte anpassen</span>
+          <span className="rounded-full border border-slate-200 bg-white px-2 py-1">3. Speichern</span>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900">Vereins-Einstellungen</h3>
-            <p className="mt-1 text-sm text-slate-500">Logo, Farben und Kontaktdaten.</p>
+      <div className="space-y-8">
+        <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+              1
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Vereinsdaten</h3>
+              <p className="text-sm text-slate-500">Logo, Farben und grundlegende Infos.</p>
+            </div>
           </div>
-          <ClubSettings club={club} />
-        </div>
+          <div className="mt-5">
+            <ClubSettings club={club} />
+          </div>
+        </section>
 
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900">Seiten-Editor</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              Texte, Buttons und Impressum der Club-Seite.
-            </p>
+        <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+              2
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Seiten-Inhalte</h3>
+              <p className="text-sm text-slate-500">Hero, Texte, Buttons und Impressum.</p>
+            </div>
           </div>
-          <ClubCmsEditor clubSlug={slug} initialContent={initialContent} clubName={club.name} />
-        </div>
+          <div className="mt-5">
+            <ClubCmsEditor clubSlug={slug} initialContent={initialContent} clubName={club.name} />
+          </div>
+        </section>
       </div>
     </>
   )
