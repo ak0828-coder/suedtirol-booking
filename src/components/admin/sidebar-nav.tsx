@@ -23,28 +23,30 @@ export function SidebarNav({
       {items.map((item) => {
         const href = `${base}${item.href}`
         const isActive = pathname === href
+        const accent = accentColor || "#0f172a"
 
         return (
           <Link
             key={item.label}
             href={href}
             className={cn(
-              "relative block rounded-xl border px-3 py-2 text-sm transition-colors duration-150",
+              "relative block rounded-xl border px-3 py-2 text-sm transition-all duration-150",
               isActive
-                ? "border-slate-200 bg-slate-100 text-slate-900 font-medium shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]"
-                : "border-transparent text-slate-700 hover:bg-slate-50 hover:border-slate-200/60"
+                ? "border-slate-200 bg-slate-100 font-medium shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]"
+                : "border-transparent text-slate-700 hover:bg-slate-50 hover:border-slate-200/60 hover:-translate-y-[1px] hover:shadow-sm"
             )}
+            style={isActive ? { color: accent } : undefined}
           >
             {isActive && (
               <>
                 <span
                   className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full"
-                  style={{ backgroundColor: accentColor || "#0f172a" }}
+                  style={{ backgroundColor: accent }}
                   aria-hidden="true"
                 />
                 <span
                   className="pointer-events-none absolute -left-2 top-1 bottom-1 w-6 rounded-full blur-md opacity-50"
-                  style={{ backgroundColor: accentColor || "#0f172a" }}
+                  style={{ backgroundColor: accent }}
                   aria-hidden="true"
                 />
               </>
