@@ -20,6 +20,28 @@ type MatchRecapFormProps = {
   memberOptions?: { id: string; name: string }[]
 }
 
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const r = Math.min(radius, width / 2, height / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + width - r, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r)
+  ctx.lineTo(x + width, y + height - r)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height)
+  ctx.lineTo(x + r, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
+}
+
 export function MatchRecapForm({
   token,
   clubName,
@@ -68,58 +90,86 @@ export function MatchRecapForm({
     canvas.height = height
 
     const gradient = ctx.createLinearGradient(0, 0, width, height)
-    gradient.addColorStop(0, "#0f172a")
+    gradient.addColorStop(0, "#0b1220")
+    gradient.addColorStop(0.5, "#0f172a")
     gradient.addColorStop(1, color)
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, width, height)
+
+    ctx.save()
+    ctx.translate(width * 0.1, height * 0.2)
+    ctx.rotate(-0.15)
+    ctx.fillStyle = "rgba(255,255,255,0.04)"
+    ctx.fillRect(-200, 0, width + 200, 90)
+    ctx.fillRect(-200, 150, width + 200, 60)
+    ctx.fillRect(-200, 280, width + 200, 40)
+    ctx.restore()
 
     ctx.fillStyle = "rgba(255,255,255,0.08)"
     ctx.beginPath()
     ctx.arc(width * 0.8, height * 0.2, 180, 0, Math.PI * 2)
     ctx.fill()
 
-    ctx.fillStyle = "rgba(255,255,255,0.05)"
+    ctx.fillStyle = "rgba(255,255,255,0.06)"
     ctx.beginPath()
     ctx.arc(width * 0.2, height * 0.85, 220, 0, Math.PI * 2)
     ctx.fill()
 
     ctx.fillStyle = "rgba(255,255,255,0.9)"
-    ctx.font = "600 48px Arial"
-    ctx.fillText(clubName, 80, 120)
+    ctx.font = "700 52px Arial"
+    ctx.fillText(clubName, 80, 110)
 
     ctx.fillStyle = "rgba(255,255,255,0.7)"
-    ctx.font = "500 28px Arial"
-    ctx.fillText("Match Recap", 80, 165)
+    ctx.font = "600 26px Arial"
+    ctx.fillText("MATCH CARD", 80, 150)
 
     ctx.fillStyle = "rgba(255,255,255,0.75)"
-    ctx.font = "500 28px Arial"
-    ctx.fillText(`${dateLabel} • ${timeLabel}`, 80, 220)
+    ctx.font = "500 26px Arial"
+    ctx.fillText(`${dateLabel} • ${timeLabel}`, 80, 190)
 
     ctx.strokeStyle = "rgba(255,255,255,0.2)"
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(80, 260)
-    ctx.lineTo(width - 80, 260)
+    ctx.moveTo(80, 230)
+    ctx.lineTo(width - 80, 230)
     ctx.stroke()
 
-    ctx.fillStyle = "white"
-    ctx.font = "700 64px Arial"
-    ctx.fillText(playerName || "Dein Name", 80, 360)
-    ctx.fillStyle = "rgba(255,255,255,0.7)"
-    ctx.font = "600 32px Arial"
-    ctx.fillText("vs", 80, 415)
-    ctx.fillStyle = "white"
-    ctx.font = "700 64px Arial"
-    ctx.fillText(opponentName || "Gegner", 80, 490)
+    const panelX = 80
+    const panelY = 280
+    const panelW = width - 160
+    const panelH = 520
+    ctx.fillStyle = "rgba(15, 23, 42, 0.65)"
+    drawRoundedRect(ctx, panelX, panelY, panelW, panelH, 28)
+    ctx.fill()
+    ctx.strokeStyle = "rgba(255,255,255,0.12)"
+    ctx.lineWidth = 2
+    drawRoundedRect(ctx, panelX, panelY, panelW, panelH, 28)
+    ctx.stroke()
 
-    ctx.fillStyle = "rgba(255,255,255,0.85)"
+    const nameY = panelY + 110
+    ctx.fillStyle = "white"
     ctx.font = "700 64px Arial"
-    ctx.fillText(resultText || "6:4, 6:2", 80, 620)
+    ctx.fillText(playerName || "Dein Name", panelX + 40, nameY)
+
+    ctx.fillStyle = "rgba(255,255,255,0.6)"
+    ctx.font = "700 34px Arial"
+    ctx.fillText("VS", panelX + 40, nameY + 60)
+
+    ctx.fillStyle = "white"
+    ctx.font = "700 64px Arial"
+    ctx.fillText(opponentName || "Gegner", panelX + 40, nameY + 140)
+
+    ctx.fillStyle = "rgba(255,255,255,0.95)"
+    ctx.font = "800 72px Arial"
+    ctx.fillText(resultText || "6:4, 6:2", panelX + 40, nameY + 260)
 
     if (winnerName) {
       ctx.fillStyle = "rgba(255,215,0,0.9)"
-      ctx.font = "700 32px Arial"
-      ctx.fillText(`Winner: ${winnerName}`, 80, 680)
+      drawRoundedRect(ctx, panelX + 40, nameY + 300, 280, 50, 18)
+      ctx.fill()
+      ctx.fillStyle = "#0b1220"
+      ctx.font = "800 26px Arial"
+      ctx.fillText(`WINNER: ${winnerName}`, panelX + 60, nameY + 334)
     }
 
     ctx.fillStyle = "rgba(255,255,255,0.5)"
