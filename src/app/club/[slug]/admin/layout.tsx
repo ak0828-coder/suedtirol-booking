@@ -86,7 +86,7 @@ export default async function AdminLayout({
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
                 Navigation
               </div>
-              <SidebarNav slug={slug} items={navItems} />
+              <SidebarNav slug={slug} items={navItems} accentColor={club.primary_color} />
             </div>
           </aside>
 
