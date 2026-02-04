@@ -31,9 +31,9 @@ export function ClubCmsEditor({
     setContent((prev) => ({ ...prev, overview: { ...prev.overview, [field]: value } }))
   }
 
-  const updateSection = (
-    section: keyof ClubContent["sections"],
-    field: keyof ClubContent["sections"]["courts"],
+  const updateSection = <S extends keyof ClubContent["sections"]>(
+    section: S,
+    field: keyof ClubContent["sections"][S],
     value: string
   ) => {
     setContent((prev) => ({
