@@ -212,18 +212,30 @@ export function MatchRecapForm({
     link.click()
   }
 
-  const handleCopy = async () => {
+  const handleShare = async () => {
     const canvas = canvasRef.current
-    if (!canvas || !("clipboard" in navigator)) return
+    if (!canvas) return
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve))
     if (!blob) return
-    try {
-      // @ts-ignore
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
-      setMessage("Bild in Zwischenablage kopiert.")
-    } catch {
-      setMessage("Kopieren nicht unterstützt. Bitte Download nutzen.")
+
+    const file = new File([blob], "match-card.png", { type: "image/png" })
+
+    // Web Share API (mobile-first)
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: "Match Card",
+          text: "Mein Match Recap",
+          files: [file],
+        })
+        setMessage("Teilen geöffnet.")
+        return
+      } catch {
+        // user cancelled -> ignore
+      }
     }
+
+    setMessage("Teilen nicht unterstützt. Bitte Download nutzen.")
   }
 
   return (
@@ -316,8 +328,8 @@ export function MatchRecapForm({
             <Button variant="outline" onClick={handleDownload} className="rounded-full">
               Download
             </Button>
-            <Button variant="outline" onClick={handleCopy} className="rounded-full">
-              Copy to Insta
+            <Button variant="outline" onClick={handleShare} className="rounded-full">
+              Teilen
             </Button>
           </div>
           {message && <div className="text-sm text-slate-500">{message}</div>}
