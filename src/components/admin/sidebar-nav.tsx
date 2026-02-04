@@ -27,12 +27,18 @@ export function SidebarNav({
             key={item.label}
             href={href}
             className={cn(
-              "block rounded-xl border px-3 py-2 text-sm transition-colors",
+              "relative block rounded-xl border px-3 py-2 text-sm transition-colors",
               isActive
                 ? "border-slate-200 bg-slate-100 text-slate-900 font-medium"
                 : "border-transparent text-slate-700 hover:bg-slate-50 hover:border-slate-200/60"
             )}
           >
+            {isActive && (
+              <span
+                className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full bg-slate-900"
+                aria-hidden="true"
+              />
+            )}
             {item.label}
           </Link>
         )
