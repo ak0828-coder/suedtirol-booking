@@ -1,37 +1,37 @@
-import { createClient } from "@/lib/supabase/server" 
+import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
-import { CalendarDays, MapPin, Check, LogIn, User } from "lucide-react"
+import { CalendarDays, MapPin, Check, LogIn, User, Sparkles, ChevronRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { BookingModal } from "@/components/booking-modal"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { MembershipPlans } from "@/components/membership-plans" 
+import { MembershipPlans } from "@/components/membership-plans"
 
 // Helper, um Daten zu holen
 async function getClubData(slug: string) {
-  const supabase = await createClient() 
-  
+  const supabase = await createClient()
+
   const { data: club } = await supabase
-    .from('clubs')
-    .select('*')
-    .eq('slug', slug)
+    .from("clubs")
+    .select("*")
+    .eq("slug", slug)
     .single()
 
   if (!club) return null
 
   const { data: courts } = await supabase
-    .from('courts')
-    .select('*')
-    .eq('club_id', club.id)
-    .order('name')
+    .from("courts")
+    .select("*")
+    .eq("club_id", club.id)
+    .order("name")
 
   // Pläne laden
   const { data: plans } = await supabase
-    .from('membership_plans')
-    .select('*')
-    .eq('club_id', club.id)
-    .order('price', { ascending: true })
+    .from("membership_plans")
+    .select("*")
+    .eq("club_id", club.id)
+    .order("price", { ascending: true })
 
   return { club, courts, plans }
 }
@@ -42,25 +42,33 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   const data = await getClubData(slug)
 
   // Prüfen, ob User eingeloggt ist (für den Header Button)
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!data) return notFound()
 
   const { club, courts, plans } = data
+  const courtCount = courts?.length || 0
+  const minPrice =
+    courts && courts.length > 0
+      ? Math.min(...courts.map((court: any) => court.price_per_hour || 0))
+      : null
 
   // --- NEU: PRÜFEN OB MEMBER ---
   let isMember = false
   if (user) {
-      const { data: member } = await supabase.from('club_members')
-        .select('id, status, valid_until')
-        .eq('club_id', club.id)
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single()
-      
-      if (member && member.valid_until && new Date(member.valid_until) > new Date()) {
-          isMember = true
-      }
+    const { data: member } = await supabase
+      .from("club_members")
+      .select("id, status, valid_until")
+      .eq("club_id", club.id)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .single()
+
+    if (member && member.valid_until && new Date(member.valid_until) > new Date()) {
+      isMember = true
+    }
   }
   // -----------------------------
 
@@ -87,44 +95,94 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
               </Link>
             ) : (
               <Link href="/login">
-                <Button variant="default" className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
+                <Button
+                  variant="default"
+                  className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+                >
                   <LogIn className="w-4 h-4" /> Login
                 </Button>
               </Link>
             )}
           </div>
 
-          <div className="mt-8 flex flex-col items-center text-center">
-            {/* LOGO */}
-            <div
-              className="w-24 h-24 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-xl overflow-hidden border border-white/70 dark:border-slate-800/70 bg-white"
-              style={{ backgroundColor: club.primary_color || '#e11d48' }}
-            >
-              {club.logo_url ? (
-                <img
-                  src={club.logo_url}
-                  alt={club.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span>{club.name.substring(0, 2).toUpperCase()}</span>
-              )}
+          <div className="mt-8 grid items-center gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
+              {/* LOGO */}
+              <div
+                className="w-24 h-24 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-xl overflow-hidden border border-white/70 dark:border-slate-800/70 bg-white"
+                style={{ backgroundColor: club.primary_color || "#e11d48" }}
+              >
+                {club.logo_url ? (
+                  <img src={club.logo_url} alt={club.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{club.name.substring(0, 2).toUpperCase()}</span>
+                )}
+              </div>
+
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                {club.name}
+              </h1>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">
+                Buche deinen Platz in Sekunden. Klar, schnell und ohne Umwege.
+              </p>
+
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 px-3 py-1 text-xs text-slate-600 dark:text-slate-300 shadow-sm">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Südtirol</span>
+                <span className="mx-2 h-3 w-px bg-slate-200 dark:bg-slate-700" />
+                <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+                  <Check className="w-3 h-3" /> Heute geöffnet
+                </span>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link href="#courts">
+                  <Button className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
+                    Jetzt buchen <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+                {plans && plans.length > 0 && !isMember && (
+                  <Link href="#membership">
+                    <Button variant="outline" className="gap-2 rounded-full">
+                      Mitglied werden
+                    </Button>
+                  </Link>
+                )}
+                {isMember && (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Mitglied aktiv
+                  </span>
+                )}
+              </div>
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-              {club.name}
-            </h1>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">
-              Buche deinen Platz in Sekunden. Klar, schnell und ohne Umwege.
-            </p>
-
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 px-3 py-1 text-xs text-slate-600 dark:text-slate-300 shadow-sm">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>Südtirol</span>
-              <span className="mx-2 h-3 w-px bg-slate-200 dark:bg-slate-700" />
-              <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
-                <Check className="w-3 h-3" /> Heute geöffnet
-              </span>
+            <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-900/80">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Club Überblick
+              </div>
+              <div className="mt-4 grid gap-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">Plätze</span>
+                  <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {courtCount}
+                  </span>
+                </div>
+                <div className="h-px bg-slate-200/60 dark:bg-slate-800/60" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">Ab Preis</span>
+                  <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {minPrice !== null ? `${minPrice}€` : "-"}
+                  </span>
+                </div>
+                <div className="h-px bg-slate-200/60 dark:bg-slate-800/60" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">Status</span>
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    <Check className="w-3.5 h-3.5" /> Heute geöffnet
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -132,10 +190,12 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
       <div className="mx-auto max-w-5xl px-4 mt-10">
         {/* SECTION 1: PLÄTZE */}
-        <div className="flex items-end justify-between mb-6">
+        <div id="courts" className="flex items-end justify-between mb-6 scroll-mt-24">
           <div>
             <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Unsere Plätze</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Wähle Platz und Uhrzeit – fertig.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Wähle Platz und Uhrzeit – fertig.
+            </p>
           </div>
         </div>
 
@@ -156,11 +216,17 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                       <div className="flex-1">
                         <div className="flex justify-between items-start gap-4">
                           <div>
-                            <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">{court.name}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">{court.sport_type || 'Tennis'}</p>
+                            <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">
+                              {court.name}
+                            </h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">
+                              {court.sport_type || "Tennis"}
+                            </p>
                           </div>
                           <div className="text-right">
-                            <span className="block text-lg font-semibold text-slate-900 dark:text-slate-100">{court.price_per_hour}€</span>
+                            <span className="block text-lg font-semibold text-slate-900 dark:text-slate-100">
+                              {court.price_per_hour}€
+                            </span>
                             <span className="text-xs text-slate-400">/ {duration} Min</span>
                           </div>
                         </div>
@@ -185,9 +251,15 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           })}
         </div>
 
+        {courtCount === 0 && (
+          <div className="mt-8 rounded-2xl border border-dashed border-slate-200/70 bg-white/70 p-8 text-center text-sm text-slate-500 dark:border-slate-800/70 dark:bg-slate-900/70 dark:text-slate-400">
+            Noch keine Plätze verfügbar.
+          </div>
+        )}
+
         {/* SECTION 2: MITGLIEDSCHAFTEN (Anzeige nur, wenn Pläne vorhanden sind und User kein Mitglied ist) */}
         {plans && plans.length > 0 && !isMember && (
-          <div className="mt-16 mb-12">
+          <div id="membership" className="mt-16 mb-12 scroll-mt-24">
             <MembershipPlans plans={plans} clubSlug={slug} />
           </div>
         )}
