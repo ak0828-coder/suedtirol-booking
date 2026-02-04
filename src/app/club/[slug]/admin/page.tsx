@@ -5,9 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "./_lib/get-admin-context"
-import { getClubContent } from "@/app/actions"
-import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
-import { ClubCmsEditor } from "@/components/admin/club-cms-editor"
 
 export const dynamic = "force-dynamic"
 
@@ -31,9 +28,6 @@ export default async function AdminPage({
     .select("*, courts (name)")
     .eq("club_id", club.id)
     .order("start_time", { ascending: false })
-
-  const storedContent = await getClubContent(slug)
-  const initialContent = applyClubDefaults(mergeClubContent(storedContent), club.name)
 
   return (
     <>
@@ -148,9 +142,6 @@ export default async function AdminPage({
         </div>
       </div>
 
-      <div className="mt-8">
-        <ClubCmsEditor clubSlug={slug} initialContent={initialContent} />
-      </div>
     </>
   )
 }
