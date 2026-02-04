@@ -23,9 +23,9 @@ export default async function AdminLayout({
   params,
 }: {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const { slug } = params
+  const { slug } = await params
   const { club, user, isSuperAdmin, hasAccess } = await getAdminContext(slug)
 
   if (!hasAccess) {
