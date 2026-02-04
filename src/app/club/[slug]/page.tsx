@@ -7,6 +7,7 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { MembershipPlans } from "@/components/membership-plans"
+import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
 
 // Helper, um Daten zu holen
 async function getClubData(slug: string) {
@@ -54,6 +55,15 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
     courts && courts.length > 0
       ? Math.min(...courts.map((court: any) => court.price_per_hour || 0))
       : null
+
+  const { data: contentRows } = await supabase
+    .from("club_content")
+    .select("content")
+    .eq("club_id", club.id)
+    .limit(1)
+
+  const storedContent = contentRows?.[0]?.content ?? null
+  const content = applyClubDefaults(mergeClubContent(storedContent), club.name)
 
   // --- NEU: PRÜFEN OB MEMBER ---
   let isMember = false
@@ -120,38 +130,38 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
               </div>
 
               <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                {club.name}
+                {content.hero.title}
               </h1>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md">
-                Buche deinen Platz in Sekunden. Klar, schnell und ohne Umwege.
+                {content.hero.subtitle}
               </p>
 
               <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 px-3 py-1 text-xs text-slate-600 dark:text-slate-300 shadow-sm">
                 <MapPin className="w-3.5 h-3.5" />
-                <span>Südtirol</span>
+                <span>{content.badges.locationText}</span>
                 <span className="mx-2 h-3 w-px bg-slate-200 dark:bg-slate-700" />
                 <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
-                  <Check className="w-3 h-3" /> Heute geöffnet
+                  <Check className="w-3 h-3" /> {content.badges.statusText}
                 </span>
               </div>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href="#courts">
                   <Button className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
-                    Jetzt buchen <ChevronRight className="w-4 h-4" />
+                    {content.hero.primaryCtaText} <ChevronRight className="w-4 h-4" />
                   </Button>
                 </Link>
                 {plans && plans.length > 0 && !isMember && (
                   <Link href="#membership">
                     <Button variant="outline" className="gap-2 rounded-full">
-                      Mitglied werden
+                      {content.hero.secondaryCtaText}
                     </Button>
                   </Link>
                 )}
                 {isMember && (
                   <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Mitglied aktiv
+                    {content.hero.memberBadgeText}
                   </span>
                 )}
               </div>
@@ -159,27 +169,33 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
             <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-900/80">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Club Überblick
+                {content.overview.title}
               </div>
               <div className="mt-4 grid gap-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">Plätze</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {content.overview.labelCourts}
+                  </span>
                   <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {courtCount}
                   </span>
                 </div>
                 <div className="h-px bg-slate-200/60 dark:bg-slate-800/60" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">Ab Preis</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {content.overview.labelFromPrice}
+                  </span>
                   <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {minPrice !== null ? `${minPrice}€` : "-"}
                   </span>
                 </div>
                 <div className="h-px bg-slate-200/60 dark:bg-slate-800/60" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">Status</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {content.overview.labelStatus}
+                  </span>
                   <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                    <Check className="w-3.5 h-3.5" /> Heute geöffnet
+                    <Check className="w-3.5 h-3.5" /> {content.badges.statusText}
                   </span>
                 </div>
               </div>
@@ -192,9 +208,11 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
         {/* SECTION 1: PLÄTZE */}
         <div id="courts" className="flex items-end justify-between mb-6 scroll-mt-24">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">Unsere Plätze</h2>
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
+              {content.sections.courts.title}
+            </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Wähle Platz und Uhrzeit – fertig.
+              {content.sections.courts.subtitle}
             </p>
           </div>
         </div>
@@ -260,9 +278,24 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
         {/* SECTION 2: MITGLIEDSCHAFTEN (Anzeige nur, wenn Pläne vorhanden sind und User kein Mitglied ist) */}
         {plans && plans.length > 0 && !isMember && (
           <div id="membership" className="mt-16 mb-12 scroll-mt-24">
-            <MembershipPlans plans={plans} clubSlug={slug} />
+            <MembershipPlans
+              plans={plans}
+              clubSlug={slug}
+              title={content.sections.membership.title}
+              subtitle={content.sections.membership.subtitle}
+              ctaLabel={content.sections.membership.ctaLabel}
+            />
           </div>
         )}
+
+        <footer className="mt-16 border-t border-slate-200/60 pt-6 text-sm text-slate-500 dark:border-slate-800/60 dark:text-slate-400">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <span>{content.footer.smallText}</span>
+            <Link href={`/club/${slug}/impressum`} className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
+              {content.footer.impressumLinkText}
+            </Link>
+          </div>
+        </footer>
       </div>
     </div>
   )

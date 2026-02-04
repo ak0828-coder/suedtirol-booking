@@ -1037,6 +1037,75 @@ export async function requestPasswordReset(email: string) {
   return { success: true }
 }
 
+// ==========================================
+// --- CLUB PAGE CMS CONTENT ---
+// ==========================================
+
+export async function getClubContent(clubSlug: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const supabaseAdmin = getAdminClient()
+
+    const { data: club } = await supabaseAdmin
+        .from('clubs')
+        .select('id, owner_id')
+        .eq('slug', clubSlug)
+        .single()
+
+    if (!club) return null
+
+    const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+    if (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
+        return null
+    }
+
+    const { data } = await supabaseAdmin
+        .from('club_content')
+        .select('content')
+        .eq('club_id', club.id)
+        .single()
+
+    return data?.content || null
+}
+
+export async function updateClubContent(clubSlug: string, content: any) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+    const supabaseAdmin = getAdminClient()
+
+    const { data: club } = await supabaseAdmin
+        .from('clubs')
+        .select('id, owner_id')
+        .eq('slug', clubSlug)
+        .single()
+
+    if (!club) return { success: false, error: "Club Fehler" }
+
+    const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+    if (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
+        return { success: false, error: "Keine Berechtigung" }
+    }
+
+    const { error } = await supabaseAdmin
+        .from('club_content')
+        .upsert({
+            club_id: club.id,
+            content: content,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'club_id' })
+
+    if (error) return { success: false, error: error.message }
+
+    revalidatePath(`/club/${clubSlug}`)
+    revalidatePath(`/club/${clubSlug}/impressum`)
+    revalidatePath(`/club/${clubSlug}/admin`)
+    return { success: true }
+}
+
 // --- NEU: MITGLIED EINLADEN (Admin) ---
 export async function inviteMember(formData: FormData) {
   const supabase = await createClient()
