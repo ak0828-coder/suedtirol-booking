@@ -1,11 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
-import { useAdminContext } from "@/components/admin/admin-context"
 import { CourtManager } from "@/components/admin/court-manager"
+import { getAdminContext } from "../_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminCourtsPage() {
-  const { club, slug } = useAdminContext()
+export default async function AdminCourtsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const { club } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: courts } = await supabase

@@ -4,12 +4,17 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
-import { useAdminContext } from "@/components/admin/admin-context"
+import { getAdminContext } from "./_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminPage() {
-  const { club, slug } = useAdminContext()
+export default async function AdminPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const { club } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: courts } = await supabase

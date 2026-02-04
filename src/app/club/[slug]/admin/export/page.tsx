@@ -1,10 +1,15 @@
-import { useAdminContext } from "@/components/admin/admin-context"
 import { ExportManager } from "@/components/admin/export-manager"
+import { getAdminContext } from "../_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminExportPage() {
-  const { slug } = useAdminContext()
+export default async function AdminExportPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  await getAdminContext(slug)
 
   return (
     <>

@@ -1,11 +1,16 @@
 import { getClubVouchers } from "@/app/actions"
-import { useAdminContext } from "@/components/admin/admin-context"
 import { VoucherManager } from "@/components/admin/voucher-manager"
+import { getAdminContext } from "../_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminVouchersPage() {
-  const { slug } = useAdminContext()
+export default async function AdminVouchersPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  await getAdminContext(slug)
   const vouchers = await getClubVouchers(slug)
 
   return (

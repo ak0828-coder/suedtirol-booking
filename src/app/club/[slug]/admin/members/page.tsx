@@ -1,13 +1,18 @@
 import { getClubMembers } from "@/app/actions"
-import { useAdminContext } from "@/components/admin/admin-context"
 import { InviteMemberDialog } from "@/components/admin/invite-member-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit } from "lucide-react"
+import { getAdminContext } from "../_lib/get-admin-context"
 
-export default async function AdminMembersPage() {
-  const { slug } = useAdminContext()
+export default async function AdminMembersPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  await getAdminContext(slug)
   const members = await getClubMembers(slug)
 
   return (

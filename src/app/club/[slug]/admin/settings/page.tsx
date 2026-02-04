@@ -1,10 +1,15 @@
-import { useAdminContext } from "@/components/admin/admin-context"
 import { ClubSettings } from "@/components/admin/club-settings"
+import { getAdminContext } from "../_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminSettingsPage() {
-  const { club } = useAdminContext()
+export default async function AdminSettingsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const { club } = await getAdminContext(slug)
 
   return (
     <>

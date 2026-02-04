@@ -1,13 +1,18 @@
 import { format } from "date-fns"
 import { createClient } from "@/lib/supabase/server"
-import { useAdminContext } from "@/components/admin/admin-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
+import { getAdminContext } from "../_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminBookingsPage() {
-  const { club } = useAdminContext()
+export default async function AdminBookingsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const { club } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: bookings } = await supabase
