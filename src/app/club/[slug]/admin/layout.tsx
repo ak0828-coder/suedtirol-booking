@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { LogOut, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { SidebarNav } from "@/components/admin/sidebar-nav"
 import { getAdminContext } from "./_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
@@ -85,17 +86,7 @@ export default async function AdminLayout({
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
                 Navigation
               </div>
-              <nav className="space-y-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={`/club/${slug}/admin${item.href}`}
-                    className="block rounded-xl border border-transparent px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:border-slate-200/60"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
+              <SidebarNav slug={slug} items={navItems} />
             </div>
           </aside>
 
