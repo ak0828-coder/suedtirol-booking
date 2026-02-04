@@ -48,7 +48,7 @@ export default async function AdminSettingsPage({
               Texte, Buttons und Impressum der Club-Seite.
             </p>
           </div>
-          <ClubCmsEditor clubSlug={slug} initialContent={initialContent} />
+          <ClubCmsEditor clubSlug={slug} initialContent={initialContent} clubName={club.name} />
         </div>
       </div>
     </>
