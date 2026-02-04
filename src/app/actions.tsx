@@ -691,21 +691,41 @@ export async function createBooking(
   // Mail versenden
   try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000)
-    const recipient = club.admin_email || SUPER_ADMIN_EMAIL || "fallback@example.com"
+    const customerEmail = user?.email || guestEmail || null
+    const adminEmail = club.admin_email || SUPER_ADMIN_EMAIL || null
+    const guestLabel = user ? "Mitglied" : (guestName || "Gast")
 
-    await resend.emails.send({
-      from: 'Suedtirol Booking <onboarding@resend.dev>',
-      to: [recipient],
-      subject: `Buchung: ${format(date, 'dd.MM.yyyy')} um ${time}`,
-      react: <BookingEmailTemplate
-        guestName={user ? "Mitglied" : "Gast"}
-        courtName="Tennisplatz"
-        date={format(date, 'dd.MM.yyyy')}
-        time={time}
-        price={finalPrice}
-        orderId={orderId}
-      />,
-    })
+    if (customerEmail) {
+      await resend.emails.send({
+        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        to: [customerEmail],
+        subject: `Deine Buchung am ${format(date, 'dd.MM.yyyy')} um ${time}`,
+        react: <BookingEmailTemplate
+          guestName={guestLabel}
+          courtName="Tennisplatz"
+          date={format(date, 'dd.MM.yyyy')}
+          time={time}
+          price={finalPrice}
+          orderId={orderId}
+        />,
+      })
+    }
+
+    if (adminEmail && adminEmail !== customerEmail) {
+      await resend.emails.send({
+        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        to: [adminEmail],
+        subject: `Neue Buchung: ${format(date, 'dd.MM.yyyy')} um ${time}`,
+        react: <BookingEmailTemplate
+          guestName={guestLabel}
+          courtName="Tennisplatz"
+          date={format(date, 'dd.MM.yyyy')}
+          time={time}
+          price={finalPrice}
+          orderId={orderId}
+        />,
+      })
+    }
   } catch (err) {
     console.error("Mail Fehler:", err)
   }
