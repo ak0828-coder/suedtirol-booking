@@ -16,6 +16,8 @@ type MatchRecapFormProps = {
   initialPlayerName: string
   initialOpponentName?: string | null
   initialResult?: string | null
+  isMemberMode?: boolean
+  memberOptions?: { id: string; name: string }[]
 }
 
 export function MatchRecapForm({
@@ -28,10 +30,14 @@ export function MatchRecapForm({
   initialPlayerName,
   initialOpponentName,
   initialResult,
+  isMemberMode = false,
+  memberOptions = [],
 }: MatchRecapFormProps) {
   const [playerName, setPlayerName] = useState(initialPlayerName)
   const [opponentName, setOpponentName] = useState(initialOpponentName || "")
   const [resultText, setResultText] = useState(initialResult || "")
+  const [opponentUserId, setOpponentUserId] = useState<string | null>(null)
+  const [useMemberOpponent, setUseMemberOpponent] = useState(isMemberMode)
   const [message, setMessage] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -138,6 +144,7 @@ export function MatchRecapForm({
       playerName: playerName.trim(),
       opponentName: opponentName.trim(),
       resultText: resultText.trim(),
+      opponentUserId,
     })
     if (res?.success) {
       setMessage("Ergebnis gespeichert. Du kannst die Card teilen.")
@@ -183,13 +190,70 @@ export function MatchRecapForm({
         </div>
 
         <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm space-y-4">
+          {isMemberMode && (
+            <div className="rounded-xl border border-emerald-200/60 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+              Mitgliedsmodus aktiv – dein Name ist fix.
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Mein Name</Label>
-            <Input value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
+            <Input value={playerName} onChange={(e) => setPlayerName(e.target.value)} disabled={isMemberMode} />
           </div>
           <div className="space-y-2">
             <Label>Gegner Name</Label>
-            <Input value={opponentName} onChange={(e) => setOpponentName(e.target.value)} />
+            {isMemberMode && (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <button
+                  type="button"
+                  className={useMemberOpponent ? "rounded-full border border-slate-200 bg-slate-100 px-2 py-1" : "rounded-full border border-slate-200 px-2 py-1"}
+                  onClick={() => setUseMemberOpponent(true)}
+                >
+                  Mitglied wählen
+                </button>
+                <button
+                  type="button"
+                  className={!useMemberOpponent ? "rounded-full border border-slate-200 bg-slate-100 px-2 py-1" : "rounded-full border border-slate-200 px-2 py-1"}
+                  onClick={() => {
+                    setUseMemberOpponent(false)
+                    setOpponentUserId(null)
+                  }}
+                >
+                  Nicht Mitglied
+                </button>
+              </div>
+            )}
+            {useMemberOpponent && memberOptions.length > 0 ? (
+              <div className="space-y-2">
+                <Input
+                  placeholder="Mitglied suchen…"
+                  value={opponentName}
+                  onChange={(e) => {
+                    setOpponentName(e.target.value)
+                    setOpponentUserId(null)
+                  }}
+                />
+                <div className="max-h-40 overflow-auto rounded-lg border border-slate-200">
+                  {memberOptions
+                    .filter((m) => m.name.toLowerCase().includes(opponentName.toLowerCase()))
+                    .slice(0, 6)
+                    .map((m) => (
+                      <button
+                        type="button"
+                        key={m.id}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
+                        onClick={() => {
+                          setOpponentName(m.name)
+                          setOpponentUserId(m.id)
+                        }}
+                      >
+                        {m.name}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <Input value={opponentName} onChange={(e) => setOpponentName(e.target.value)} />
+            )}
           </div>
           <div className="space-y-2">
             <Label>Ergebnis (z.B. 6:4, 6:2)</Label>

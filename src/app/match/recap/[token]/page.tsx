@@ -13,7 +13,12 @@ export default async function MatchRecapPage({
 
   if (!data) return notFound()
 
-  const { recap, booking, club } = data
+  const { recap, booking, club, playerProfile, members } = data
+
+  const playerName =
+    playerProfile?.first_name || playerProfile?.last_name
+      ? `${playerProfile?.first_name || ""} ${playerProfile?.last_name || ""}`.trim()
+      : recap.guest_name || "Spieler"
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-6">
@@ -25,9 +30,11 @@ export default async function MatchRecapPage({
           clubColor={club?.primary_color}
           dateLabel={format(new Date(booking.start_time), "dd.MM.yyyy")}
           timeLabel={format(new Date(booking.start_time), "HH:mm")}
-          initialPlayerName={recap.guest_name || "Spieler"}
+          initialPlayerName={playerName}
           initialOpponentName={recap.opponent_name}
           initialResult={recap.result_text}
+          isMemberMode={!!recap.player_user_id}
+          memberOptions={members}
         />
       </div>
     </div>

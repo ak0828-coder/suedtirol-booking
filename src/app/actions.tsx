@@ -936,13 +936,34 @@ export async function getMatchRecapByToken(token: string) {
     .eq('id', booking.club_id)
     .single()
 
-  return { recap, booking, club }
+  let playerProfile = null
+  if (recap.player_user_id) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', recap.player_user_id)
+      .single()
+    playerProfile = profile || null
+  }
+
+  const { data: memberRows } = await supabaseAdmin
+    .from('club_members')
+    .select('user_id, profiles:user_id(first_name, last_name)')
+    .eq('club_id', booking.club_id)
+
+  const members = (memberRows || []).map((row: any) => ({
+    id: row.user_id,
+    name: `${row.profiles?.first_name || ""} ${row.profiles?.last_name || ""}`.trim(),
+  })).filter((m) => m.name.length > 0)
+
+  return { recap, booking, club, playerProfile, members }
 }
 
 export async function submitMatchRecap(token: string, payload: {
   playerName: string
   opponentName: string
   resultText: string
+  opponentUserId?: string | null
 }) {
   const supabaseAdmin = getAdminClient()
 
@@ -959,12 +980,27 @@ export async function submitMatchRecap(token: string, payload: {
     .update({
       guest_name: payload.playerName,
       opponent_name: payload.opponentName,
+      opponent_user_id: payload.opponentUserId || null,
       result_text: payload.resultText,
       completed_at: new Date().toISOString()
     })
     .eq('id', recap.id)
 
   if (error) return { success: false, error: error.message }
+
+  if (recap.player_user_id) {
+    await supabaseAdmin
+      .from('match_results')
+      .insert({
+        club_id: recap.club_id,
+        booking_id: recap.booking_id,
+        player_user_id: recap.player_user_id,
+        opponent_user_id: payload.opponentUserId || null,
+        player_name: payload.playerName,
+        opponent_name: payload.opponentName,
+        result_text: payload.resultText
+      })
+  }
 
   return { success: true }
 }
