@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,6 +19,7 @@ export function ClubCmsEditor({
   clubName: string
 }) {
   const [content, setContent] = useState<ClubContent>(initialContent)
+  const [lastSaved, setLastSaved] = useState<ClubContent>(initialContent)
   const [message, setMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [activeTab, setActiveTab] = useState<"hero" | "overview" | "sections" | "impressum" | "footer" | "seo">(
@@ -68,6 +69,7 @@ export function ClubCmsEditor({
     startTransition(async () => {
       const res = await updateClubContent(clubSlug, content)
       if (res?.success) {
+        setLastSaved(content)
         setMessage("Gespeichert.")
       } else {
         setMessage(res?.error || "Fehler beim Speichern.")
@@ -85,11 +87,36 @@ export function ClubCmsEditor({
     setMessage("Letzte gespeicherte Version geladen.")
   }
 
+  const isDirty = useMemo(
+    () => JSON.stringify(content) !== JSON.stringify(lastSaved),
+    [content, lastSaved]
+  )
+
+  useEffect(() => {
+    if (!isDirty) return
+    const timer = setTimeout(() => {
+      startTransition(async () => {
+        const res = await updateClubContent(clubSlug, content)
+        if (res?.success) {
+          setLastSaved(content)
+          setMessage("Auto-Speicher: gespeichert.")
+        }
+      })
+    }, 1200)
+
+    return () => clearTimeout(timer)
+  }, [content, clubSlug, isDirty, startTransition])
+
   return (
     <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Seiten Editor (CMS)</CardTitle>
         <div className="flex items-center gap-3">
+          {isDirty && (
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+              Ungespeichert
+            </span>
+          )}
           {message && <span className="text-xs text-slate-500">{message}</span>}
           <Button variant="outline" onClick={handleRevertSaved} disabled={isPending} className="rounded-full">
             Rückgängig
@@ -134,32 +161,32 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">Hero</div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Titel</Label>
+                    <Label title="Hauptüberschrift der Club-Seite">Titel</Label>
                     <Input value={content.hero.title} onChange={(e) => updateHero("title", e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Untertitel</Label>
+                    <Label title="Kurzer Teaser unter dem Titel">Untertitel</Label>
                     <Input
                       value={content.hero.subtitle}
                       onChange={(e) => updateHero("subtitle", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Primärer Button</Label>
+                    <Label title="Haupt-Call-to-Action">Primärer Button</Label>
                     <Input
                       value={content.hero.primaryCtaText}
                       onChange={(e) => updateHero("primaryCtaText", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Sekundärer Button</Label>
+                    <Label title="Sekundärer Call-to-Action">Sekundärer Button</Label>
                     <Input
                       value={content.hero.secondaryCtaText}
                       onChange={(e) => updateHero("secondaryCtaText", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Member Badge Text</Label>
+                    <Label title="Badge für eingeloggte Mitglieder">Member Badge Text</Label>
                     <Input
                       value={content.hero.memberBadgeText}
                       onChange={(e) => updateHero("memberBadgeText", e.target.value)}
@@ -174,42 +201,42 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">Badges & Überblick</div>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Standort Text</Label>
+                    <Label title="Ort/Region des Clubs">Standort Text</Label>
                     <Input
                       value={content.badges.locationText}
                       onChange={(e) => updateBadges("locationText", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Status Text</Label>
+                    <Label title="Zustand/Statusanzeige">Status Text</Label>
                     <Input
                       value={content.badges.statusText}
                       onChange={(e) => updateBadges("statusText", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Überblick Titel</Label>
+                    <Label title="Titel der Overview-Karte">Überblick Titel</Label>
                     <Input
                       value={content.overview.title}
                       onChange={(e) => updateOverview("title", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Label Plätze</Label>
+                    <Label title="Label für Court-Anzahl">Label Plätze</Label>
                     <Input
                       value={content.overview.labelCourts}
                       onChange={(e) => updateOverview("labelCourts", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Label Ab Preis</Label>
+                    <Label title="Label für niedrigsten Preis">Label Ab Preis</Label>
                     <Input
                       value={content.overview.labelFromPrice}
                       onChange={(e) => updateOverview("labelFromPrice", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Label Status</Label>
+                    <Label title="Label für Statuszeile">Label Status</Label>
                     <Input
                       value={content.overview.labelStatus}
                       onChange={(e) => updateOverview("labelStatus", e.target.value)}
@@ -225,19 +252,19 @@ export function ClubCmsEditor({
                   <div className="text-sm font-semibold text-slate-700">Abschnitt: Plätze</div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Titel</Label>
-                      <Input
-                        value={content.sections.courts.title}
-                        onChange={(e) => updateSection("courts", "title", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Untertitel</Label>
-                      <Input
-                        value={content.sections.courts.subtitle}
-                        onChange={(e) => updateSection("courts", "subtitle", e.target.value)}
-                      />
-                    </div>
+                    <Label title="Sektionstitel für Courts">Titel</Label>
+                    <Input
+                      value={content.sections.courts.title}
+                      onChange={(e) => updateSection("courts", "title", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label title="Kurzbeschreibung unter dem Titel">Untertitel</Label>
+                    <Input
+                      value={content.sections.courts.subtitle}
+                      onChange={(e) => updateSection("courts", "subtitle", e.target.value)}
+                    />
+                  </div>
                   </div>
                 </div>
 
@@ -245,26 +272,26 @@ export function ClubCmsEditor({
                   <div className="text-sm font-semibold text-slate-700">Abschnitt: Mitgliedschaft</div>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label>Titel</Label>
-                      <Input
-                        value={content.sections.membership.title}
-                        onChange={(e) => updateSection("membership", "title", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Untertitel</Label>
-                      <Input
-                        value={content.sections.membership.subtitle}
-                        onChange={(e) => updateSection("membership", "subtitle", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>CTA Button Text</Label>
-                      <Input
-                        value={content.sections.membership.ctaLabel}
-                        onChange={(e) => updateSection("membership", "ctaLabel", e.target.value)}
-                      />
-                    </div>
+                    <Label title="Sektionstitel für Mitgliedschaft">Titel</Label>
+                    <Input
+                      value={content.sections.membership.title}
+                      onChange={(e) => updateSection("membership", "title", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label title="Kurzbeschreibung unter dem Titel">Untertitel</Label>
+                    <Input
+                      value={content.sections.membership.subtitle}
+                      onChange={(e) => updateSection("membership", "subtitle", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label title="Text des Membership-Buttons">CTA Button Text</Label>
+                    <Input
+                      value={content.sections.membership.ctaLabel}
+                      onChange={(e) => updateSection("membership", "ctaLabel", e.target.value)}
+                    />
+                  </div>
                   </div>
                 </div>
               </section>
@@ -275,21 +302,21 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">Impressum</div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Impressum Titel</Label>
+                    <Label title="Überschrift der Impressum-Seite">Impressum Titel</Label>
                     <Input
                       value={content.impressum.title}
                       onChange={(e) => updateImpressum("title", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Footer Link Text</Label>
+                    <Label title="Text des Impressum-Links im Footer">Footer Link Text</Label>
                     <Input
                       value={content.footer.impressumLinkText}
                       onChange={(e) => updateFooter("impressumLinkText", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label>Impressum Inhalt</Label>
+                    <Label title="Text der Impressum-Seite">Impressum Inhalt</Label>
                     <textarea
                       className="min-h-[160px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400"
                       value={content.impressum.body}
@@ -305,7 +332,7 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">Footer</div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Footer Text</Label>
+                    <Label title="Kleiner Text im Footer">Footer Text</Label>
                     <Input
                       value={content.footer.smallText}
                       onChange={(e) => updateFooter("smallText", e.target.value)}
@@ -320,7 +347,10 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">SEO</div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>SEO Description</Label>
+                    <Label title="Kurzbeschreibung für Suchmaschinen">SEO Description</Label>
+                    <div className="text-xs text-slate-500">
+                      Erscheint in Suchergebnissen. Ideal sind 120–160 Zeichen.
+                    </div>
                     <Input
                       value={content.seo.description}
                       onChange={(e) => updateSeo("description", e.target.value)}
@@ -333,57 +363,52 @@ export function ClubCmsEditor({
 
           <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Live Preview</div>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-xl border border-slate-200/60 bg-white p-4">
-                <div className="text-sm font-semibold text-slate-900">{content.hero.title}</div>
-                <div className="text-xs text-slate-500">{content.hero.subtitle}</div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-slate-900 px-3 py-1 text-xs text-white">
-                    {content.hero.primaryCtaText}
-                  </span>
-                  <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-700">
-                    {content.hero.secondaryCtaText}
-                  </span>
-                </div>
+            <div className="mt-4 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-sm">
+              <div className="text-sm text-slate-500">Hero</div>
+              <div className="mt-2 text-lg font-semibold text-slate-900">{content.hero.title}</div>
+              <div className="text-xs text-slate-500">{content.hero.subtitle}</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs text-white">
+                  {content.hero.primaryCtaText}
+                </span>
+                <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-700">
+                  {content.hero.secondaryCtaText}
+                </span>
               </div>
 
-              <div className="rounded-xl border border-slate-200/60 bg-white p-4">
-                <div className="text-xs uppercase tracking-wide text-slate-500">{content.overview.title}</div>
-                <div className="mt-2 text-xs text-slate-500">
-                  {content.overview.labelCourts} • {content.overview.labelFromPrice} •{" "}
-                  {content.overview.labelStatus}
+              <div className="mt-5 rounded-xl border border-slate-200/60 bg-slate-50 p-3 text-xs text-slate-600">
+                <div className="font-semibold uppercase tracking-wide text-slate-500">{content.overview.title}</div>
+                <div className="mt-1">
+                  {content.overview.labelCourts}: 4 • {content.overview.labelFromPrice}: 20€ •{" "}
+                  {content.overview.labelStatus}: {content.badges.statusText}
                 </div>
-                <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-700">
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1">
                   {content.badges.locationText} • {content.badges.statusText}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200/60 bg-white p-4">
+              <div className="mt-5 rounded-xl border border-slate-200/60 bg-white p-3">
                 <div className="text-sm font-semibold text-slate-900">{content.sections.courts.title}</div>
                 <div className="text-xs text-slate-500">{content.sections.courts.subtitle}</div>
               </div>
 
-              <div className="rounded-xl border border-slate-200/60 bg-white p-4">
-                <div className="text-sm font-semibold text-slate-900">
-                  {content.sections.membership.title}
-                </div>
+              <div className="mt-3 rounded-xl border border-slate-200/60 bg-white p-3">
+                <div className="text-sm font-semibold text-slate-900">{content.sections.membership.title}</div>
                 <div className="text-xs text-slate-500">{content.sections.membership.subtitle}</div>
                 <div className="mt-2 inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
                   {content.sections.membership.ctaLabel}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200/60 bg-white p-4">
+              <div className="mt-5 rounded-xl border border-slate-200/60 bg-white p-3">
                 <div className="text-xs uppercase tracking-wide text-slate-500">Impressum</div>
-                <div className="mt-2 text-sm font-semibold text-slate-900">
-                  {content.impressum.title}
-                </div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">{content.impressum.title}</div>
                 <div className="text-xs text-slate-500">
-                  {content.impressum.body ? content.impressum.body.slice(0, 120) + "..." : "Kein Inhalt"}
+                  {content.impressum.body ? content.impressum.body.slice(0, 140) + "..." : "Kein Inhalt"}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200/60 bg-white p-4 text-xs text-slate-500">
+              <div className="mt-5 border-t border-slate-200/60 pt-3 text-xs text-slate-500">
                 {content.footer.smallText} • {content.footer.impressumLinkText}
               </div>
             </div>
