@@ -585,7 +585,9 @@ export async function createBooking(
   price: number,
   durationMinutes: number,
   paymentMethod: 'paid_cash' | 'paid_stripe' = 'paid_cash',
-  creditCode?: string
+  creditCode?: string,
+  guestName?: string,
+  guestEmail?: string
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -676,7 +678,9 @@ export async function createBooking(
       status: 'confirmed',
       payment_status: finalPaymentStatus,
       price_paid: finalPrice,
-      guest_name: user ? 'Mitglied' : 'Gast (Gutschein)'
+      guest_name: user ? 'Mitglied' : (guestName || 'Gast'),
+      guest_email: user?.email || guestEmail || null,
+      user_id: user?.id || null
     })
 
   if (error) {
@@ -855,7 +859,9 @@ export async function createCheckoutSession(
   price: number,
   courtName: string,
   durationMinutes: number,
-  creditCode?: string
+  creditCode?: string,
+  guestName?: string,
+  guestEmail?: string
 ) {
   let finalPrice = price
   let metadata: any = {
@@ -888,12 +894,79 @@ export async function createCheckoutSession(
       quantity: 1,
     }],
     mode: 'payment',
-    metadata: metadata,
+    metadata: {
+      ...metadata,
+      guestName,
+      userId: user?.id || null
+    },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+    customer_email: user?.email || guestEmail,
   })
 
   return { url: session.url }
+}
+
+// ==========================================
+// --- MATCH RECAPS ---
+// ==========================================
+
+export async function getMatchRecapByToken(token: string) {
+  const supabaseAdmin = getAdminClient()
+
+  const { data: recap } = await supabaseAdmin
+    .from('match_recaps')
+    .select('*')
+    .eq('token', token)
+    .single()
+
+  if (!recap) return null
+
+  const { data: booking } = await supabaseAdmin
+    .from('bookings')
+    .select('id, start_time, end_time, court_id, club_id')
+    .eq('id', recap.booking_id)
+    .single()
+
+  if (!booking) return null
+
+  const { data: club } = await supabaseAdmin
+    .from('clubs')
+    .select('id, name, slug, logo_url, primary_color')
+    .eq('id', booking.club_id)
+    .single()
+
+  return { recap, booking, club }
+}
+
+export async function submitMatchRecap(token: string, payload: {
+  playerName: string
+  opponentName: string
+  resultText: string
+}) {
+  const supabaseAdmin = getAdminClient()
+
+  const { data: recap } = await supabaseAdmin
+    .from('match_recaps')
+    .select('*')
+    .eq('token', token)
+    .single()
+
+  if (!recap) return { success: false, error: "Ungültiger Link." }
+
+  const { error } = await supabaseAdmin
+    .from('match_recaps')
+    .update({
+      guest_name: payload.playerName,
+      opponent_name: payload.opponentName,
+      result_text: payload.resultText,
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', recap.id)
+
+  if (error) return { success: false, error: error.message }
+
+  return { success: true }
 }
 
 // --- HELPER FUNCTIONS ---

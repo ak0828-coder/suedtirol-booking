@@ -149,7 +149,7 @@ export async function POST(req: Request) {
     // Wir erkennen das daran, dass 'courtId' in den Metadaten ist
     if (session.metadata?.courtId) {
         // HIER NEU: creditCode auslesen
-        const { courtId, clubSlug, date, time, durationMinutes, creditCode } = session.metadata
+        const { courtId, clubSlug, date, time, durationMinutes, creditCode, guestName, userId } = session.metadata
         const amountTotal = session.amount_total ? session.amount_total / 100 : 0 // Stripe ist in Cents
         const customerEmail = session.customer_details?.email
 
@@ -181,7 +181,9 @@ export async function POST(req: Request) {
                 status: 'confirmed',
                 payment_status: 'paid_stripe',
                 price_paid: amountTotal, // <--- Hier speichern wir den Stripe-Preis!
-                guest_name: customerEmail || 'Gast (Stripe)'
+                guest_name: guestName || customerEmail || 'Gast (Stripe)',
+                guest_email: customerEmail || null,
+                user_id: userId || null
             })
             
             console.log(`✅ Stripe Buchung angelegt: ${amountTotal}€ für ${time} Uhr`)

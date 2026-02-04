@@ -36,7 +36,7 @@ export default async function MemberDashboard({
   }
 
   // 3. Echte Buchungen laden!
-  const { data: myBookings } = await supabase
+  const { data: upcomingBookings } = await supabase
     .from("bookings")
     .select("*, courts(name)")
     .eq("club_id", member.clubs.id)
@@ -44,10 +44,32 @@ export default async function MemberDashboard({
     .gte("start_time", new Date().toISOString()) // Nur zukünftige
     .order("start_time", { ascending: true })
 
+  const pastStart = new Date()
+  pastStart.setDate(pastStart.getDate() - 7)
+
+  const { data: pastBookings } = await supabase
+    .from("bookings")
+    .select("*, courts(name)")
+    .eq("club_id", member.clubs.id)
+    .eq("user_id", user.id)
+    .gte("start_time", pastStart.toISOString())
+    .lt("start_time", new Date().toISOString())
+    .order("start_time", { ascending: false })
+
+  const bookingIds = [...(upcomingBookings || []), ...(pastBookings || [])].map((b: any) => b.id)
+  const { data: recaps } = bookingIds.length
+    ? await supabase
+        .from("match_recaps")
+        .select("booking_id, token, completed_at")
+        .in("booking_id", bookingIds)
+    : { data: [] }
+
+  const recapMap = new Map((recaps || []).map((r: any) => [r.booking_id, r]))
+
   // 4. Profil laden
   const profile = await getProfile()
 
-  const nextBooking = myBookings && myBookings.length > 0 ? myBookings[0] : null
+  const nextBooking = upcomingBookings && upcomingBookings.length > 0 ? upcomingBookings[0] : null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-20">
@@ -141,9 +163,9 @@ export default async function MemberDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {myBookings && myBookings.length > 0 ? (
+            {upcomingBookings && upcomingBookings.length > 0 ? (
               <div className="space-y-4">
-                {myBookings.map((b: any) => (
+                {upcomingBookings.map((b: any) => (
                   <div
                     key={b.id}
                     className="flex items-center justify-between p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-sm transition-shadow"
@@ -159,7 +181,9 @@ export default async function MemberDashboard({
                         {b.courts?.name}
                       </div>
                     </div>
-                    <CancelBookingButton bookingId={b.id} />
+                    <div className="flex items-center gap-2">
+                      <CancelBookingButton bookingId={b.id} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -171,6 +195,51 @@ export default async function MemberDashboard({
                     Jetzt buchen
                   </Button>
                 </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex gap-2 items-center">
+              <Calendar className="text-blue-500" /> Letzte Spiele
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pastBookings && pastBookings.length > 0 ? (
+              <div className="space-y-4">
+                {pastBookings.map((b: any) => (
+                  <div
+                    key={b.id}
+                    className="flex items-center justify-between p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-sm transition-shadow"
+                  >
+                    <div>
+                      <div className="font-semibold text-base">
+                        {format(new Date(b.start_time), "dd.MM.yyyy")}
+                      </div>
+                      <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3" />
+                        {format(new Date(b.start_time), "HH:mm")} Uhr
+                        <span className="mx-1">•</span>
+                        {b.courts?.name}
+                      </div>
+                    </div>
+                    {recapMap.get(b.id)?.token ? (
+                      <Link href={`/match/recap/${recapMap.get(b.id).token}`}>
+                        <Button variant="outline" size="sm" className="rounded-full">
+                          Ergebnis eintragen
+                        </Button>
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-slate-500">Wird vorbereitet…</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-slate-500 italic mb-2">Noch keine Spiele in den letzten 7 Tagen.</p>
               </div>
             )}
           </CardContent>

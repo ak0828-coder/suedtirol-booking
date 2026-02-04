@@ -33,6 +33,9 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isBooking, setIsBooking] = useState(false)
+
+  const [guestName, setGuestName] = useState("")
+  const [guestEmail, setGuestEmail] = useState("")
    
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [blockedPeriods, setBlockedPeriods] = useState<any[]>([])
@@ -52,6 +55,8 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
           setDiscount(0)
           setVoucherSuccess(false)
           setVoucherError(null)
+          setGuestName("")
+          setGuestEmail("")
       }
   }, [isOpen])
 
@@ -113,6 +118,12 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
 
   const handleBook = async () => {
     if (!date || !selectedTime) return
+    if (!isMember) {
+      if (!guestName.trim() || !guestEmail.trim()) {
+        alert("Bitte Name und E-Mail eingeben.")
+        return
+      }
+    }
     setIsBooking(true)
     
     // Wenn alles durch Gutschein gedeckt ist, rufen wir direkt createBooking auf
@@ -126,7 +137,9 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
         price, 
         durationMinutes, 
         isFullyCovered ? 'paid_stripe' : 'paid_cash', // Wenn fully covered -> stripe logic
-        isFullyCovered ? voucherCode : undefined 
+        isFullyCovered ? voucherCode : undefined,
+        isMember ? undefined : guestName,
+        isMember ? undefined : guestEmail
     )
     
     setIsBooking(false)
@@ -228,6 +241,26 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
           {/* 3. ABSCHLUSS & GUTSCHEIN */}
           {selectedTime && !activeBlock && (
             <div className="flex flex-col gap-4 pt-4 border-t mt-2">
+
+               {!isMember && (
+                  <div className="grid gap-3">
+                    <div className="text-xs font-semibold text-slate-500 uppercase">Deine Angaben</div>
+                    <input
+                      type="text"
+                      placeholder="Dein Name"
+                      className="border rounded px-3 py-2 text-sm"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                    />
+                    <input
+                      type="email"
+                      placeholder="E-Mail für Bestätigung"
+                      className="border rounded px-3 py-2 text-sm"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                    />
+                  </div>
+               )}
                
                {/* --- NEU: GUTSCHEIN EINGABE (Nur für Gäste) --- */}
                {!isMember && (
@@ -307,6 +340,10 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" 
                             disabled={isBooking}
                             onClick={async () => {
+                                if (!guestName.trim() || !guestEmail.trim()) {
+                                  alert("Bitte Name und E-Mail eingeben.")
+                                  return
+                                }
                                 setIsBooking(true)
                                 // WICHTIG: voucherCode übergeben!
                                 const result = await createCheckoutSession(
@@ -317,7 +354,9 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                                     price, 
                                     courtName, 
                                     durationMinutes,
-                                    voucherCode // <---
+                                    voucherCode, // <---
+                                    guestName,
+                                    guestEmail
                                 )
                                 if (result?.url) window.location.href = result.url
                                 else { alert("Fehler"); setIsBooking(false); }

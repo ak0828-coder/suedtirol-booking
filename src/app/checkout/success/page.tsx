@@ -32,7 +32,10 @@ export default async function SuccessPage({
     meta.time,
     parseFloat(meta.price),
     parseInt(meta.durationMinutes || '60'), // <--- Dauer nutzen (Default 60 falls fehlt)
-    'paid_stripe' // <--- WICHTIG: Als bezahlt markieren!
+    'paid_stripe', // <--- WICHTIG: Als bezahlt markieren!
+    undefined,
+    meta.guestName,
+    session.customer_details?.email || undefined
   )
 
   return (
