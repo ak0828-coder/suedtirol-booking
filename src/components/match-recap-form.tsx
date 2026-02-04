@@ -61,6 +61,7 @@ export function MatchRecapForm({
   const [opponentUserId, setOpponentUserId] = useState<string | null>(null)
   const [useMemberOpponent, setUseMemberOpponent] = useState(isMemberMode)
   const [message, setMessage] = useState<string | null>(null)
+  const [shareSupported, setShareSupported] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const color = clubColor || "#0f172a"
@@ -187,6 +188,10 @@ export function MatchRecapForm({
       img.src = clubLogo
     }
   }, [clubName, clubLogo, color, dateLabel, timeLabel, playerName, opponentName, resultText, winnerName])
+
+  useEffect(() => {
+    setShareSupported(!!(navigator.share && navigator.canShare))
+  }, [])
 
   const handleSave = async () => {
     setMessage(null)
@@ -329,8 +334,11 @@ export function MatchRecapForm({
               Download
             </Button>
             <Button variant="outline" onClick={handleShare} className="rounded-full">
-              Teilen
+              {shareSupported ? "Teilen" : "Download für Insta"}
             </Button>
+          </div>
+          <div className="text-xs text-slate-500">
+            Tipp: Für Instagram einfach „Download“ wählen und dann in der Story posten.
           </div>
           {message && <div className="text-sm text-slate-500">{message}</div>}
         </div>
