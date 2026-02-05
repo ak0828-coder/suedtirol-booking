@@ -35,3 +35,63 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .anim-fade-up {
+    animation: fade-up 600ms ease-out both;
+  }
+  .anim-fade-up-sm {
+    animation: fade-up 450ms ease-out both;
+  }
+  .anim-stagger-1 {
+    animation-delay: 80ms;
+  }
+  .anim-stagger-2 {
+    animation-delay: 160ms;
+  }
+  .anim-stagger-3 {
+    animation-delay: 240ms;
+  }
+  .anim-float {
+    animation: floaty 6s ease-in-out infinite;
+  }
+  .anim-glow {
+    animation: glow 3.5s ease-in-out infinite;
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes floaty {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+    }
+    50% {
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.25);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .anim-fade-up,
+    .anim-fade-up-sm,
+    .anim-float,
+    .anim-glow {
+      animation: none;
+    }
+  }
+}

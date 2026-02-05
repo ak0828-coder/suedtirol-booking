@@ -249,9 +249,9 @@ export function MatchRecapForm({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] anim-fade-up">
       <div className="space-y-6">
-        <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm">
+        <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm anim-fade-up-sm anim-stagger-1">
           <h1 className="text-2xl font-semibold text-slate-900">Match-Card erstellen</h1>
           <p className="mt-2 text-sm text-slate-500">
             Trage das Ergebnis ein und teile deine Match-Card mit Freunden.
@@ -261,7 +261,7 @@ export function MatchRecapForm({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm space-y-4">
+        <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm space-y-4 anim-fade-up-sm anim-stagger-2">
           {isMemberMode && (
             <div className="rounded-xl border border-emerald-200/60 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
               Mitgliedsmodus aktiv – dein Name ist fix.
@@ -332,13 +332,13 @@ export function MatchRecapForm({
             <Input value={resultText} onChange={(e) => setResultText(e.target.value)} />
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={handleSave} className="rounded-full">
+            <Button onClick={handleSave} className="rounded-full transition-transform hover:-translate-y-0.5">
               Erstellen
             </Button>
-            <Button variant="outline" onClick={handleDownload} className="rounded-full">
+            <Button variant="outline" onClick={handleDownload} className="rounded-full transition-transform hover:-translate-y-0.5">
               Download
             </Button>
-            <Button variant="outline" onClick={handleShare} className="rounded-full">
+            <Button variant="outline" onClick={handleShare} className="rounded-full transition-transform hover:-translate-y-0.5">
               {shareSupported ? "Teilen" : "Download für Insta"}
             </Button>
           </div>
@@ -349,9 +349,9 @@ export function MatchRecapForm({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm">
+      <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm anim-fade-up-sm anim-stagger-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Live Card</div>
-        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200/60 bg-slate-900">
+        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200/60 bg-slate-900 anim-glow">
           <canvas ref={canvasRef} className="w-full h-auto" />
         </div>
       </div>
