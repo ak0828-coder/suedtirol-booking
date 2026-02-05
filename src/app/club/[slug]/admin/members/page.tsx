@@ -31,7 +31,7 @@ export default async function AdminMembersPage({
             <TableRow className="bg-slate-50/80">
               <TableHead>Name</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Attest Gultig bis</TableHead>
+              <TableHead>Attest</TableHead>
               <TableHead>Telefon</TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
@@ -47,11 +47,41 @@ export default async function AdminMembersPage({
                   <Badge variant={m.status === "active" ? "default" : "secondary"}>{m.status}</Badge>
                 </TableCell>
                 <TableCell>
-                  {m.medical_certificate_valid_until ? (
-                    new Date(m.medical_certificate_valid_until).toLocaleDateString()
-                  ) : (
-                    <span className="text-red-400 text-sm">Fehlt</span>
-                  )}
+                  <div className="space-y-1">
+                    {m.medical_certificate_valid_until ? (
+                      <div className="text-sm">
+                        Gültig bis {new Date(m.medical_certificate_valid_until).toLocaleDateString()}
+                      </div>
+                    ) : (
+                      <span className="text-red-400 text-sm">Fehlt</span>
+                    )}
+                    {m.latest_med_doc ? (
+                      <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 anim-pop">
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            m.latest_med_doc.review_status === "approved"
+                              ? "bg-emerald-400"
+                              : m.latest_med_doc.ai_status === "ok"
+                              ? "bg-amber-400"
+                              : m.latest_med_doc.ai_status === "reject"
+                              ? "bg-rose-400"
+                              : "bg-slate-300"
+                          }`}
+                        />
+                        {m.latest_med_doc.review_status === "approved"
+                          ? "Bestätigt"
+                          : m.latest_med_doc.review_status === "rejected"
+                          ? "Abgelehnt"
+                          : m.latest_med_doc.ai_status === "ok"
+                          ? "KI ok"
+                          : m.latest_med_doc.ai_status === "reject"
+                          ? "KI abgelehnt"
+                          : "KI prüft"}
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-400">Kein Dokument</div>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>{m.profiles?.phone || "-"}</TableCell>
                 <TableCell className="text-right">

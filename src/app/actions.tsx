@@ -338,7 +338,24 @@ export async function getClubMembers(clubSlug: string) {
     return []
   }
 
-  return members
+  const { data: docs } = await supabase
+    .from("member_documents")
+    .select("user_id, doc_type, ai_status, review_status, temp_valid_until, valid_until, created_at")
+    .eq("club_id", club.id)
+    .eq("doc_type", "medical_certificate")
+    .order("created_at", { ascending: false })
+
+  const latestByUser = new Map<string, any>()
+  for (const doc of docs || []) {
+    if (!latestByUser.has(doc.user_id)) {
+      latestByUser.set(doc.user_id, doc)
+    }
+  }
+
+  return (members || []).map((m: any) => ({
+    ...m,
+    latest_med_doc: latestByUser.get(m.user_id) || null
+  }))
 }
 
 // --- SUPER ADMIN ACTIONS ---
