@@ -65,6 +65,14 @@
   .anim-pop {
     animation: pop 300ms ease-out both;
   }
+  .tilt-card {
+    transition: transform 220ms ease, box-shadow 220ms ease;
+    transform-style: preserve-3d;
+  }
+  .tilt-card:hover {
+    transform: perspective(1200px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  }
   .input-glow {
     transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
   }
@@ -119,13 +127,45 @@
       opacity: 1;
     }
   }
+  @keyframes confetti-fall {
+    0% {
+      transform: translate3d(var(--x), -20px, 0) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(calc(var(--x) + 20px), 420px, 0) rotate(360deg);
+      opacity: 0;
+    }
+  }
+  .confetti-wrap {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 8px;
+    height: 14px;
+    background: hsl(var(--hue) 90% 60%);
+    border-radius: 2px;
+    animation: confetti-fall 900ms ease-out forwards;
+    animation-delay: var(--delay);
+  }
   @media (prefers-reduced-motion: reduce) {
     .anim-fade-up,
     .anim-fade-up-sm,
     .anim-float,
     .anim-glow,
     .anim-shimmer,
-    .anim-pop {
+    .anim-pop,
+    .tilt-card,
+    .confetti-piece {
       animation: none;
     }
   }

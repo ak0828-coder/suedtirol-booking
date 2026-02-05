@@ -93,10 +93,11 @@ export async function GET(
           style={{
             position: "absolute",
             top: 120,
-            left: -120,
-            width: 1400,
-            height: 120,
-            background: "rgba(255,255,255,0.05)",
+            left: -160,
+            width: 1500,
+            height: 140,
+            background:
+              "linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.10) 40%, rgba(255,255,255,0.04) 60%, transparent 100%)",
             transform: "rotate(-8deg)",
           }}
         />
