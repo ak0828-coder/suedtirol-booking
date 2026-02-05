@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { Resend } from "resend"
+import React from "react"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -49,18 +50,32 @@ export async function GET(req: Request) {
     if (!adminEmail) continue
 
     try {
-      await resend.emails.send({
-        from: "Suedtirol Booking <onboarding@resend.dev>",
-        to: [adminEmail],
-        subject: `Erinnerung: ärztliches Zeugnis prüfen (${club?.name || "Club"})`,
-        react: (
-          <div>
-            <p>Ein ärztliches Zeugnis läuft bald aus und wartet auf Bestätigung.</p>
-            <p><strong>Datei:</strong> {doc.file_name}</p>
-            <p><strong>Vorläufig gültig bis:</strong> {new Date(doc.temp_valid_until).toLocaleDateString("de-DE")}</p>
-          </div>
-        ),
-      })
+        const emailReact = React.createElement(
+          "div",
+          null,
+          React.createElement("p", null, "Ein ärztliches Zeugnis läuft bald aus und wartet auf Bestätigung."),
+          React.createElement(
+            "p",
+            null,
+            React.createElement("strong", null, "Datei:"),
+            " ",
+            doc.file_name
+          ),
+          React.createElement(
+            "p",
+            null,
+            React.createElement("strong", null, "Vorläufig gültig bis:"),
+            " ",
+            new Date(doc.temp_valid_until).toLocaleDateString("de-DE")
+          )
+        )
+
+        await resend.emails.send({
+          from: "Suedtirol Booking <onboarding@resend.dev>",
+          to: [adminEmail],
+          subject: `Erinnerung: ärztliches Zeugnis prüfen (${club?.name || "Club"})`,
+          react: emailReact,
+        })
       sent += 1
     } catch (err) {
       console.error("Reminder email failed:", err)
