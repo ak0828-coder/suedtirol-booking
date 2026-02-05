@@ -5,6 +5,13 @@ alter table public.bookings
 
 create index if not exists bookings_user_id_idx on public.bookings(user_id);
 
+-- Booking: recap status helpers
+alter table public.bookings
+  add column if not exists recap_status text,
+  add column if not exists recap_completed_at timestamptz;
+
+create index if not exists bookings_recap_status_idx on public.bookings(recap_status);
+
 -- Match recap tokens + results
 create table if not exists public.match_recaps (
   id uuid primary key default gen_random_uuid(),

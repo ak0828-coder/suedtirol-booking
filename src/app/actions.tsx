@@ -1011,6 +1011,14 @@ export async function submitMatchRecap(token: string, payload: {
 
   if (error) return { success: false, error: error.message }
 
+  await supabaseAdmin
+    .from('bookings')
+    .update({
+      recap_status: 'completed',
+      recap_completed_at: new Date().toISOString()
+    })
+    .eq('id', recap.booking_id)
+
   if (recap.player_user_id) {
     await supabaseAdmin
       .from('match_results')

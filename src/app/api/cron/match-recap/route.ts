@@ -89,6 +89,11 @@ export async function GET(req: Request) {
       continue
     }
 
+    await supabaseAdmin
+      .from("bookings")
+      .update({ recap_status: "pending" })
+      .eq("id", booking.id)
+
     if (!email) continue
 
     try {
