@@ -20,9 +20,11 @@ export default async function AdminMemberDetailPage({
     .select("id, user_id, status, profiles:user_id(first_name, last_name, phone, id), medical_certificate_valid_until")
     .eq("id", memberId)
     .eq("club_id", club.id)
-    .single()
+    .maybeSingle()
 
   if (!member) return notFound()
+
+  const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
 
   const documents = await getMemberDocumentsForAdmin(slug, member.user_id)
 
@@ -31,9 +33,9 @@ export default async function AdminMemberDetailPage({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div>
           <h2 className="text-2xl font-semibold">
-            {member.profiles?.first_name} {member.profiles?.last_name || "Unbekannt"}
+            {profile?.first_name} {profile?.last_name || "Unbekannt"}
           </h2>
-          <div className="text-sm text-slate-500">{member.profiles?.id}</div>
+          <div className="text-sm text-slate-500">{profile?.id}</div>
         </div>
         <Link href={`/club/${slug}/admin/members`}>
           <Button variant="outline" className="rounded-full">Zurück</Button>
@@ -42,7 +44,7 @@ export default async function AdminMemberDetailPage({
 
       <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-2">
         <div className="text-sm text-slate-600">Status: {member.status}</div>
-        <div className="text-sm text-slate-600">Telefon: {member.profiles?.phone || "-"}</div>
+        <div className="text-sm text-slate-600">Telefon: {profile?.phone || "-"}</div>
         <div className="text-sm text-slate-600">
           Attest gültig bis:{" "}
           {member.medical_certificate_valid_until
