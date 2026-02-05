@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trophy, Calendar, Clock, User, Sparkles, ArrowRight } from "lucide-react"
 import { format } from "date-fns"
-import { getClubRanking, getProfile } from "@/app/actions"
+import { getClubRanking, getMyBadges, getMyMemberStats, getProfile } from "@/app/actions"
 import { ProfileForm } from "@/components/profile-form"
 import { CancelBookingButton } from "@/components/cancel-booking-button"
 import Link from "next/link"
@@ -70,6 +70,8 @@ export default async function MemberDashboard({
   const profile = await getProfile()
 
   const ranking = await getClubRanking(member.clubs.id)
+  const stats = await getMyMemberStats(member.clubs.id)
+  const badges = await getMyBadges(member.clubs.id)
 
   const nextBooking = upcomingBookings && upcomingBookings.length > 0 ? upcomingBookings[0] : null
 
@@ -124,6 +126,20 @@ export default async function MemberDashboard({
                   ? new Date(member.valid_until).toLocaleDateString("de-DE")
                   : "Unbegrenzt"}
               </p>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl border border-slate-200/60 bg-white/90 px-2 py-2">
+                  <div className="text-lg font-semibold">{stats?.wins ?? 0}</div>
+                  <div className="text-xs text-slate-500">Siege</div>
+                </div>
+                <div className="rounded-xl border border-slate-200/60 bg-white/90 px-2 py-2">
+                  <div className="text-lg font-semibold">{stats?.losses ?? 0}</div>
+                  <div className="text-xs text-slate-500">Niederl.</div>
+                </div>
+                <div className="rounded-xl border border-slate-200/60 bg-white/90 px-2 py-2">
+                  <div className="text-lg font-semibold">{stats?.win_streak ?? 0}</div>
+                  <div className="text-xs text-slate-500">Streak</div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -189,6 +205,31 @@ export default async function MemberDashboard({
                       <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                         {row.points} Punkte
                       </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Sparkles className="text-indigo-500" /> Badges & Erfolge
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {badges.length === 0 ? (
+                <p className="text-sm text-slate-500">Spiele dein erstes Match, um Badges zu sammeln.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {badges.map((b) => (
+                    <div
+                      key={b.id}
+                      className="rounded-full border border-slate-200/60 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 anim-pop"
+                      title={b.desc}
+                    >
+                      {b.label}
                     </div>
                   ))}
                 </div>

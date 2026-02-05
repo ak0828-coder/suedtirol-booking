@@ -1016,6 +1016,41 @@ export async function getClubRanking(clubId: string) {
   }))
 }
 
+export async function getMyMemberStats(clubId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: stats } = await supabase
+    .from("member_stats")
+    .select("*")
+    .eq("club_id", clubId)
+    .eq("user_id", user.id)
+    .single()
+
+  return stats || null
+}
+
+function deriveBadges(stats: any) {
+  if (!stats) return []
+  const badges: { id: string; label: string; desc: string }[] = []
+
+  if (stats.wins >= 1) badges.push({ id: "win-1", label: "Erster Sieg", desc: "1 Sieg" })
+  if (stats.wins >= 5) badges.push({ id: "win-5", label: "5 Siege", desc: "5 Siege" })
+  if (stats.wins >= 10) badges.push({ id: "win-10", label: "10 Siege", desc: "10 Siege" })
+  if (stats.matches_played >= 5) badges.push({ id: "match-5", label: "Aktiv", desc: "5 Matches" })
+  if (stats.win_streak >= 3) badges.push({ id: "streak-3", label: "Streak x3", desc: "3 Siege in Folge" })
+  if (stats.win_streak >= 5) badges.push({ id: "streak-5", label: "Streak x5", desc: "5 Siege in Folge" })
+  if (stats.best_streak >= 10) badges.push({ id: "streak-10", label: "Legende", desc: "10er Streak" })
+
+  return badges.slice(0, 6)
+}
+
+export async function getMyBadges(clubId: string) {
+  const stats = await getMyMemberStats(clubId)
+  return deriveBadges(stats)
+}
+
 export async function submitMatchRecap(token: string, payload: {
   playerName: string
   opponentName: string
@@ -1120,6 +1155,54 @@ export async function submitMatchRecap(token: string, payload: {
               updated_at: new Date().toISOString()
             }, { onConflict: "club_id,user_id" })
         }
+
+        const nowIso = new Date().toISOString()
+        const { data: statsRows } = await supabaseAdmin
+          .from("member_stats")
+          .select("user_id, matches_played, wins, losses, win_streak, best_streak")
+          .eq("club_id", recap.club_id)
+          .in("user_id", [winnerId, loserId])
+
+        const statsMap = new Map((statsRows || []).map((r: any) => [r.user_id, r]))
+
+        const winnerStats = statsMap.get(winnerId) || {
+          matches_played: 0, wins: 0, losses: 0, win_streak: 0, best_streak: 0
+        }
+        const loserStats = statsMap.get(loserId) || {
+          matches_played: 0, wins: 0, losses: 0, win_streak: 0, best_streak: 0
+        }
+
+        const winnerStreak = winnerStats.win_streak + 1
+        const winnerBest = Math.max(winnerStats.best_streak, winnerStreak)
+
+        await supabaseAdmin
+          .from("member_stats")
+          .upsert({
+            club_id: recap.club_id,
+            user_id: winnerId,
+            matches_played: winnerStats.matches_played + 1,
+            wins: winnerStats.wins + 1,
+            losses: winnerStats.losses,
+            win_streak: winnerStreak,
+            best_streak: winnerBest,
+            last_match_at: nowIso,
+            last_win_at: nowIso,
+            updated_at: nowIso
+          }, { onConflict: "club_id,user_id" })
+
+        await supabaseAdmin
+          .from("member_stats")
+          .upsert({
+            club_id: recap.club_id,
+            user_id: loserId,
+            matches_played: loserStats.matches_played + 1,
+            wins: loserStats.wins,
+            losses: loserStats.losses + 1,
+            win_streak: 0,
+            best_streak: loserStats.best_streak,
+            last_match_at: nowIso,
+            updated_at: nowIso
+          }, { onConflict: "club_id,user_id" })
       }
     }
   }
