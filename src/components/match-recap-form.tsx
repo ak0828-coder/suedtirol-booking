@@ -190,7 +190,11 @@ export function MatchRecapForm({
   }, [clubName, clubLogo, color, dateLabel, timeLabel, playerName, opponentName, resultText, winnerName])
 
   useEffect(() => {
-    setShareSupported(!!(navigator.share && navigator.canShare?.({ files: [] })))
+    const nav = navigator as unknown as {
+      share?: (data?: ShareData) => Promise<void>
+      canShare?: (data?: ShareData) => boolean
+    }
+    setShareSupported(typeof nav.share === "function" && typeof nav.canShare === "function")
   }, [])
 
   const handleSave = async () => {
