@@ -60,7 +60,7 @@
   }
   .anim-shimmer {
     background-size: 200% 100%;
-    animation: shimmer 2.8s ease-in-out infinite;
+    animation: shimmer 9s ease-in-out infinite;
   }
   .anim-pop {
     animation: pop 300ms ease-out both;
@@ -156,6 +156,27 @@
     border-radius: 2px;
     animation: confetti-fall 900ms ease-out forwards;
     animation-delay: var(--delay);
+  }
+  .ring-pulse {
+    position: absolute;
+    inset: 10px;
+    border-radius: 18px;
+    border: 2px solid rgba(16, 185, 129, 0.25);
+    animation: ring-pulse 700ms ease-out both;
+    pointer-events: none;
+  }
+  @keyframes ring-pulse {
+    0% {
+      transform: scale(0.985);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.01);
+      opacity: 0;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .anim-fade-up,

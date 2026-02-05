@@ -62,7 +62,7 @@ export function MatchRecapForm({
   const [useMemberOpponent, setUseMemberOpponent] = useState(isMemberMode)
   const [message, setMessage] = useState<string | null>(null)
   const [shareSupported, setShareSupported] = useState(false)
-  const [showConfetti, setShowConfetti] = useState(false)
+  const [showSuccessRing, setShowSuccessRing] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const color = clubColor || "#0f172a"
@@ -212,8 +212,8 @@ export function MatchRecapForm({
     })
     if (res?.success) {
       setMessage("Ergebnis gespeichert. Du kannst die Card teilen.")
-      setShowConfetti(true)
-      setTimeout(() => setShowConfetti(false), 900)
+      setShowSuccessRing(true)
+      setTimeout(() => setShowSuccessRing(false), 700)
     } else {
       setMessage(res?.error || "Fehler beim Speichern.")
     }
@@ -365,24 +365,12 @@ export function MatchRecapForm({
       <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm anim-fade-up-sm anim-stagger-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Live Card</div>
         <div className="relative mt-4 overflow-hidden rounded-2xl border border-slate-200/60 bg-slate-900 anim-glow tilt-card">
-          <div className="absolute inset-0 opacity-20 anim-shimmer" style={{ backgroundImage: "linear-gradient(110deg, transparent 20%, rgba(255,255,255,0.35) 50%, transparent 80%)" }} />
+          <div
+            className="absolute inset-0 opacity-10 anim-shimmer"
+            style={{ backgroundImage: "linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.25) 50%, transparent 75%)" }}
+          />
           <canvas ref={canvasRef} className="relative w-full h-auto" />
-          {showConfetti && (
-            <div className="confetti-wrap">
-              {Array.from({ length: 14 }).map((_, i) => (
-                <span
-                  key={i}
-                  className="confetti-piece"
-                  style={{
-                    // deterministisch, keine Math.random im Render
-                    ["--x" as any]: `${(i - 7) * 22}px`,
-                    ["--delay" as any]: `${i * 20}ms`,
-                    ["--hue" as any]: `${(i * 27) % 360}`,
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          {showSuccessRing && <div className="ring-pulse" />}
         </div>
       </div>
     </div>
