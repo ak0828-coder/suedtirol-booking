@@ -26,6 +26,7 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
   const [savingId, setSavingId] = useState<string | null>(null)
   const [openingId, setOpeningId] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [filter, setFilter] = useState<"all" | "pending">("all")
 
   const handleReview = async (id: string, approve: boolean) => {
     setSavingId(id)
@@ -46,11 +47,34 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
         <h2 className="text-lg font-semibold text-slate-900">Dokumente</h2>
         <p className="text-sm text-slate-500">Prüfe und bestätige medizinische Nachweise.</p>
       </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={filter === "all" ? "default" : "outline"}
+          className="rounded-full text-xs"
+          onClick={() => setFilter("all")}
+        >
+          Alle
+        </Button>
+        <Button
+          variant={filter === "pending" ? "default" : "outline"}
+          className="rounded-full text-xs"
+          onClick={() => setFilter("pending")}
+        >
+          Wartet auf Review
+        </Button>
+      </div>
+
       {documents.length === 0 ? (
         <p className="text-sm text-slate-500">Keine Dokumente vorhanden.</p>
       ) : (
         <div className="space-y-2">
-          {documents.map((doc) => (
+          {documents
+            .filter((doc) =>
+              filter === "pending"
+                ? doc.review_status === "pending"
+                : true
+            )
+            .map((doc) => (
             <div key={doc.id} className="rounded-xl border border-slate-200/60 bg-white/90 px-3 py-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>

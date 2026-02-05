@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 import { Resend } from 'resend'
+import React from "react"
 import { BookingEmailTemplate } from '@/components/emails/booking-template'
 import { WelcomeMemberEmailTemplate } from '@/components/emails/welcome-member-template'
 import { format } from "date-fns"
@@ -1440,6 +1441,15 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
     .eq("id", documentId)
 
   await supabaseAdmin
+    .from("member_document_audit")
+    .insert({
+      document_id: documentId,
+      club_id: club.id,
+      actor_user_id: user.id,
+      action: approve ? "approved" : "rejected",
+    })
+
+  await supabaseAdmin
     .from("club_members")
     .update({
       medical_certificate_valid_until: approve ? finalValid : null,
@@ -1447,8 +1457,75 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
     .eq("club_id", club.id)
     .eq("user_id", doc.user_id)
 
+  try {
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("first_name, last_name, phone")
+      .eq("id", doc.user_id)
+      .single()
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(doc.user_id)
+    const memberEmail = userData?.user?.email
+    if (memberEmail) {
+        const emailReact = React.createElement(
+          "div",
+          null,
+          React.createElement("p", null, `Hallo ${profile?.first_name || "Mitglied"},`),
+          React.createElement(
+            "p",
+            null,
+            "Dein ärztliches Zeugnis wurde ",
+            React.createElement("strong", null, approve ? "bestätigt" : "abgelehnt"),
+            "."
+          ),
+          approve
+            ? React.createElement(
+                "p",
+                null,
+                "Gültig bis: ",
+                new Date(finalValid).toLocaleDateString("de-DE")
+              )
+            : null
+        )
+
+        await resend.emails.send({
+          from: "Suedtirol Booking <onboarding@resend.dev>",
+          to: [memberEmail],
+          subject: approve ? "Ärztliches Zeugnis bestätigt" : "Ärztliches Zeugnis abgelehnt",
+          react: emailReact,
+        })
+    }
+  } catch (err) {
+    console.error("Member notification email failed:", err)
+  }
+
   revalidatePath(`/club/${clubSlug}/admin/members`)
   return { success: true }
+}
+
+export async function getDocumentAudit(clubSlug: string, documentId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return []
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return []
+
+  const supabaseAdmin = getAdminClient()
+  const { data } = await supabaseAdmin
+    .from("member_document_audit")
+    .select("id, action, created_at, actor_user_id")
+    .eq("document_id", documentId)
+    .order("created_at", { ascending: false })
+
+  return data || []
 }
 
 export async function getMemberDocumentSignedUrl(clubSlug: string, documentId: string) {

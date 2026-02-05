@@ -31,3 +31,17 @@ create policy "member_documents_self_read"
   on public.member_documents
   for select
   using (user_id = auth.uid());
+
+-- Audit log for document decisions
+create table if not exists public.member_document_audit (
+  id uuid primary key default gen_random_uuid(),
+  document_id uuid references public.member_documents(id) on delete cascade,
+  club_id uuid references public.clubs(id) on delete cascade,
+  actor_user_id uuid references auth.users(id),
+  action text not null, -- approved | rejected
+  reason text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists member_document_audit_doc_idx
+  on public.member_document_audit (document_id, created_at desc);
