@@ -93,11 +93,18 @@ export default async function MemberDashboard({
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-700 px-4 py-2 text-sm font-semibold border border-emerald-100">
                 {member.membership_plans?.name || "Aktiv"}
               </div>
-              <Link href={`/club/${slug}`}>
-                <Button variant="outline" className="gap-2 rounded-full">
-                  Zur Buchung <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
+              <div className="flex flex-wrap gap-2">
+                <Link href={`/club/${slug}/dashboard/settings`}>
+                  <Button variant="outline" className="gap-2 rounded-full">
+                    Einstellungen
+                  </Button>
+                </Link>
+                <Link href={`/club/${slug}`}>
+                  <Button variant="outline" className="gap-2 rounded-full">
+                    Zur Buchung <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </header>

@@ -985,18 +985,34 @@ export async function getMatchRecapByToken(token: string) {
 export async function getClubRanking(clubId: string) {
   const supabaseAdmin = getAdminClient()
 
-  const { data: rows } = await supabaseAdmin
-    .from("ranking_points")
-    .select("user_id, points, profiles:user_id(first_name, last_name)")
+  const { data: members } = await supabaseAdmin
+    .from("club_members")
+    .select("user_id, leaderboard_opt_out, profiles:user_id(first_name, last_name)")
     .eq("club_id", clubId)
-    .order("points", { ascending: false })
-    .limit(10)
+    .eq("status", "active")
 
-  return (rows || []).map((row: any, index: number) => ({
+  const visibleMembers = (members || []).filter((m: any) => !m.leaderboard_opt_out)
+  if (visibleMembers.length === 0) return []
+
+  const { data: pointsRows } = await supabaseAdmin
+    .from("ranking_points")
+    .select("user_id, points")
+    .eq("club_id", clubId)
+
+  const pointsMap = new Map((pointsRows || []).map((r: any) => [r.user_id, r.points || 0]))
+
+  const ranked = visibleMembers
+    .map((m: any) => ({
+      userId: m.user_id,
+      name: `${m.profiles?.first_name || ""} ${m.profiles?.last_name || ""}`.trim() || "Mitglied",
+      points: pointsMap.get(m.user_id) || 0,
+    }))
+    .sort((a: any, b: any) => b.points - a.points)
+    .slice(0, 10)
+
+  return ranked.map((row: any, index: number) => ({
     rank: index + 1,
-    userId: row.user_id,
-    points: row.points || 0,
-    name: `${row.profiles?.first_name || ""} ${row.profiles?.last_name || ""}`.trim() || "Mitglied"
+    ...row,
   }))
 }
 
@@ -1072,29 +1088,65 @@ export async function submitMatchRecap(token: string, payload: {
       }
 
       if (winnerId && loserId) {
-        const { data: rankingRows } = await supabaseAdmin
-          .from("ranking_points")
-          .select("user_id, points")
+        const { data: members } = await supabaseAdmin
+          .from("club_members")
+          .select("user_id, leaderboard_opt_out")
           .eq("club_id", recap.club_id)
-          .order("points", { ascending: false })
+          .in("user_id", [winnerId, loserId])
 
-        const rankIndex = (rankingRows || []).findIndex((r: any) => r.user_id === loserId)
-        const rank = rankIndex >= 0 ? rankIndex + 1 : 10
-        const pointsAwarded = Math.max(10, 100 - (rank - 1) * 10)
+        const winnerOptOut = (members || []).find((m: any) => m.user_id === winnerId)?.leaderboard_opt_out
+        const loserOptOut = (members || []).find((m: any) => m.user_id === loserId)?.leaderboard_opt_out
 
-        await supabaseAdmin
-          .from("ranking_points")
-          .upsert({
-            club_id: recap.club_id,
-            user_id: winnerId,
-            points: (rankingRows || []).find((r: any) => r.user_id === winnerId)?.points
-              ? (rankingRows || []).find((r: any) => r.user_id === winnerId)!.points + pointsAwarded
-              : pointsAwarded,
-            updated_at: new Date().toISOString()
-          }, { onConflict: "club_id,user_id" })
+        if (!winnerOptOut) {
+          const { data: rankingRows } = await supabaseAdmin
+            .from("ranking_points")
+            .select("user_id, points")
+            .eq("club_id", recap.club_id)
+            .order("points", { ascending: false })
+
+          const rankIndex = (rankingRows || []).findIndex((r: any) => r.user_id === loserId)
+          const rank = rankIndex >= 0 ? rankIndex + 1 : 10
+          const effectiveRank = loserOptOut ? 10 : rank
+          const pointsAwarded = Math.max(10, 100 - (effectiveRank - 1) * 10)
+
+          const winnerPoints = (rankingRows || []).find((r: any) => r.user_id === winnerId)?.points || 0
+
+          await supabaseAdmin
+            .from("ranking_points")
+            .upsert({
+              club_id: recap.club_id,
+              user_id: winnerId,
+              points: winnerPoints + pointsAwarded,
+              updated_at: new Date().toISOString()
+            }, { onConflict: "club_id,user_id" })
+        }
       }
     }
   }
+
+  return { success: true }
+}
+
+export async function updateLeaderboardOptOut(clubSlug: string, optOut: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const { error } = await supabase
+    .from("club_members")
+    .update({ leaderboard_opt_out: optOut })
+    .eq("club_id", club.id)
+    .eq("user_id", user.id)
+
+  if (error) return { success: false, error: error.message }
 
   return { success: true }
 }
