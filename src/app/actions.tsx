@@ -15,6 +15,8 @@ const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase() || ""
 
 if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nicht in .env gesetzt!")
 
+const MEMBER_DOC_BUCKET = "member-documents"
+
 type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member'
 
 // --- HELPER: ADMIN CLIENT ---
@@ -1049,6 +1051,289 @@ function deriveBadges(stats: any) {
 export async function getMyBadges(clubId: string) {
   const stats = await getMyMemberStats(clubId)
   return deriveBadges(stats)
+}
+
+type MedicalAiResult = {
+  is_medical_certificate: boolean
+  is_italian: boolean
+  has_doctor_signature_or_stamp: boolean
+  has_patient_name: boolean
+  has_date: boolean
+  date_iso: string | null
+  confidence: number
+  reason: string
+}
+
+async function analyzeMedicalCertificateImage(imageUrl: string): Promise<MedicalAiResult | null> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return null
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4.1-mini",
+      input: [
+        {
+          role: "system",
+          content:
+            "Du bist eine strenge Prüf-KI für medizinische Sportatteste in Italien. " +
+            "Gib ausschließlich ein JSON-Objekt mit den geforderten Feldern zurück.",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: "Prüfe dieses Dokument. Ist es ein italienisches sportmedizinisches Attest? Fülle das JSON aus." },
+            { type: "input_image", image_url: imageUrl },
+          ],
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "medical_cert_check",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              is_medical_certificate: { type: "boolean" },
+              is_italian: { type: "boolean" },
+              has_doctor_signature_or_stamp: { type: "boolean" },
+              has_patient_name: { type: "boolean" },
+              has_date: { type: "boolean" },
+              date_iso: { type: ["string", "null"] },
+              confidence: { type: "number" },
+              reason: { type: "string" },
+            },
+            required: [
+              "is_medical_certificate",
+              "is_italian",
+              "has_doctor_signature_or_stamp",
+              "has_patient_name",
+              "has_date",
+              "date_iso",
+              "confidence",
+              "reason",
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+    }),
+  })
+
+  if (!response.ok) return null
+  const data = await response.json()
+  const text = data.output_text || data.output?.[0]?.content?.[0]?.text
+  if (!text) return null
+
+  try {
+    return JSON.parse(text) as MedicalAiResult
+  } catch {
+    return null
+  }
+}
+
+export async function getMyDocuments(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return []
+
+  const { data } = await supabase
+    .from("member_documents")
+    .select("*")
+    .eq("club_id", club.id)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+
+  return data || []
+}
+
+export async function uploadMemberDocument(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const clubSlug = formData.get("clubSlug") as string
+  const docType = (formData.get("docType") as string) || "medical_certificate"
+  const file = formData.get("file") as File | null
+
+  if (!clubSlug || !file) return { success: false, error: "Datei fehlt." }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const supabaseAdmin = getAdminClient()
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_")
+  const filePath = `${club.id}/${user.id}/${Date.now()}-${safeName}`
+
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = new Uint8Array(arrayBuffer)
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from(MEMBER_DOC_BUCKET)
+    .upload(filePath, buffer, { contentType: file.type, upsert: true })
+
+  if (uploadError) return { success: false, error: uploadError.message }
+
+  const { data: doc, error: insertError } = await supabaseAdmin
+    .from("member_documents")
+    .insert({
+      club_id: club.id,
+      user_id: user.id,
+      doc_type: docType,
+      file_path: filePath,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.type,
+      ai_status: "pending",
+      review_status: "pending",
+    })
+    .select()
+    .single()
+
+  if (insertError) return { success: false, error: insertError.message }
+
+  if (docType === "medical_certificate") {
+    const { data: signed } = await supabaseAdmin.storage
+      .from(MEMBER_DOC_BUCKET)
+      .createSignedUrl(filePath, 60 * 10)
+
+    if (signed?.signedUrl) {
+      const ai = await analyzeMedicalCertificateImage(signed.signedUrl)
+      const now = new Date()
+      const tempValid = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+      const isOk =
+        !!ai &&
+        ai.is_medical_certificate &&
+        ai.is_italian &&
+        ai.has_doctor_signature_or_stamp &&
+        ai.has_date
+
+      await supabaseAdmin
+        .from("member_documents")
+        .update({
+          ai_status: isOk ? "ok" : "reject",
+          ai_confidence: ai?.confidence ?? null,
+          ai_reason: ai?.reason ?? "Keine KI-Antwort",
+          temp_valid_until: isOk ? tempValid : null,
+        })
+        .eq("id", doc.id)
+
+      if (isOk) {
+        await supabaseAdmin
+          .from("club_members")
+          .update({ medical_certificate_valid_until: tempValid })
+          .eq("club_id", club.id)
+          .eq("user_id", user.id)
+      }
+    } else {
+      await supabaseAdmin
+        .from("member_documents")
+        .update({ ai_status: "error", ai_reason: "Signed URL fehlgeschlagen" })
+        .eq("id", doc.id)
+    }
+  }
+
+  revalidatePath(`/club/${clubSlug}/dashboard/documents`)
+  return { success: true }
+}
+
+export async function getMemberDocumentsForAdmin(clubSlug: string, memberId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return []
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return []
+
+  const supabaseAdmin = getAdminClient()
+  const { data } = await supabaseAdmin
+    .from("member_documents")
+    .select("*")
+    .eq("club_id", club.id)
+    .eq("user_id", memberId)
+    .order("created_at", { ascending: false })
+
+  return data || []
+}
+
+export async function reviewMemberDocument(clubSlug: string, documentId: string, approve: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: doc } = await supabaseAdmin
+    .from("member_documents")
+    .select("*")
+    .eq("id", documentId)
+    .single()
+
+  if (!doc) return { success: false, error: "Dokument nicht gefunden" }
+
+  const createdAt = new Date(doc.created_at)
+  const finalValid = new Date(createdAt.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()
+  const nowIso = new Date().toISOString()
+
+  await supabaseAdmin
+    .from("member_documents")
+    .update({
+      review_status: approve ? "approved" : "rejected",
+      reviewed_by: user.id,
+      reviewed_at: nowIso,
+      valid_until: approve ? finalValid : null,
+    })
+    .eq("id", documentId)
+
+  await supabaseAdmin
+    .from("club_members")
+    .update({
+      medical_certificate_valid_until: approve ? finalValid : null,
+    })
+    .eq("club_id", club.id)
+    .eq("user_id", doc.user_id)
+
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true }
 }
 
 export async function submitMatchRecap(token: string, payload: {

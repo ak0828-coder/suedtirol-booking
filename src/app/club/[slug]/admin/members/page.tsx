@@ -55,9 +55,11 @@ export default async function AdminMembersPage({
                 </TableCell>
                 <TableCell>{m.profiles?.phone || "-"}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" className="rounded-full">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Details
+                  <Button asChild variant="ghost" size="sm" className="rounded-full">
+                    <a href={`/club/${slug}/admin/members/${m.id}`}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Details
+                    </a>
                   </Button>
                 </TableCell>
               </TableRow>

@@ -101,6 +101,11 @@ export default async function MemberDashboard({
                     Einstellungen
                   </Button>
                 </Link>
+                <Link href={`/club/${slug}/dashboard/documents`}>
+                  <Button variant="outline" className="gap-2 rounded-full">
+                    Dokumente
+                  </Button>
+                </Link>
                 <Link href={`/club/${slug}`}>
                   <Button variant="outline" className="gap-2 rounded-full">
                     Zur Buchung <ArrowRight className="w-4 h-4" />
