@@ -67,12 +67,26 @@ export default async function ClubLeaderboardPage({
                 {ranking.map((row) => (
                   <div
                     key={row.userId}
-                    className="flex items-center justify-between rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm"
+                    className={`flex items-center justify-between rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm ${row.rank <= 3 ? "anim-pop" : ""}`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-8 text-center font-semibold text-slate-500">
-                        {row.rank}
-                      </span>
+                      {row.rank <= 3 ? (
+                        <span
+                          className={
+                            row.rank === 1
+                              ? "rounded-full bg-amber-100 text-amber-800 px-2 py-1 text-xs font-semibold"
+                              : row.rank === 2
+                              ? "rounded-full bg-slate-200 text-slate-700 px-2 py-1 text-xs font-semibold"
+                              : "rounded-full bg-amber-50 text-amber-700 px-2 py-1 text-xs font-semibold"
+                          }
+                        >
+                          {row.rank}
+                        </span>
+                      ) : (
+                        <span className="w-8 text-center font-semibold text-slate-500">
+                          {row.rank}
+                        </span>
+                      )}
                       <span className="font-medium text-slate-800">{row.name}</span>
                     </div>
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
