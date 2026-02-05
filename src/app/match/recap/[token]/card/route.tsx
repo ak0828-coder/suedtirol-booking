@@ -1,12 +1,14 @@
 import { ImageResponse } from "@vercel/og"
 import { createClient } from "@supabase/supabase-js"
+import { NextRequest } from "next/server"
 
 export const runtime = "edge"
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { token: string } }
+  _req: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
 ) {
+  const { token } = await params
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -16,7 +18,7 @@ export async function GET(
   const { data: recap } = await supabaseAdmin
     .from("match_recaps")
     .select("*")
-    .eq("token", params.token)
+    .eq("token", token)
     .single()
 
   if (!recap) {
