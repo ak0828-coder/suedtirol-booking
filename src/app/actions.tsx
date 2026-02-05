@@ -883,6 +883,9 @@ export async function createCheckoutSession(
   guestName?: string,
   guestEmail?: string
 ) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   let finalPrice = price
   let metadata: any = {
     courtId, clubSlug,
