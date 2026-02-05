@@ -58,6 +58,21 @@
   .anim-glow {
     animation: glow 3.5s ease-in-out infinite;
   }
+  .anim-shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 2.8s ease-in-out infinite;
+  }
+  .anim-pop {
+    animation: pop 300ms ease-out both;
+  }
+  .input-glow {
+    transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
+  }
+  .input-glow:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.6);
+    transform: translateY(-1px);
+  }
   @keyframes fade-up {
     from {
       opacity: 0;
@@ -86,11 +101,31 @@
       box-shadow: 0 0 24px rgba(16, 185, 129, 0.25);
     }
   }
+  @keyframes shimmer {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
+  }
+  @keyframes pop {
+    0% {
+      transform: scale(0.96);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .anim-fade-up,
     .anim-fade-up-sm,
     .anim-float,
-    .anim-glow {
+    .anim-glow,
+    .anim-shimmer,
+    .anim-pop {
       animation: none;
     }
   }

@@ -165,7 +165,11 @@ export function MatchRecapForm({
     ctx.fillText(resultText || "6:4, 6:2", panelX + 40, nameY + 260)
 
     if (winnerName) {
-      ctx.fillStyle = "rgba(255,215,0,0.95)"
+      const shimmer = ctx.createLinearGradient(panelX + 40, nameY + 300, panelX + 360, nameY + 354)
+      shimmer.addColorStop(0, "rgba(255,215,0,0.9)")
+      shimmer.addColorStop(0.5, "rgba(255,239,160,0.95)")
+      shimmer.addColorStop(1, "rgba(255,215,0,0.9)")
+      ctx.fillStyle = shimmer
       drawRoundedRect(ctx, panelX + 40, nameY + 300, 320, 54, 18)
       ctx.fill()
       ctx.fillStyle = "#0b1220"
@@ -269,7 +273,12 @@ export function MatchRecapForm({
           )}
           <div className="space-y-2">
             <Label>Mein Name</Label>
-            <Input value={playerName} onChange={(e) => setPlayerName(e.target.value)} disabled={isMemberMode} />
+            <Input
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              disabled={isMemberMode}
+              className="input-glow"
+            />
           </div>
           <div className="space-y-2">
             <Label>Gegner Name</Label>
@@ -303,6 +312,7 @@ export function MatchRecapForm({
                     setOpponentName(e.target.value)
                     setOpponentUserId(null)
                   }}
+                  className="input-glow"
                 />
                 <div className="max-h-40 overflow-auto rounded-lg border border-slate-200">
                   {memberOptions
@@ -324,12 +334,12 @@ export function MatchRecapForm({
                 </div>
               </div>
             ) : (
-              <Input value={opponentName} onChange={(e) => setOpponentName(e.target.value)} />
+              <Input value={opponentName} onChange={(e) => setOpponentName(e.target.value)} className="input-glow" />
             )}
           </div>
           <div className="space-y-2">
             <Label>Ergebnis (z.B. 6:4, 6:2)</Label>
-            <Input value={resultText} onChange={(e) => setResultText(e.target.value)} />
+            <Input value={resultText} onChange={(e) => setResultText(e.target.value)} className="input-glow" />
           </div>
           <div className="flex flex-wrap gap-3">
             <Button onClick={handleSave} className="rounded-full transition-transform hover:-translate-y-0.5">
@@ -345,7 +355,7 @@ export function MatchRecapForm({
           <div className="text-xs text-slate-500">
             Tipp: Für Instagram einfach „Download“ wählen und dann in der Story posten.
           </div>
-          {message && <div className="text-sm text-slate-500">{message}</div>}
+          {message && <div className="text-sm text-slate-500 anim-pop">{message}</div>}
         </div>
       </div>
 
