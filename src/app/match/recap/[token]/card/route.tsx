@@ -60,7 +60,7 @@ export async function GET(
 
   const winnerName = (() => {
     const parts = resultText.split(",").map((p: string) => p.trim())
-    const score = parts.map((set) => {
+    const score: number[] = parts.map((set: string) => {
       const [a, b] = set.split(":").map((v: string) => parseInt(v, 10))
       if (Number.isNaN(a) || Number.isNaN(b)) return 0
       return a > b ? 1 : a < b ? -1 : 0
