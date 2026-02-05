@@ -25,6 +25,7 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
   const [message, setMessage] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [openingId, setOpeningId] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const handleReview = async (id: string, approve: boolean) => {
     setSavingId(id)
@@ -78,7 +79,7 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
                     setOpeningId(doc.id)
                     const res = await getMemberDocumentSignedUrl(clubSlug, doc.id)
                     if (res?.success && res.url) {
-                      window.open(res.url, "_blank")
+                      setPreviewUrl(res.url)
                     } else {
                       setMessage(res?.error || "Dokument konnte nicht geöffnet werden.")
                     }
@@ -86,6 +87,26 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
                   }}
                 >
                   Öffnen
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full"
+                  disabled={openingId === doc.id}
+                  onClick={async () => {
+                    setOpeningId(doc.id)
+                    const res = await getMemberDocumentSignedUrl(clubSlug, doc.id)
+                    if (res?.success && res.url) {
+                      const link = document.createElement("a")
+                      link.href = res.url
+                      link.download = doc.file_name
+                      link.click()
+                    } else {
+                      setMessage(res?.error || "Download fehlgeschlagen.")
+                    }
+                    setOpeningId(null)
+                  }}
+                >
+                  Download
                 </Button>
                 <Button
                   className="rounded-full"
@@ -108,6 +129,12 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
         </div>
       )}
       {message && <div className="text-xs text-slate-500">{message}</div>}
+      {previewUrl && (
+        <div className="rounded-xl border border-slate-200/60 bg-white/90 p-3">
+          <div className="mb-2 text-xs text-slate-500">Vorschau</div>
+          <iframe src={previewUrl} className="h-96 w-full rounded-lg border border-slate-200/60" />
+        </div>
+      )}
     </div>
   )
 }

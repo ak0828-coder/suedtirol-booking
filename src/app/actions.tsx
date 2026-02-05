@@ -1053,6 +1053,57 @@ export async function getMyBadges(clubId: string) {
   return deriveBadges(stats)
 }
 
+export async function getClubAiSettings(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id, ai_doc_enabled, ai_doc_mode")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return null
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return null
+
+  return {
+    ai_doc_enabled: club.ai_doc_enabled ?? true,
+    ai_doc_mode: club.ai_doc_mode ?? "buffer_30"
+  }
+}
+
+export async function updateClubAiSettings(clubSlug: string, enabled: boolean, mode: "buffer_30" | "ai_only") {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const { error } = await supabase
+    .from("clubs")
+    .update({ ai_doc_enabled: enabled, ai_doc_mode: mode })
+    .eq("id", club.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/club/${clubSlug}/admin/settings`)
+  return { success: true }
+}
+
 type MedicalAiResult = {
   is_medical_certificate: boolean
   is_italian: boolean
@@ -1173,7 +1224,7 @@ export async function uploadMemberDocument(formData: FormData) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, name, admin_email, ai_doc_enabled, ai_doc_mode")
     .eq("slug", clubSlug)
     .single()
 
@@ -1216,7 +1267,10 @@ export async function uploadMemberDocument(formData: FormData) {
     .eq("id", user.id)
     .single()
 
-  if (docType === "medical_certificate") {
+  const aiEnabled = club.ai_doc_enabled ?? true
+  const aiMode = (club.ai_doc_mode ?? "buffer_30") as "buffer_30" | "ai_only"
+
+  if (docType === "medical_certificate" && aiEnabled) {
     const { data: signed } = await supabaseAdmin.storage
       .from(MEMBER_DOC_BUCKET)
       .createSignedUrl(filePath, 60 * 10)
@@ -1243,10 +1297,25 @@ export async function uploadMemberDocument(formData: FormData) {
         })
         .eq("id", doc.id)
 
-      if (isOk) {
+      if (isOk && aiMode === "buffer_30") {
         await supabaseAdmin
           .from("club_members")
           .update({ medical_certificate_valid_until: tempValid })
+          .eq("club_id", club.id)
+          .eq("user_id", user.id)
+      } else if (isOk && aiMode === "ai_only") {
+        const finalValid = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        await supabaseAdmin
+          .from("member_documents")
+          .update({
+            review_status: "approved",
+            valid_until: finalValid
+          })
+          .eq("id", doc.id)
+
+        await supabaseAdmin
+          .from("club_members")
+          .update({ medical_certificate_valid_until: finalValid })
           .eq("club_id", club.id)
           .eq("user_id", user.id)
       }
