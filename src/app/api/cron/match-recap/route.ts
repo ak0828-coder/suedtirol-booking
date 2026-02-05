@@ -4,6 +4,7 @@ import { Resend } from "resend"
 import { MatchRecapEmailTemplate } from "@/components/emails/match-recap-template"
 import { format } from "date-fns"
 import crypto from "crypto"
+import React from "react"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -91,18 +92,18 @@ export async function GET(req: Request) {
     if (!email) continue
 
     try {
+      const emailReact = React.createElement(MatchRecapEmailTemplate, {
+        clubName: club?.name || "Club",
+        date: format(new Date(booking.end_time), "dd.MM.yyyy"),
+        time: format(new Date(booking.end_time), "HH:mm"),
+        recapUrl,
+      })
+
       await resend.emails.send({
         from: "Suedtirol Booking <onboarding@resend.dev>",
         to: [email],
         subject: `Wie lief dein Match?`,
-        react: (
-          <MatchRecapEmailTemplate
-            clubName={club?.name || "Club"}
-            date={format(new Date(booking.end_time), "dd.MM.yyyy")}
-            time={format(new Date(booking.end_time), "HH:mm")}
-            recapUrl={recapUrl}
-          />
-        ),
+        react: emailReact,
       })
 
       await supabaseAdmin
