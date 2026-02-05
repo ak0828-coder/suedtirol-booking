@@ -1031,6 +1031,51 @@ export async function submitMatchRecap(token: string, payload: {
         opponent_name: payload.opponentName,
         result_text: payload.resultText
       })
+
+    // Punktevergabe (eTennis-style): Gewinner bekommt Punkte nach Rang des Gegners
+    if (payload.opponentUserId) {
+      const parts = payload.resultText.split(",").map((p: string) => p.trim())
+      const score: number[] = parts.map((set: string) => {
+        const [a, b] = set.split(":").map((v: string) => parseInt(v, 10))
+        if (Number.isNaN(a) || Number.isNaN(b)) return 0
+        return a > b ? 1 : a < b ? -1 : 0
+      })
+      const sum = score.reduce((acc, v) => acc + v, 0)
+
+      let winnerId: string | null = null
+      let loserId: string | null = null
+
+      if (sum > 0) {
+        winnerId = recap.player_user_id
+        loserId = payload.opponentUserId
+      } else if (sum < 0) {
+        winnerId = payload.opponentUserId
+        loserId = recap.player_user_id
+      }
+
+      if (winnerId && loserId) {
+        const { data: rankingRows } = await supabaseAdmin
+          .from("ranking_points")
+          .select("user_id, points")
+          .eq("club_id", recap.club_id)
+          .order("points", { ascending: false })
+
+        const rankIndex = (rankingRows || []).findIndex((r: any) => r.user_id === loserId)
+        const rank = rankIndex >= 0 ? rankIndex + 1 : 10
+        const pointsAwarded = Math.max(10, 100 - (rank - 1) * 10)
+
+        await supabaseAdmin
+          .from("ranking_points")
+          .upsert({
+            club_id: recap.club_id,
+            user_id: winnerId,
+            points: (rankingRows || []).find((r: any) => r.user_id === winnerId)?.points
+              ? (rankingRows || []).find((r: any) => r.user_id === winnerId)!.points + pointsAwarded
+              : pointsAwarded,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "club_id,user_id" })
+      }
+    }
   }
 
   return { success: true }
