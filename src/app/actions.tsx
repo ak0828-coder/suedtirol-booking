@@ -1210,6 +1210,12 @@ export async function uploadMemberDocument(formData: FormData) {
 
   if (insertError) return { success: false, error: insertError.message }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, phone")
+    .eq("id", user.id)
+    .single()
+
   if (docType === "medical_certificate") {
     const { data: signed } = await supabaseAdmin.storage
       .from(MEMBER_DOC_BUCKET)
@@ -1249,6 +1255,29 @@ export async function uploadMemberDocument(formData: FormData) {
         .from("member_documents")
         .update({ ai_status: "error", ai_reason: "Signed URL fehlgeschlagen" })
         .eq("id", doc.id)
+    }
+  }
+
+  if (docType === "medical_certificate") {
+    const adminEmail = (club as any).admin_email || SUPER_ADMIN_EMAIL
+    if (adminEmail) {
+      try {
+        await resend.emails.send({
+          from: "Suedtirol Booking <onboarding@resend.dev>",
+          to: [adminEmail],
+          subject: `Neues ärztliches Zeugnis (${clubSlug})`,
+          react: (
+            <div>
+              <p>Ein Mitglied hat ein neues ärztliches Zeugnis hochgeladen.</p>
+              <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
+              <p><strong>Telefon:</strong> {profile?.phone || "-"}</p>
+              <p><strong>Datei:</strong> {file.name}</p>
+            </div>
+          ),
+        })
+      } catch (err) {
+        console.error("Admin notification email failed:", err)
+      }
     }
   }
 
@@ -1334,6 +1363,42 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
 
   revalidatePath(`/club/${clubSlug}/admin/members`)
   return { success: true }
+}
+
+export async function getMemberDocumentSignedUrl(clubSlug: string, documentId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+
+  const supabaseAdmin = getAdminClient()
+  const { data: doc } = await supabaseAdmin
+    .from("member_documents")
+    .select("id, club_id, user_id, file_path")
+    .eq("id", documentId)
+    .single()
+
+  if (!doc || doc.club_id !== club.id) return { success: false, error: "Dokument nicht gefunden" }
+
+  if (doc.user_id !== user.id && club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const { data: signed } = await supabaseAdmin.storage
+    .from(MEMBER_DOC_BUCKET)
+    .createSignedUrl(doc.file_path, 60 * 10)
+
+  if (!signed?.signedUrl) return { success: false, error: "Signed URL fehlgeschlagen" }
+  return { success: true, url: signed.signedUrl }
 }
 
 export async function submitMatchRecap(token: string, payload: {

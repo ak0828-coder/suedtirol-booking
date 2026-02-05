@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { reviewMemberDocument } from "@/app/actions"
+import { getMemberDocumentSignedUrl, reviewMemberDocument } from "@/app/actions"
 
 type AdminDoc = {
   id: string
@@ -24,6 +24,7 @@ type MemberDocumentsAdminProps = {
 export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdminProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [openingId, setOpeningId] = useState<string | null>(null)
 
   const handleReview = async (id: string, approve: boolean) => {
     setSavingId(id)
@@ -69,6 +70,23 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-full"
+                  disabled={openingId === doc.id}
+                  onClick={async () => {
+                    setOpeningId(doc.id)
+                    const res = await getMemberDocumentSignedUrl(clubSlug, doc.id)
+                    if (res?.success && res.url) {
+                      window.open(res.url, "_blank")
+                    } else {
+                      setMessage(res?.error || "Dokument konnte nicht geöffnet werden.")
+                    }
+                    setOpeningId(null)
+                  }}
+                >
+                  Öffnen
+                </Button>
                 <Button
                   className="rounded-full"
                   disabled={savingId === doc.id}

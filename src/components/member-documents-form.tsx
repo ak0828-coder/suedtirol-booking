@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { uploadMemberDocument } from "@/app/actions"
+import { getMemberDocumentSignedUrl, uploadMemberDocument } from "@/app/actions"
 
 type MemberDocument = {
   id: string
@@ -23,6 +23,7 @@ type MemberDocumentsFormProps = {
 export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsFormProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [openingId, setOpeningId] = useState<string | null>(null)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -85,6 +86,13 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                   <div className="text-xs text-slate-500">
                     KI: {doc.ai_status} · Review: {doc.review_status}
                   </div>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
+                    <span>Upload</span>
+                    <span>→</span>
+                    <span>{doc.ai_status === "ok" ? "KI ok" : doc.ai_status === "reject" ? "KI abgelehnt" : "KI prüft"}</span>
+                    <span>→</span>
+                    <span>{doc.review_status === "approved" ? "Bestätigt" : doc.review_status === "rejected" ? "Abgelehnt" : "Wartet"}</span>
+                  </div>
                 </div>
                 <div className="text-xs text-slate-500">
                   {doc.valid_until
@@ -93,6 +101,23 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                     ? `Vorläufig bis ${new Date(doc.temp_valid_until).toLocaleDateString("de-DE")}`
                     : "Nicht gültig"}
                 </div>
+                <Button
+                  variant="outline"
+                  className="rounded-full text-xs"
+                  disabled={openingId === doc.id}
+                  onClick={async () => {
+                    setOpeningId(doc.id)
+                    const res = await getMemberDocumentSignedUrl(clubSlug, doc.id)
+                    if (res?.success && res.url) {
+                      window.open(res.url, "_blank")
+                    } else {
+                      setMessage(res?.error || "Dokument konnte nicht geöffnet werden.")
+                    }
+                    setOpeningId(null)
+                  }}
+                >
+                  Öffnen
+                </Button>
               </div>
             ))}
           </div>
