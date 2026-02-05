@@ -85,7 +85,7 @@ export default async function MemberDashboard({
               <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight">
                 Hallo {profile?.first_name || "Mitglied"}!
               </h1>
-              <p className="text-slate-500">Willkommen bei {member.clubs.name}</p>
+              <p className="text-slate-500">Willkommen bei {member.clubs.name}.</p>
             </div>
             <div className="flex flex-col items-start md:items-end gap-3">
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-700 px-4 py-2 text-sm font-semibold border border-emerald-100">
