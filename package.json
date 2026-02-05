@@ -19,6 +19,7 @@
     "@react-email/render": "^2.0.4",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.1",
+    "@vercel/og": "^0.8.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",

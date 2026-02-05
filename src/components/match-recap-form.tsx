@@ -213,20 +213,21 @@ export function MatchRecapForm({
   }
 
   const handleDownload = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const link = document.createElement("a")
-    link.download = "match-card.png"
-    link.href = canvas.toDataURL("image/png")
-    link.click()
+    const cardUrl = `/match/recap/${token}/card`
+    fetch(cardUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const link = document.createElement("a")
+        link.download = "match-card.png"
+        link.href = URL.createObjectURL(blob)
+        link.click()
+        URL.revokeObjectURL(link.href)
+      })
   }
 
   const handleShare = async () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve))
-    if (!blob) return
-
+    const cardUrl = `/match/recap/${token}/card`
+    const blob = await fetch(cardUrl).then((res) => res.blob())
     const file = new File([blob], "match-card.png", { type: "image/png" })
 
     // Web Share API (mobile-first)
