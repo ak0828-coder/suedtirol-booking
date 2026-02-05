@@ -69,7 +69,7 @@ export function MatchRecapForm({
   const winnerName = useMemo(() => {
     if (!resultText) return null
     const parts = resultText.split(",").map((p) => p.trim())
-    const score = parts.map((set) => {
+    const score: number[] = parts.map((set) => {
       const [a, b] = set.split(":").map((v) => parseInt(v, 10))
       if (Number.isNaN(a) || Number.isNaN(b)) return 0
       return a > b ? 1 : a < b ? -1 : 0
