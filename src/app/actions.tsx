@@ -982,7 +982,7 @@ export async function getMatchRecapByToken(token: string) {
   return { recap, booking, club, playerProfile, members }
 }
 
-export async function getClubRanking(clubId: string) {
+export async function getClubRanking(clubId: string, limit = 10) {
   const supabaseAdmin = getAdminClient()
 
   const { data: members } = await supabaseAdmin
@@ -1008,7 +1008,7 @@ export async function getClubRanking(clubId: string) {
       points: pointsMap.get(m.user_id) || 0,
     }))
     .sort((a: any, b: any) => b.points - a.points)
-    .slice(0, 10)
+    .slice(0, limit)
 
   return ranked.map((row: any, index: number) => ({
     rank: index + 1,

@@ -209,6 +209,13 @@ export default async function MemberDashboard({
                   ))}
                 </div>
               )}
+              <div className="mt-4">
+                <Link href={`/club/${slug}/dashboard/leaderboard`}>
+                  <Button variant="outline" className="rounded-full">
+                    Top 50 ansehen
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
