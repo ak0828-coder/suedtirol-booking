@@ -81,14 +81,43 @@ export async function GET(
           padding: "64px",
           color: "white",
           background:
+            "radial-gradient(1200px 900px at 10% 10%, rgba(255,255,255,0.08), transparent 60%)," +
+            "radial-gradient(900px 700px at 80% 20%, rgba(255,255,255,0.06), transparent 60%)," +
             "linear-gradient(135deg, #0b1220 0%, #0f172a 55%, " + clubColor + " 100%)",
-          fontFamily: "Arial, sans-serif",
+          fontFamily: "Impact, Arial Black, Arial, sans-serif",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: 120,
+            left: -120,
+            width: 1400,
+            height: 120,
+            background: "rgba(255,255,255,0.05)",
+            transform: "rotate(-8deg)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 260,
+            left: -120,
+            width: 1400,
+            height: 70,
+            background: "rgba(255,255,255,0.04)",
+            transform: "rotate(-8deg)",
+          }}
+        />
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 48, fontWeight: 700 }}>{clubName}</div>
-            <div style={{ fontSize: 22, opacity: 0.7, marginTop: 6 }}>MATCH CARD</div>
+            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: 1 }}>{clubName}</div>
+            <div style={{ fontSize: 22, opacity: 0.7, marginTop: 6, letterSpacing: 2 }}>
+              MATCH CARD
+            </div>
             <div style={{ fontSize: 20, opacity: 0.75, marginTop: 6 }}>{dateLabel}</div>
           </div>
           {club?.logo_url ? (
@@ -96,24 +125,27 @@ export async function GET(
               src={club.logo_url}
               width={120}
               height={120}
-              style={{ opacity: 0.9, borderRadius: 16 }}
+              style={{ opacity: 0.9, borderRadius: 18 }}
             />
           ) : null}
         </div>
 
         <div
           style={{
-            marginTop: 60,
-            padding: 48,
-            borderRadius: 32,
-            background: "rgba(15, 23, 42, 0.65)",
-            border: "2px solid rgba(255,255,255,0.12)",
+            marginTop: 70,
+            padding: 56,
+            borderRadius: 36,
+            background: "rgba(15, 23, 42, 0.7)",
+            border: "2px solid rgba(255,255,255,0.15)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
           }}
         >
-          <div style={{ fontSize: 64, fontWeight: 800 }}>{playerName}</div>
-          <div style={{ fontSize: 34, opacity: 0.6, marginTop: 16 }}>VS</div>
-          <div style={{ fontSize: 64, fontWeight: 800, marginTop: 12 }}>{opponentName}</div>
-          <div style={{ fontSize: 72, fontWeight: 900, marginTop: 32 }}>{resultText}</div>
+          <div style={{ fontSize: 66, fontWeight: 900 }}>{playerName}</div>
+          <div style={{ fontSize: 34, opacity: 0.6, marginTop: 16, letterSpacing: 2 }}>VS</div>
+          <div style={{ fontSize: 66, fontWeight: 900, marginTop: 12 }}>{opponentName}</div>
+          <div style={{ fontSize: 78, fontWeight: 900, marginTop: 32, letterSpacing: 2 }}>
+            {resultText}
+          </div>
           {winnerName ? (
             <div
               style={{
@@ -121,10 +153,11 @@ export async function GET(
                 marginTop: 28,
                 padding: "10px 18px",
                 borderRadius: 14,
-                background: "rgba(255, 215, 0, 0.9)",
+                background: "rgba(255, 215, 0, 0.95)",
                 color: "#0b1220",
-                fontWeight: 800,
+                fontWeight: 900,
                 fontSize: 22,
+                letterSpacing: 1,
               }}
             >
               WINNER: {winnerName}
@@ -132,7 +165,7 @@ export async function GET(
           ) : null}
         </div>
 
-        <div style={{ marginTop: "auto", fontSize: 20, opacity: 0.6 }}>
+        <div style={{ marginTop: "auto", fontSize: 20, opacity: 0.6, letterSpacing: 1 }}>
           Played at {clubName}
         </div>
       </div>
