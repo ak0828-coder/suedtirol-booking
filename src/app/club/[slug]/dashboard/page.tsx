@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trophy, Calendar, Clock, User, Sparkles, ArrowRight } from "lucide-react"
 import { format } from "date-fns"
-import { getProfile } from "@/app/actions"
+import { getClubRanking, getProfile } from "@/app/actions"
 import { ProfileForm } from "@/components/profile-form"
 import { CancelBookingButton } from "@/components/cancel-booking-button"
 import Link from "next/link"
@@ -68,6 +68,8 @@ export default async function MemberDashboard({
 
   // 4. Profil laden
   const profile = await getProfile()
+
+  const ranking = await getClubRanking(member.clubs.id)
 
   const nextBooking = upcomingBookings && upcomingBookings.length > 0 ? upcomingBookings[0] : null
 
@@ -152,6 +154,38 @@ export default async function MemberDashboard({
               <div className="text-sm text-slate-500">
                 Pflege deine Kontaktdaten und Angaben.
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Sparkles className="text-emerald-500" /> Club Rangliste
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {ranking.length === 0 ? (
+                <p className="text-sm text-slate-500">Noch keine Ranglistenpunkte vorhanden.</p>
+              ) : (
+                <div className="space-y-2">
+                  {ranking.map((row) => (
+                    <div
+                      key={row.userId}
+                      className="flex items-center justify-between rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 text-center font-semibold text-slate-500">
+                          {row.rank}
+                        </span>
+                        <span className="font-medium text-slate-800">{row.name}</span>
+                      </div>
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        {row.points} Punkte
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

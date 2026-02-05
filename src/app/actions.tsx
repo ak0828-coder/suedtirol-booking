@@ -982,6 +982,24 @@ export async function getMatchRecapByToken(token: string) {
   return { recap, booking, club, playerProfile, members }
 }
 
+export async function getClubRanking(clubId: string) {
+  const supabaseAdmin = getAdminClient()
+
+  const { data: rows } = await supabaseAdmin
+    .from("ranking_points")
+    .select("user_id, points, profiles:user_id(first_name, last_name)")
+    .eq("club_id", clubId)
+    .order("points", { ascending: false })
+    .limit(10)
+
+  return (rows || []).map((row: any, index: number) => ({
+    rank: index + 1,
+    userId: row.user_id,
+    points: row.points || 0,
+    name: `${row.profiles?.first_name || ""} ${row.profiles?.last_name || ""}`.trim() || "Mitglied"
+  }))
+}
+
 export async function submitMatchRecap(token: string, payload: {
   playerName: string
   opponentName: string
