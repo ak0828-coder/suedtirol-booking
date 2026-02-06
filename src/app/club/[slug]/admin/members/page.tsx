@@ -1,8 +1,9 @@
-import { getClubMembers, getImportedMembersCount, getMemberAdminDashboardStats } from "@/app/actions"
+import { getClubMembers, getImportedMembersCount, getMemberAdminDashboardStats, getMembershipContract } from "@/app/actions"
 import { InviteMemberDialog } from "@/components/admin/invite-member-dialog"
 import { MemberImportWizard } from "@/components/admin/member-import-wizard"
 import { ActivationBanner } from "@/components/admin/activation-banner"
 import { MemberActionDialog } from "@/components/admin/member-action-dialog"
+import { ContractEditor } from "@/components/admin/contract-editor"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -19,6 +20,7 @@ export default async function AdminMembersPage({
   const members = await getClubMembers(slug)
   const importedCount = await getImportedMembersCount(slug)
   const stats = await getMemberAdminDashboardStats(slug)
+  const contract = await getMembershipContract(slug)
 
   return (
     <>
@@ -72,6 +74,16 @@ export default async function AdminMembersPage({
       </div>
 
       <MemberImportWizard clubSlug={slug} />
+
+      {contract && (
+        <ContractEditor
+          clubSlug={slug}
+          initialTitle={contract.title}
+          initialBody={contract.body}
+          version={contract.version}
+          updatedAt={contract.updated_at}
+        />
+      )}
 
       <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">
         <Table>

@@ -2632,6 +2632,70 @@ export async function activateImportedMembers(clubSlug: string) {
   return { success: true, sent }
 }
 
+// ==============================
+// --- MEMBERSHIP CONTRACT ------
+// ==============================
+
+export async function getMembershipContract(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return null
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return null
+
+  return {
+    title: club.membership_contract_title || "Mitgliedsvertrag",
+    body: club.membership_contract_body || "",
+    version: club.membership_contract_version || 1,
+    updated_at: club.membership_contract_updated_at || null
+  }
+}
+
+export async function updateMembershipContract(clubSlug: string, title: string, body: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id, membership_contract_version")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const nextVersion = (club.membership_contract_version || 1) + 1
+  const { error } = await supabaseAdmin
+    .from("clubs")
+    .update({
+      membership_contract_title: title,
+      membership_contract_body: body,
+      membership_contract_version: nextVersion,
+      membership_contract_updated_at: new Date().toISOString()
+    })
+    .eq("id", club.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true }
+}
+
 // --- NEU: CSV EXPORT ---
 export async function exportBookingsCsv(clubSlug: string, year: number, month: number) {
   const supabase = await createClient()
