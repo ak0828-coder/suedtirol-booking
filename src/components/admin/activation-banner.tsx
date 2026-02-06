@@ -30,7 +30,7 @@ export function ActivationBanner({
       </div>
       <Button
         className="rounded-full bg-amber-600 hover:bg-amber-700 text-white gap-2"
-        onClick={() => startTransition(() => activateImportedMembers(clubSlug))}
+        onClick={() => startTransition(() => { void activateImportedMembers(clubSlug) })}
         disabled={isPending}
       >
         <Send className="h-4 w-4" /> {isPending ? "Sende Einladungen..." : "Verein aktivieren & alle einladen"}
