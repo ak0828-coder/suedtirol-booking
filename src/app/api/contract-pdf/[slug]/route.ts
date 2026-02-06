@@ -45,8 +45,13 @@ export async function GET(
   })
 
   const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
-  const body = buffer as unknown as BodyInit
-  return new Response(body, {
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(buffer)
+      controller.close()
+    },
+  })
+  return new Response(stream, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",

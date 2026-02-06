@@ -28,15 +28,15 @@ class PdfPreviewBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="h-full w-full flex flex-col items-center justify-center text-center text-sm text-slate-500 px-4">
-          <div className="font-medium text-slate-700">PDF Vorschau nicht verfÃ¼gbar</div>
-          <div className="mt-1">Bitte Ã¶ffne die PDF in einem neuen Tab.</div>
+          <div className="font-medium text-slate-700">PDF Vorschau nicht verfügbar</div>
+          <div className="mt-1">Bitte öffne die PDF in einem neuen Tab.</div>
           <a
             href={this.props.fallbackHref}
             target="_blank"
             rel="noreferrer"
             className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
           >
-            PDF Ã¶ffnen
+            PDF öffnen
           </a>
         </div>
       )

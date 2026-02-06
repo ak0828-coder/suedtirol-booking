@@ -243,8 +243,13 @@ export async function getUserRole() {
 
   const adminRoles = ownedClubs?.map(c => ({ role: 'club_admin', slug: c.slug, name: c.name })) || []
 
-  // @ts-ignore
-  const memberRoles = memberships?.map(m => ({ role: 'member', slug: m.clubs?.slug, name: m.clubs?.name })) || []
+  const memberRoles = (memberships ?? [])
+    .map((m: { clubs?: { slug?: string | null; name?: string | null } | null }) => ({
+      role: 'member',
+      slug: m.clubs?.slug || '',
+      name: m.clubs?.name || ''
+    }))
+    .filter((r) => r.slug)
 
   const allRoles = [...adminRoles, ...memberRoles]
 
@@ -900,15 +905,16 @@ export async function cancelBooking(bookingId: string) {
   const now = new Date()
   const diffInHours = (bookingStart.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-  // @ts-ignore
-  const limitHours = booking.clubs?.cancellation_buffer_hours || 24
+  const bookingWithClub = booking as {
+    clubs?: { cancellation_buffer_hours?: number | null; id?: string | null; slug?: string | null } | null
+  }
+  const limitHours = bookingWithClub.clubs?.cancellation_buffer_hours ?? 24
 
   if (diffInHours < limitHours) {
     return { success: false, error: `Stornierung nur bis ${limitHours}h vor Termin möglich.` }
   }
 
-  // @ts-ignore
-  const clubId = booking.clubs?.id
+  const clubId = bookingWithClub.clubs?.id || null
   let message = "Erfolgreich storniert."
 
   // Wenn bezahlt wurde: Refund Code erstellen
@@ -934,8 +940,10 @@ export async function cancelBooking(bookingId: string) {
     await supabase.from('bookings').delete().eq('id', bookingId)
   }
 
-  // @ts-ignore
-  revalidatePath(`/club/${booking.clubs?.slug}/dashboard`)
+  const bookingSlug = bookingWithClub.clubs?.slug
+  if (bookingSlug) {
+    revalidatePath(`/club/${bookingSlug}/dashboard`)
+  }
   return { success: true, message: message }
 }
 
@@ -950,8 +958,8 @@ export async function deleteBooking(bookingId: string) {
 
   if (!booking) return { success: false, error: "Buchung nicht gefunden" }
 
-  // @ts-ignore
-  const clubSlug = booking.clubs?.slug
+  const bookingWithClub = booking as { clubs?: { slug?: string | null } | null }
+  const clubSlug = bookingWithClub.clubs?.slug || null
 
   const { error } = await supabase
     .from('bookings')
@@ -1985,8 +1993,8 @@ export async function updateCourtHours(courtId: string, startHour: number, endHo
 
   const { data: court } = await supabaseAdmin.from('courts').select('club_id, clubs(owner_id)').eq('id', courtId).single()
 
-  // @ts-ignore
-  const ownerId = court?.clubs?.owner_id
+  const courtWithClub = court as { clubs?: { owner_id?: string | null } | null }
+  const ownerId = courtWithClub?.clubs?.owner_id
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
 
   if (ownerId !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
@@ -2051,8 +2059,8 @@ export async function deleteBlockedPeriod(id: string) {
 
   const { data: block } = await supabaseAdmin.from('blocked_periods').select('club_id, clubs(owner_id)').eq('id', id).single()
 
-  // @ts-ignore
-  const ownerId = block?.clubs?.owner_id
+  const blockWithClub = block as { clubs?: { owner_id?: string | null } | null }
+  const ownerId = blockWithClub?.clubs?.owner_id
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
 
   if (ownerId !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
@@ -2440,15 +2448,23 @@ export async function importMembersBatch(
 
   let imported = 0
   let failed = 0
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   for (const row of members) {
-    const email = (row.email || "").toString().trim().toLowerCase()
-    const firstName = (row.first_name || "").toString().trim()
-    const lastName = (row.last_name || "").toString().trim()
-    if (!email) {
+    if (!row || typeof row !== "object") {
       failed += 1
       continue
     }
+    const email = (row.email || "").toString().trim().toLowerCase()
+    const firstName = (row.first_name || "").toString().trim()
+    const lastName = (row.last_name || "").toString().trim()
+    if (!email || !emailRegex.test(email)) {
+      failed += 1
+      continue
+    }
+    const creditBalanceRaw = (row.credit_balance ?? "").toString().trim()
+    const creditBalanceParsed = Number.parseFloat(creditBalanceRaw.replace(",", "."))
+    const creditBalance = Number.isFinite(creditBalanceParsed) ? creditBalanceParsed : 0
 
     const tempPassword = `Avaimo-${Math.random().toString(36).slice(-4).toUpperCase()}`
 
@@ -2497,7 +2513,7 @@ export async function importMembersBatch(
         imported_at: new Date().toISOString(),
         invited_at: options.activateNow ? new Date().toISOString() : null,
         import_email: email,
-        credit_balance: row.credit_balance ? parseFloat(row.credit_balance) : 0,
+        credit_balance: creditBalance,
       }, { onConflict: "club_id, user_id" })
 
     if (memberError) {
