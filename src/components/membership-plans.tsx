@@ -46,7 +46,11 @@ export function MembershipPlans({
 
       <div className="mt-8 grid md:grid-cols-3 gap-6">
         {plans.map((plan) => (
-          <Card key={plan.id} className="border-2 hover:border-slate-900 transition-colors relative flex flex-col">
+          <Card
+            key={plan.id}
+            className="border-2 transition-colors relative flex flex-col hover:shadow-md"
+            style={{ borderColor: "color-mix(in srgb, var(--club-primary, #0f172a) 20%, transparent)" }}
+          >
             <CardHeader>
               <CardTitle>{plan.name}</CardTitle>
               <CardDescription>Jahresbeitrag</CardDescription>
@@ -58,14 +62,18 @@ export function MembershipPlans({
 
               <ul className="space-y-2 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" /> Kostenlos spielen
+                  <Check className="w-4 h-4 club-primary-text" /> Kostenlos spielen
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" /> Bevorzugte Buchung
+                  <Check className="w-4 h-4 club-primary-text" /> Bevorzugte Buchung
                 </li>
               </ul>
 
-              <Button className="w-full" onClick={() => handleSubscribe(plan.id, plan.stripe_price_id)} disabled={!!loadingId}>
+              <Button
+                className="w-full club-primary-bg btn-press touch-44"
+                onClick={() => handleSubscribe(plan.id, plan.stripe_price_id)}
+                disabled={!!loadingId}
+              >
                 {loadingId === plan.id ? <Loader2 className="animate-spin" /> : ctaLabel}
               </Button>
             </CardContent>

@@ -183,7 +183,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
             <span className="text-sm font-semibold flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" /> Datum wählen
             </span>
-            <div className="border rounded-md p-2 flex justify-center bg-slate-50">
+            <div className="border rounded-md p-2 flex justify-center bg-slate-50" style={{ ["--rdp-accent-color" as any]: "var(--club-primary)" }}>
               <Calendar
                 mode="single"
                 selected={date}
@@ -328,7 +328,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                     {/* ENTWEDER: Komplett gedeckt -> Kostenlos buchen */}
                     {isFullyCovered ? (
                         <Button 
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                            className="w-full club-primary-bg hover:opacity-90 btn-press"
                             disabled={isBooking}
                             onClick={handleBook} // Ruft createBooking direkt auf
                         >
@@ -337,7 +337,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                     ) : (
                         // ODER: Restbetrag via Stripe
                         <Button 
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" 
+                            className="w-full club-primary-bg hover:opacity-90 btn-press" 
                             disabled={isBooking}
                             onClick={async () => {
                                 if (!guestName.trim() || !guestEmail.trim()) {
