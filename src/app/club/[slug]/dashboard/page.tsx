@@ -76,8 +76,8 @@ export default async function MemberDashboard({
   const nextBooking = upcomingBookings && upcomingBookings.length > 0 ? upcomingBookings[0] : null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-20">
-      <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-20 safe-bottom">
+      <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
         <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
           <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-emerald-100 blur-2xl" />
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">

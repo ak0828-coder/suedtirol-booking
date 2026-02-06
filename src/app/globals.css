@@ -87,6 +87,22 @@
   .btn-press:active {
     transform: scale(0.96);
   }
+  .safe-bottom {
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  }
+  .app-pad {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  @media (min-width: 640px) {
+    .app-pad {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  .touch-44 {
+    min-height: 44px;
+  }
   @keyframes fade-up {
     from {
       opacity: 0;

@@ -83,7 +83,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   // -----------------------------
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 pb-20 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 pb-20 safe-bottom transition-colors duration-300">
       {/* HEADER */}
       <header className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
         <div className="absolute inset-0 pointer-events-none">
@@ -91,7 +91,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-rose-200/50 blur-3xl dark:bg-rose-900/20" />
         </div>
 
-        <div className="relative mx-auto max-w-5xl px-4 py-6 sm:py-10">
+        <div className="relative mx-auto max-w-5xl app-pad py-6 sm:py-10">
           {/* Navigation Oben Rechts */}
           <div className="flex items-center justify-end gap-2">
             <ModeToggle />
@@ -119,7 +119,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
             <div className="flex flex-col items-center text-center md:items-start md:text-left">
               {/* LOGO */}
               <div
-                className="w-24 h-24 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-xl overflow-hidden border border-white/70 dark:border-slate-800/70 bg-white"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-xl overflow-hidden border border-white/70 dark:border-slate-800/70 bg-white"
                 style={{ backgroundColor: club.primary_color || "#e11d48" }}
               >
                 {club.logo_url ? (
@@ -147,13 +147,13 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
               <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <Link href="#courts">
-                  <Button className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 btn-press w-full sm:w-auto">
+                  <Button className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 btn-press w-full sm:w-auto touch-44">
                     {content.hero.primaryCtaText} <ChevronRight className="w-4 h-4" />
                   </Button>
                 </Link>
                 {plans && plans.length > 0 && !isMember && (
                   <Link href="#membership">
-                    <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
+                    <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto touch-44">
                       {content.hero.secondaryCtaText}
                     </Button>
                   </Link>
@@ -167,7 +167,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-900/80">
+            <div className="rounded-3xl border border-slate-200/60 bg-white/85 p-5 sm:p-6 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-900/80">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {content.overview.title}
               </div>
@@ -204,7 +204,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-4 mt-8 sm:mt-10">
+      <div className="mx-auto max-w-5xl app-pad mt-8 sm:mt-10">
         {/* SECTION 1: PLÄTZE */}
         <div id="courts" className="flex items-end justify-between mb-6 scroll-mt-24">
           <div>

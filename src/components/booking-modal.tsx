@@ -158,7 +158,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 btn-press h-11">
+        <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 btn-press h-11 touch-44">
            Platz buchen
         </Button>
       </DialogTrigger>

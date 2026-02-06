@@ -64,7 +64,7 @@ export default async function MatchRecapPage({
       : recap.guest_name || "Spieler"
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-4 sm:p-6 safe-bottom">
       <div className="mx-auto max-w-6xl space-y-8">
         <MatchRecapForm
           token={token}
