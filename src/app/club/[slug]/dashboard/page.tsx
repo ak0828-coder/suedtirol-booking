@@ -77,10 +77,10 @@ export default async function MemberDashboard({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-20">
-      <div className="max-w-4xl mx-auto space-y-6 p-6">
-        <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6">
+        <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
           <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-emerald-100 blur-2xl" />
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
                 <Sparkles className="w-3.5 h-3.5" />
@@ -91,23 +91,23 @@ export default async function MemberDashboard({
               </h1>
               <p className="text-slate-500">Willkommen bei {member.clubs.name}!</p>
             </div>
-            <div className="flex flex-col items-start md:items-end gap-3">
+            <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-700 px-4 py-2 text-sm font-semibold border border-emerald-100">
                 {member.membership_plans?.name || "Aktiv"}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Link href={`/club/${slug}/dashboard/settings`}>
-                  <Button variant="outline" className="gap-2 rounded-full">
+                  <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
                     Einstellungen
                   </Button>
                 </Link>
                 <Link href={`/club/${slug}/dashboard/documents`}>
-                  <Button variant="outline" className="gap-2 rounded-full">
+                  <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
                     Dokumente
                   </Button>
                 </Link>
                 <Link href={`/club/${slug}`}>
-                  <Button variant="outline" className="gap-2 rounded-full">
+                  <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
                     Zur Buchung <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
@@ -116,7 +116,7 @@ export default async function MemberDashboard({
           </div>
         </header>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
           <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
@@ -216,7 +216,7 @@ export default async function MemberDashboard({
               )}
               <div className="mt-4">
                 <Link href={`/club/${slug}/dashboard/leaderboard`}>
-                  <Button variant="outline" className="rounded-full">
+                  <Button variant="outline" className="rounded-full btn-press w-full sm:w-auto">
                     Top 50 ansehen
                   </Button>
                 </Link>
