@@ -44,8 +44,12 @@ export async function GET(
       : null,
   })
 
-  const buffer = await pdf(doc).toBuffer()
-  return new Response(buffer as unknown as BodyInit, {
+  const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
+  const arrayBuffer = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength
+  )
+  return new Response(arrayBuffer, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
