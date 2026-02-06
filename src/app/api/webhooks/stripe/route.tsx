@@ -254,7 +254,10 @@ export async function POST(req: Request) {
                 next_payment_at: validUntil.toISOString()
             }, { onConflict: 'club_id, user_id' })
         }
-    }\r\n  }\r\n\r\n  // 2. ABO ERFOLGREICH VERLÄNGERT
+    }
+  }
+
+  // 2. ABO ERFOLGREICH VERLÄNGERT
   if (event.type === "invoice.payment_succeeded") {
       const subscriptionId = session.subscription
       
@@ -299,6 +302,17 @@ export async function POST(req: Request) {
 
   return new NextResponse(null, { status: 200 })
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
