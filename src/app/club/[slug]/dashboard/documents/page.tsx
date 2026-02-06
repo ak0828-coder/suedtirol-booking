@@ -5,6 +5,7 @@ import { MemberDocumentsForm } from "@/components/member-documents-form"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { getReadableTextColor } from "@/lib/color"
 
 export default async function MemberDocumentsPage({
   params,
@@ -21,7 +22,7 @@ export default async function MemberDocumentsPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, primary_color")
     .eq("slug", slug)
     .single()
 
@@ -38,8 +39,14 @@ export default async function MemberDocumentsPage({
 
   const documents = await getMyDocuments(slug)
 
+  const primary = club.primary_color || "#0f172a"
+  const primaryFg = getReadableTextColor(primary)
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter">
+    <div
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter"
+      style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
+    >
       <div className="mx-auto max-w-3xl space-y-6 app-pad pt-4 sm:pt-6">
         <header className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">

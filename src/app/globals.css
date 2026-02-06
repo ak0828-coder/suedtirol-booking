@@ -106,6 +106,13 @@
   .touch-44 {
     min-height: 44px;
   }
+  .club-primary-bg {
+    background-color: var(--club-primary, #0f172a);
+    color: var(--club-primary-foreground, #ffffff);
+  }
+  .club-primary-text {
+    color: var(--club-primary, #0f172a);
+  }
   .page-enter {
     animation: page-enter 420ms ease-out both;
   }

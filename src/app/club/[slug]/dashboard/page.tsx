@@ -8,6 +8,7 @@ import { ProfileForm } from "@/components/profile-form"
 import { CancelBookingButton } from "@/components/cancel-booking-button"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getReadableTextColor } from "@/lib/color"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 export default async function MemberDashboard({
@@ -27,7 +28,7 @@ export default async function MemberDashboard({
   // 2. Member Status Check
   const { data: member } = await supabase
     .from("club_members")
-    .select("*, clubs!inner(slug, name, id), membership_plans(name)")
+    .select("*, clubs!inner(slug, name, id, primary_color), membership_plans(name)")
     .eq("user_id", user.id)
     .eq("clubs.slug", slug)
     .single()
@@ -76,8 +77,14 @@ export default async function MemberDashboard({
 
   const nextBooking = upcomingBookings && upcomingBookings.length > 0 ? upcomingBookings[0] : null
 
+  const primary = member.clubs.primary_color || "#0f172a"
+  const primaryFg = getReadableTextColor(primary)
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter">
+    <div
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter"
+      style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
+    >
       <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
         <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
           <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-emerald-100 blur-2xl" />

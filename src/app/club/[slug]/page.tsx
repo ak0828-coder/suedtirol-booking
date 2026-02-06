@@ -9,6 +9,7 @@ import Link from "next/link"
 import { MembershipPlans } from "@/components/membership-plans"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { getReadableTextColor } from "@/lib/color"
 
 // Helper, um Daten zu holen
 async function getClubData(slug: string) {
@@ -51,6 +52,8 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   if (!data) return notFound()
 
   const { club, courts, plans } = data
+  const primary = club.primary_color || "#0f172a"
+  const primaryFg = getReadableTextColor(primary)
   const courtCount = courts?.length || 0
   const minPrice =
     courts && courts.length > 0
@@ -84,7 +87,10 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   // -----------------------------
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 pb-24 safe-bottom transition-colors duration-300 page-enter">
+    <div
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 pb-24 safe-bottom transition-colors duration-300 page-enter"
+      style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
+    >
       {/* HEADER */}
       <header className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
         <div className="absolute inset-0 pointer-events-none">
@@ -148,7 +154,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
               <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <Link href="#courts">
-                  <Button className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 btn-press w-full sm:w-auto touch-44">
+                  <Button className="gap-2 rounded-full club-primary-bg hover:opacity-90 btn-press w-full sm:w-auto touch-44">
                     {content.hero.primaryCtaText} <ChevronRight className="w-4 h-4" />
                   </Button>
                 </Link>
@@ -301,7 +307,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
       <div className="sm:hidden fixed left-4 right-4 bottom-20 z-30">
         <Link href="#courts">
-          <Button className="w-full rounded-full bg-slate-900 text-white hover:bg-slate-800 btn-press touch-44">
+          <Button className="w-full rounded-full club-primary-bg hover:opacity-90 btn-press touch-44">
             Jetzt buchen
           </Button>
         </Link>

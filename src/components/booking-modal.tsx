@@ -158,12 +158,12 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 btn-press h-11 touch-44">
+        <Button className="w-full club-primary-bg hover:opacity-90 btn-press h-11 touch-44">
            Platz buchen
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] sm:max-w-[520px] bg-white text-slate-900 max-h-[92vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] sm:max-w-[520px] bg-white text-slate-900 max-h-[92vh] overflow-y-auto overflow-x-hidden rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>{courtName} buchen</span>
@@ -225,7 +225,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                     <Button
                       key={time}
                       variant={isBooked ? "ghost" : (selectedTime === time ? "default" : "outline")}
-                      className={`text-sm h-11 btn-press ${isBooked ? 'text-red-300 line-through bg-slate-50 opacity-60 cursor-not-allowed' : ''}`}
+                      className={`text-sm h-11 btn-press ${selectedTime === time ? "club-primary-bg" : ""} ${isBooked ? 'text-red-300 line-through bg-slate-50 opacity-60 cursor-not-allowed' : ''}`}
                       disabled={isBooked}
                       onClick={() => setSelectedTime(time)}
                     >

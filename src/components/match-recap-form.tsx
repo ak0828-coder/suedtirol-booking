@@ -345,7 +345,7 @@ export function MatchRecapForm({
             <Input value={resultText} onChange={(e) => setResultText(e.target.value)} className="input-glow" />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={handleSave} className="rounded-full transition-transform hover:-translate-y-0.5 btn-press w-full sm:w-auto">
+            <Button onClick={handleSave} className="rounded-full transition-transform hover:-translate-y-0.5 btn-press w-full sm:w-auto club-primary-bg hover:opacity-90">
               Erstellen
             </Button>
             <Button variant="outline" onClick={handleDownload} className="rounded-full transition-transform hover:-translate-y-0.5 btn-press w-full sm:w-auto">

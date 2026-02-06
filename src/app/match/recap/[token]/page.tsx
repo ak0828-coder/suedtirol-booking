@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getReadableTextColor } from "@/lib/color"
 
 export default async function MatchRecapPage({
   params,
@@ -17,6 +18,9 @@ export default async function MatchRecapPage({
   if (!data) return notFound()
 
   const { recap, booking, club, playerProfile, members } = data
+
+  const primary = club?.primary_color || "#0f172a"
+  const primaryFg = getReadableTextColor(primary)
 
   if (recap.player_user_id) {
     const supabase = await createClient()
@@ -64,7 +68,10 @@ export default async function MatchRecapPage({
       : recap.guest_name || "Spieler"
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-4 sm:p-6 safe-bottom page-enter">
+    <div
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-4 sm:p-6 safe-bottom page-enter"
+      style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
+    >
       <div className="mx-auto max-w-6xl space-y-8">
         <MatchRecapForm
           token={token}
