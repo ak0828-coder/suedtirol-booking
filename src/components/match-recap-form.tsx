@@ -270,7 +270,7 @@ export function MatchRecapForm({
 
         <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-5 sm:p-6 shadow-sm space-y-4 anim-fade-up-sm anim-stagger-2">
           {isMemberMode && (
-            <div className="rounded-xl border border-emerald-200/60 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+            <div className="rounded-xl border club-primary-border bg-white/90 px-3 py-2 text-xs club-primary-text">
               Mitgliedsmodus aktiv – dein Name ist fix.
             </div>
           )}

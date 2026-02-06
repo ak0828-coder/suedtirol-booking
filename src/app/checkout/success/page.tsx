@@ -1,5 +1,4 @@
 import { stripe } from "@/lib/stripe"
-import { createBooking } from "@/app/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle2 } from "lucide-react"
 import Link from "next/link"
@@ -23,20 +22,6 @@ export default async function SuccessPage({
   }
 
   const meta = session.metadata as any
-  
-  // HIER DER FIX: Wir nutzen die Dauer aus der Session und setzen payment_status explizit
-  await createBooking(
-    meta.courtId,
-    meta.clubSlug,
-    new Date(meta.date),
-    meta.time,
-    parseFloat(meta.price),
-    parseInt(meta.durationMinutes || '60'), // <--- Dauer nutzen (Default 60 falls fehlt)
-    'paid_stripe', // <--- WICHTIG: Als bezahlt markieren!
-    undefined,
-    meta.guestName,
-    session.customer_details?.email || undefined
-  )
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -49,8 +34,8 @@ export default async function SuccessPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-slate-600">
-            Danke! Dein Platz ist fest reserviert.
-            Eine Bestätigung wurde an deine E-Mail gesendet.
+            Danke! Deine Zahlung ist eingegangen.
+            Deine Buchung wird gerade finalisiert und ist gleich im System sichtbar.
           </p>
           
           <div className="bg-slate-100 p-4 rounded-lg text-sm text-left">
@@ -66,3 +51,4 @@ export default async function SuccessPage({
     </div>
   )
 }
+

@@ -18,7 +18,7 @@ if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nich
 
 const MEMBER_DOC_BUCKET = "member-documents"
 
-type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member'
+type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'pending'
 
 // --- HELPER: ADMIN CLIENT ---
 // Wird benötigt, um Gutscheine zu validieren (für Gäste ohne Account) 
@@ -726,6 +726,9 @@ export async function createBooking(
 
   if (error) {
     console.error(error)
+    if ((error as any).code === '23505') {
+      return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
+    }
     return { success: false, error: "Datenbankfehler." }
   }
 
@@ -926,6 +929,7 @@ export async function createCheckoutSession(
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const supabaseAdmin = getAdminClient()
 
   let finalPrice = price
   let metadata: any = {
@@ -947,28 +951,72 @@ export async function createCheckoutSession(
     }
   }
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{
-      price_data: {
-        currency: 'eur',
-        product_data: { name: `Buchung: ${courtName} (${durationMinutes} Min)` },
-        unit_amount: Math.round(finalPrice * 100),
-      },
-      quantity: 1,
-    }],
-    mode: 'payment',
-    metadata: {
-      ...metadata,
-      guestName,
-      userId: user?.id || null
-    },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
-    customer_email: user?.email || guestEmail,
-  })
+  const { data: club } = await supabaseAdmin
+    .from('clubs')
+    .select('id')
+    .eq('slug', clubSlug)
+    .single()
 
-  return { url: session.url }
+  if (!club) return { error: "Club nicht gefunden" }
+
+  const [hours, minutes] = time.split(':').map(Number)
+  const startTime = new Date(date)
+  startTime.setHours(hours, minutes, 0, 0)
+  const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
+
+  const { data: booking, error: bookingError } = await supabaseAdmin
+    .from('bookings')
+    .insert({
+      court_id: courtId,
+      club_id: club.id,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+      status: 'awaiting_payment',
+      payment_status: 'pending',
+      price_paid: finalPrice,
+      guest_name: user ? 'Mitglied' : (guestName || 'Gast'),
+      guest_email: user?.email || guestEmail || null,
+      user_id: user?.id || null
+    })
+    .select('id')
+    .single()
+
+  if (bookingError) {
+    if (bookingError.code === '23505') {
+      return { error: "Dieser Termin wurde gerade gebucht. Bitte wähle eine andere Zeit." }
+    }
+    return { error: "Fehler beim Reservieren des Slots." }
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: { name: `Buchung: ${courtName} (${durationMinutes} Min)` },
+          unit_amount: Math.round(finalPrice * 100),
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      metadata: {
+        ...metadata,
+        bookingId: booking.id,
+        guestName,
+        userId: user?.id || null
+      },
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+      customer_email: user?.email || guestEmail,
+      expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
+    })
+
+    return { url: session.url }
+  } catch (err) {
+    await supabaseAdmin.from('bookings').delete().eq('id', booking.id)
+    return { error: "Fehler bei der Zahlungs-Einleitung." }
+  }
 }
 
 // ==========================================
@@ -2183,6 +2231,7 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
 
     // Payment Status übersetzen
     let payStatus = "Unbekannt"
+    if (b.status === 'awaiting_payment' || b.payment_status === 'pending') payStatus = "Ausstehend"
     if (b.payment_status === 'paid_stripe') payStatus = "Online (Stripe)"
     if (b.payment_status === 'paid_cash') payStatus = "Bar / Vor Ort"
     if (b.payment_status === 'paid_member') payStatus = "Mitglied (Kostenlos)"

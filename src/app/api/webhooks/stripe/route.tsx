@@ -150,45 +150,49 @@ export async function POST(req: Request) {
     // --- B) NEU: EINZELBUCHUNG (COURT BOOKING) ---
     // Wir erkennen das daran, dass 'courtId' in den Metadaten ist
     if (session.metadata?.courtId) {
-        // HIER NEU: creditCode auslesen
-        const { courtId, clubSlug, date, time, durationMinutes, creditCode, guestName, userId } = session.metadata
-        const amountTotal = session.amount_total ? session.amount_total / 100 : 0 // Stripe ist in Cents
+        const { courtId, clubSlug, date, time, durationMinutes, creditCode, guestName, userId, bookingId } = session.metadata
+        const amountTotal = session.amount_total ? session.amount_total / 100 : 0
         const customerEmail = session.customer_details?.email
 
-        // Wir brauchen die Club ID
         const { data: club } = await supabaseAdmin.from('clubs').select('id, admin_email').eq('slug', clubSlug).single()
         
-        if (club) {
-            // Start/Endzeit berechnen
+        if (club && bookingId) {
             const [hours, minutes] = time.split(':').map(Number)
             const startTime = new Date(date)
             startTime.setHours(hours, minutes, 0, 0)
             const endTime = new Date(startTime.getTime() + parseInt(durationMinutes) * 60000)
 
-            // NEU: Gutschein entwerten, falls einer genutzt wurde
             if (creditCode) {
-                 console.log(`🎟️ Löse Gutschein ${creditCode} via Webhook ein...`)
-                 await supabaseAdmin.from('credit_codes')
-                    .update({ is_redeemed: true })
-                    .eq('code', creditCode)
-                    .eq('club_id', club.id)
+                 const { data: current } = await supabaseAdmin
+                   .from('credit_codes')
+                   .select('usage_count, usage_limit')
+                   .eq('code', creditCode.toUpperCase())
+                   .eq('club_id', club.id)
+                   .single()
+
+                 if (current) {
+                   const newCount = (current.usage_count || 0) + 1
+                   const limit = current.usage_limit || 1
+                   const isFullyRedeemed = newCount >= limit
+                   await supabaseAdmin.from('credit_codes')
+                     .update({ usage_count: newCount, is_redeemed: isFullyRedeemed })
+                     .eq('code', creditCode.toUpperCase())
+                     .eq('club_id', club.id)
+                 }
             }
 
-            // BUCHUNG SPEICHERN
-            await supabaseAdmin.from('bookings').insert({
-                court_id: courtId,
-                club_id: club.id,
-                start_time: startTime.toISOString(),
-                end_time: endTime.toISOString(),
+            await supabaseAdmin.from('bookings').update({
                 status: 'confirmed',
                 payment_status: 'paid_stripe',
-                price_paid: amountTotal, // <--- Hier speichern wir den Stripe-Preis!
+                price_paid: amountTotal,
+                start_time: startTime.toISOString(),
+                end_time: endTime.toISOString(),
                 guest_name: guestName || customerEmail || 'Gast (Stripe)',
                 guest_email: customerEmail || null,
                 user_id: userId || null
-            })
+            }).eq('id', bookingId)
             
-            console.log(`✅ Stripe Buchung angelegt: ${amountTotal}€ für ${time} Uhr`)
+            console.log(`✅ Stripe Buchung aktualisiert: ${amountTotal}€ für ${time} Uhr`)
 
             // BUCHUNGSMAIL AN KUNDEN
             if (customerEmail) {
@@ -212,10 +216,26 @@ export async function POST(req: Request) {
                     console.error("❌ Buchungs-Mail Fehler:", emailError)
                 }
             }
+        } else if (club && courtId) {
+            const [hours, minutes] = time.split(':').map(Number)
+            const startTime = new Date(date)
+            startTime.setHours(hours, minutes, 0, 0)
+            const endTime = new Date(startTime.getTime() + parseInt(durationMinutes) * 60000)
+
+            await supabaseAdmin.from('bookings').insert({
+                court_id: courtId,
+                club_id: club.id,
+                start_time: startTime.toISOString(),
+                end_time: endTime.toISOString(),
+                status: 'confirmed',
+                payment_status: 'paid_stripe',
+                price_paid: amountTotal,
+                guest_name: guestName || customerEmail || 'Gast (Stripe)',
+                guest_email: customerEmail || null,
+                user_id: userId || null
+            })
         }
     }
-  }
-
   // 2. ABO ERFOLGREICH VERLÄNGERT
   if (event.type === "invoice.payment_succeeded") {
       const subscriptionId = session.subscription
@@ -240,6 +260,16 @@ export async function POST(req: Request) {
       }
   }
 
+  // 1b. CHECKOUT SESSION EXPIRED (Zahlung abgebrochen/timeout)
+  if (event.type === "checkout.session.expired") {
+      const expired = event.data.object as any
+      const bookingId = expired.metadata?.bookingId
+      if (bookingId) {
+          await supabaseAdmin.from('bookings').delete().eq('id', bookingId)
+          console.log(`🧹 Awaiting-Payment Buchung gelöscht: ${bookingId}`)
+      }
+  }
+
   // 3. ZAHLUNG FEHLGESCHLAGEN
   if (event.type === "invoice.payment_failed") {
       const subscriptionId = session.subscription
@@ -251,3 +281,5 @@ export async function POST(req: Request) {
 
   return new NextResponse(null, { status: 200 })
 }
+
+

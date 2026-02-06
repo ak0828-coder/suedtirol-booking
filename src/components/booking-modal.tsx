@@ -47,6 +47,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   const [voucherError, setVoucherError] = useState<string | null>(null)
   const [voucherSuccess, setVoucherSuccess] = useState(false)
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
 
   // Reset beim Schließen
   useEffect(() => {
@@ -57,6 +58,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
           setVoucherError(null)
           setGuestName("")
           setGuestEmail("")
+          setMessage(null)
       }
   }, [isOpen])
 
@@ -120,7 +122,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
     if (!date || !selectedTime) return
     if (!isMember) {
       if (!guestName.trim() || !guestEmail.trim()) {
-        alert("Bitte Name und E-Mail eingeben.")
+        setMessage("Bitte Name und E-Mail eingeben.")
         return
       }
     }
@@ -145,11 +147,12 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
     setIsBooking(false)
 
     if (result.success) {
-      alert("✅ Buchung erfolgreich gespeichert!")
-      setIsOpen(false)
-      window.location.reload() 
+      setMessage("Buchung erfolgreich gespeichert.")
+      setTimeout(() => {
+        setIsOpen(false)
+      }, 500)
     } else {
-      alert("❌ Fehler: " + result.error)
+      setMessage(result.error || "Fehler bei der Buchung.")
     }
   }
 
@@ -290,7 +293,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                           )}
                       </div>
                       {voucherError && <p className="text-xs text-red-500">{voucherError}</p>}
-                      {voucherSuccess && <p className="text-xs text-green-600 font-medium">✅ Gutschein über {discount}€ angewendet!</p>}
+                      {voucherSuccess && <p className="text-xs font-medium club-primary-text">✅ Gutschein über {discount}€ angewendet!</p>}
                   </div>
                )}
 
@@ -305,7 +308,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                       <span>Zu zahlen:</span>
                       <div className="text-right">
                           {isMember ? (
-                              <span className="text-green-600 font-bold">0€ (Mitglied)</span>
+                              <span className="club-primary-text font-bold">0€ (Mitglied)</span>
                           ) : (
                               <>
                                 {discount > 0 && <span className="text-slate-400 line-through mr-2">{price}€</span>}
@@ -319,7 +322,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
               {/* --- BUTTONS --- */}
               {isMember ? (
                   // MITGLIEDER BUTTON
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2" disabled={isBooking} onClick={handleBook}>
+                  <Button className="w-full club-primary-bg hover:opacity-90 btn-press gap-2" disabled={isBooking} onClick={handleBook}>
                       {isBooking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4"/> Jetzt kostenlos buchen</>}
                   </Button>
               ) : (
@@ -341,7 +344,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                             disabled={isBooking}
                             onClick={async () => {
                                 if (!guestName.trim() || !guestEmail.trim()) {
-                                  alert("Bitte Name und E-Mail eingeben.")
+                                  setMessage("Bitte Name und E-Mail eingeben.")
                                   return
                                 }
                                 setIsBooking(true)
@@ -358,8 +361,12 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                                     guestName,
                                     guestEmail
                                 )
-                                if (result?.url) window.location.href = result.url
-                                else { alert("Fehler"); setIsBooking(false); }
+                                if (result?.url) {
+                                  window.location.href = result.url
+                                } else {
+                                  setMessage(result?.error || "Fehler beim Checkout.")
+                                  setIsBooking(false)
+                                }
                             }}
                         >
                             {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
@@ -368,7 +375,7 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
 
                     {/* Vor Ort zahlen nur anzeigen, wenn kein Gutschein aktiv ist (oder man könnte es verbieten) */}
                     {!voucherSuccess && (
-                        <Button variant="outline" className="w-full" disabled={isBooking} onClick={handleBook}>
+                        <Button variant="outline" className="w-full btn-press" disabled={isBooking} onClick={handleBook}>
                             Vor Ort bezahlen
                         </Button>
                     )}
@@ -376,7 +383,12 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
               )}
             </div>
           )}
-           
+
+          {message && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+              {message}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

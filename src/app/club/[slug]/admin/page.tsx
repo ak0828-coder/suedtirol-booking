@@ -64,11 +64,13 @@ export default async function AdminPage({
                     <div className="flex items-center gap-4">
                       <div className="text-right hidden sm:block">
                         <div className="font-medium text-slate-900">
-                          {booking.payment_status === "paid_cash"
-                            ? "Vor Ort"
-                            : booking.payment_status === "paid_member"
-                              ? "Abo"
-                              : "Online"}
+                          {booking.status === "awaiting_payment" || booking.payment_status === "pending"
+                            ? "Ausstehend"
+                            : booking.payment_status === "paid_cash"
+                              ? "Vor Ort"
+                              : booking.payment_status === "paid_member"
+                                ? "Abo"
+                                : "Online"}
                         </div>
                         <div className="text-xs text-slate-500 capitalize">{booking.status}</div>
                       </div>
