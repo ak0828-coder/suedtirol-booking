@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { MembershipPlans } from "@/components/membership-plans"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 // Helper, um Daten zu holen
 async function getClubData(slug: string) {
@@ -83,7 +84,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   // -----------------------------
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 pb-20 safe-bottom transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 pb-24 safe-bottom transition-colors duration-300 page-enter">
       {/* HEADER */}
       <header className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
         <div className="absolute inset-0 pointer-events-none">
@@ -251,7 +252,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                       </div>
                     </div>
                     <div className="px-6 pb-6">
-                      <BookingModal
+      <BookingModal
                         courtId={court.id}
                         courtName={court.name}
                         price={court.price_per_hour}
@@ -297,6 +298,16 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           </div>
         </footer>
       </div>
+
+      <div className="sm:hidden fixed left-4 right-4 bottom-20 z-30">
+        <Link href="#courts">
+          <Button className="w-full rounded-full bg-slate-900 text-white hover:bg-slate-800 btn-press touch-44">
+            Jetzt buchen
+          </Button>
+        </Link>
+      </div>
+
+      <MobileBottomNav slug={club.slug} active="home" />
     </div>
   )
 }

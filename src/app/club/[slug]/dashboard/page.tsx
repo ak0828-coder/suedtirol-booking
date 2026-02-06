@@ -8,6 +8,7 @@ import { ProfileForm } from "@/components/profile-form"
 import { CancelBookingButton } from "@/components/cancel-booking-button"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 export default async function MemberDashboard({
   params,
@@ -76,7 +77,7 @@ export default async function MemberDashboard({
   const nextBooking = upcomingBookings && upcomingBookings.length > 0 ? upcomingBookings[0] : null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-20 safe-bottom">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter">
       <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
         <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
           <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-emerald-100 blur-2xl" />
@@ -350,6 +351,7 @@ export default async function MemberDashboard({
           </CardContent>
         </Card>
       </div>
+      <MobileBottomNav slug={slug} active="dashboard" />
     </div>
   )
 }
