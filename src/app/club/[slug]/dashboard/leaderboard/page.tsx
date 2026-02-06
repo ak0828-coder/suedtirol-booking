@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trophy } from "lucide-react"
+import { AnimatedNumber } from "@/components/animated-number"
 
 export default async function ClubLeaderboardPage({
   params,
@@ -90,7 +91,7 @@ export default async function ClubLeaderboardPage({
                       <span className="font-medium text-slate-800">{row.name}</span>
                     </div>
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      {row.points} Punkte
+                      <AnimatedNumber value={row.points} /> Punkte
                     </span>
                   </div>
                 ))}

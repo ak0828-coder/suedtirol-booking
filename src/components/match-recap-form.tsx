@@ -345,13 +345,13 @@ export function MatchRecapForm({
             <Input value={resultText} onChange={(e) => setResultText(e.target.value)} className="input-glow" />
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={handleSave} className="rounded-full transition-transform hover:-translate-y-0.5">
+            <Button onClick={handleSave} className="rounded-full transition-transform hover:-translate-y-0.5 btn-press">
               Erstellen
             </Button>
-            <Button variant="outline" onClick={handleDownload} className="rounded-full transition-transform hover:-translate-y-0.5">
+            <Button variant="outline" onClick={handleDownload} className="rounded-full transition-transform hover:-translate-y-0.5 btn-press">
               Download
             </Button>
-            <Button variant="outline" onClick={handleShare} className="rounded-full transition-transform hover:-translate-y-0.5">
+            <Button variant="outline" onClick={handleShare} className="rounded-full transition-transform hover:-translate-y-0.5 btn-press">
               {shareSupported ? "Teilen" : "Download für Insta"}
             </Button>
           </div>
