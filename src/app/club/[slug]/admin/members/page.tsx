@@ -78,6 +78,7 @@ export default async function AdminMembersPage({
       {contract && (
         <ContractEditor
           clubSlug={slug}
+          clubName={contract.club_name}
           initialTitle={contract.title}
           initialBody={contract.body}
           initialFee={contract.membership_fee}

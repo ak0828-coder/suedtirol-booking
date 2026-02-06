@@ -2653,6 +2653,7 @@ export async function getMembershipContract(clubSlug: string) {
   if (club.owner_id !== user.id && !isSuperAdmin) return null
 
   return {
+    club_name: club.name,
     title: club.membership_contract_title || "Mitgliedsvertrag",
     body: club.membership_contract_body || "",
     version: club.membership_contract_version || 1,

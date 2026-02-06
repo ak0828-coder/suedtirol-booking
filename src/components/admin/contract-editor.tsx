@@ -1,14 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { updateMembershipContract } from "@/app/actions"
+import { ContractPdfDocument } from "@/lib/contract-pdf"
+
+const PDFViewer = dynamic(
+  () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
+  { ssr: false }
+)
 
 export function ContractEditor({
   clubSlug,
+  clubName,
   initialTitle,
   initialBody,
   initialFee,
@@ -18,6 +26,7 @@ export function ContractEditor({
   updatedAt,
 }: {
   clubSlug: string
+  clubName: string
   initialTitle: string
   initialBody: string
   initialFee: number
@@ -33,6 +42,16 @@ export function ContractEditor({
   const [allowSub, setAllowSub] = useState(!!allowSubscription)
   const [saving, setSaving] = useState(false)
   const lastUpdated = updatedAt ? new Date(updatedAt).toLocaleDateString("de-DE") : "—"
+  const [previewTitle, setPreviewTitle] = useState(initialTitle)
+  const [previewBody, setPreviewBody] = useState(initialBody)
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPreviewTitle(title)
+      setPreviewBody(body)
+    }, 180)
+    return () => clearTimeout(t)
+  }, [title, body])
 
   const handleSave = async () => {
     setSaving(true)
@@ -105,15 +124,17 @@ export function ContractEditor({
         </CardHeader>
         <CardContent>
           <div className="aspect-[3/4] w-full rounded-xl border border-slate-200 bg-white overflow-hidden">
-            <iframe
-              title="Mitgliedsvertrag PDF"
-              src={`/api/contract-pdf/${clubSlug}?v=${version}`}
-              className="h-full w-full"
-            />
+            <PDFViewer width="100%" height="100%" showToolbar={false}>
+              <ContractPdfDocument
+                clubName={clubName}
+                title={previewTitle}
+                body={previewBody}
+                version={version}
+                updatedAt={lastUpdated}
+              />
+            </PDFViewer>
           </div>
-          <div className="mt-3 text-xs text-slate-500">
-            Tipp: Nach Änderungen speichern, dann aktualisiert sich die Vorschau.
-          </div>
+          <div className="mt-3 text-xs text-slate-500">Live‑Preview während du tippst.</div>
         </CardContent>
       </Card>
     </div>
