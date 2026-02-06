@@ -236,6 +236,25 @@ export async function POST(req: Request) {
             })
         }
     }
+
+    // --- A2) MITGLIEDSCHAFT (EINMALZAHLUNG) ---
+    if (session.metadata?.type === 'membership_one_time') {
+        const clubId = session.metadata?.clubId
+        const userId = session.metadata?.userId
+        if (clubId && userId) {
+            const validUntil = new Date()
+            validUntil.setFullYear(validUntil.getFullYear() + 1)
+
+            await supabaseAdmin.from('club_members').upsert({
+                user_id: userId,
+                club_id: clubId,
+                status: 'active',
+                payment_status: 'paid',
+                valid_until: validUntil.toISOString(),
+                next_payment_at: validUntil.toISOString()
+            }, { onConflict: 'club_id, user_id' })
+        }
+    }
   // 2. ABO ERFOLGREICH VERLÄNGERT
   if (event.type === "invoice.payment_succeeded") {
       const subscriptionId = session.subscription

@@ -2643,7 +2643,7 @@ export async function getMembershipContract(clubSlug: string) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at")
+    .select("id, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
     .eq("slug", clubSlug)
     .single()
 
@@ -2656,11 +2656,22 @@ export async function getMembershipContract(clubSlug: string) {
     title: club.membership_contract_title || "Mitgliedsvertrag",
     body: club.membership_contract_body || "",
     version: club.membership_contract_version || 1,
-    updated_at: club.membership_contract_updated_at || null
+    updated_at: club.membership_contract_updated_at || null,
+    membership_fee: club.membership_fee || 0,
+    membership_fee_currency: club.membership_fee_currency || "EUR",
+    membership_fee_enabled: club.membership_fee_enabled ?? false,
+    membership_allow_subscription: club.membership_allow_subscription ?? true
   }
 }
 
-export async function updateMembershipContract(clubSlug: string, title: string, body: string) {
+export async function updateMembershipContract(
+  clubSlug: string,
+  title: string,
+  body: string,
+  fee: number,
+  feeEnabled: boolean,
+  allowSubscription: boolean
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: "Nicht eingeloggt" }
@@ -2686,13 +2697,170 @@ export async function updateMembershipContract(clubSlug: string, title: string, 
       membership_contract_title: title,
       membership_contract_body: body,
       membership_contract_version: nextVersion,
-      membership_contract_updated_at: new Date().toISOString()
+      membership_contract_updated_at: new Date().toISOString(),
+      membership_fee: fee,
+      membership_fee_enabled: feeEnabled,
+      membership_allow_subscription: allowSubscription
     })
     .eq("id", club.id)
 
   if (error) return { success: false, error: error.message }
 
   revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true }
+}
+
+export async function getMembershipContractForMember(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return null
+
+  const { data: member } = await supabase
+    .from("club_members")
+    .select("id, user_id, status")
+    .eq("club_id", club.id)
+    .eq("user_id", user.id)
+    .single()
+
+  if (!member) return null
+
+  return {
+    clubId: club.id,
+    title: club.membership_contract_title || "Mitgliedsvertrag",
+    body: club.membership_contract_body || "",
+    version: club.membership_contract_version || 1,
+    updated_at: club.membership_contract_updated_at || null,
+    membership_fee: club.membership_fee || 0,
+    membership_fee_currency: club.membership_fee_currency || "EUR",
+    membership_fee_enabled: club.membership_fee_enabled ?? false,
+    membership_allow_subscription: club.membership_allow_subscription ?? true
+  }
+}
+
+export async function submitMembershipSignature(
+  clubSlug: string,
+  signatureDataUrl: string,
+  contractVersion: number
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const base64 = signatureDataUrl.split(",")[1]
+  if (!base64) return { success: false, error: "Ungültige Signatur" }
+  const buffer = Uint8Array.from(Buffer.from(base64, "base64"))
+  const filePath = `${club.id}/${user.id}/contract-signature-${Date.now()}.png`
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from(MEMBER_DOC_BUCKET)
+    .upload(filePath, buffer, { contentType: "image/png", upsert: true })
+
+  if (uploadError) return { success: false, error: uploadError.message }
+
+  await supabaseAdmin
+    .from("member_documents")
+    .insert({
+      club_id: club.id,
+      user_id: user.id,
+      doc_type: "membership_contract",
+      file_path: filePath,
+      file_name: "contract-signature.png",
+      file_size: buffer.length,
+      mime_type: "image/png",
+      ai_status: "ok",
+      review_status: "approved"
+    })
+
+  await supabaseAdmin
+    .from("club_members")
+    .update({
+      contract_signed_at: new Date().toISOString(),
+      contract_version: contractVersion
+    })
+    .eq("club_id", club.id)
+    .eq("user_id", user.id)
+
+  return { success: true }
+}
+
+export async function createMembershipOneTimeCheckout(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, name, membership_fee, membership_fee_currency, membership_fee_enabled")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club || !club.membership_fee_enabled || !club.membership_fee) {
+    return { error: "Mitgliedsbeitrag nicht konfiguriert" }
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: (club.membership_fee_currency || "EUR").toLowerCase(),
+          product_data: { name: `${club.name} Mitgliedsbeitrag` },
+          unit_amount: Math.round(Number(club.membership_fee) * 100),
+        },
+        quantity: 1,
+      },
+    ],
+    mode: "payment",
+    metadata: {
+      type: "membership_one_time",
+      clubId: club.id,
+      userId: user.id,
+      clubSlug
+    },
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}/onboarding?paid=1`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}/onboarding?canceled=1`,
+    customer_email: user.email || undefined,
+  })
+
+  return { url: session.url }
+}
+
+export async function markMembershipPaymentOffline(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const supabaseAdmin = getAdminClient()
+  await supabaseAdmin
+    .from("club_members")
+    .update({
+      payment_status: "unpaid",
+      next_payment_at: null
+    })
+    .eq("club_id", club.id)
+    .eq("user_id", user.id)
+
   return { success: true }
 }
 
