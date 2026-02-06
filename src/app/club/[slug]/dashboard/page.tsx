@@ -87,10 +87,13 @@ export default async function MemberDashboard({
     >
       <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
         <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
-          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-emerald-100 blur-2xl" />
+          <div
+            className="absolute -top-10 -right-10 h-40 w-40 rounded-full blur-2xl"
+            style={{ backgroundColor: "var(--club-primary)", opacity: 0.12 }}
+          />
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+              <div className="inline-flex items-center gap-2 rounded-full border club-primary-border bg-white/90 px-3 py-1 text-xs club-primary-text">
                 <Sparkles className="w-3.5 h-3.5" />
                 Mitglied aktiv
               </div>
@@ -100,7 +103,7 @@ export default async function MemberDashboard({
               <p className="text-slate-500">Willkommen bei {member.clubs.name}!</p>
             </div>
             <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-700 px-4 py-2 text-sm font-semibold border border-emerald-100">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/90 text-slate-900 px-4 py-2 text-sm font-semibold border border-slate-200/60">
                 {member.membership_plans?.name || "Aktiv"}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -128,7 +131,7 @@ export default async function MemberDashboard({
           <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
-                <Trophy className="text-amber-500" /> Dein Status
+                <Trophy className="club-primary-text" /> Dein Status
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -159,7 +162,7 @@ export default async function MemberDashboard({
           <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
-                <Calendar className="text-blue-500" /> Nächster Termin
+                <Calendar className="club-primary-text" /> Nächster Termin
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -196,7 +199,7 @@ export default async function MemberDashboard({
           <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-2">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
-                <Sparkles className="text-emerald-500" /> Club Rangliste
+                <Sparkles className="club-primary-text" /> Club Rangliste
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -215,7 +218,7 @@ export default async function MemberDashboard({
                         </span>
                         <span className="font-medium text-slate-800">{row.name}</span>
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      <span className="rounded-full border club-primary-border px-3 py-1 text-xs font-semibold club-primary-text">
                         {row.points} Punkte
                       </span>
                     </div>
@@ -235,7 +238,7 @@ export default async function MemberDashboard({
           <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-3">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
-                <Sparkles className="text-indigo-500" /> Badges & Erfolge
+                <Sparkles className="club-primary-text" /> Badges & Erfolge
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -261,7 +264,7 @@ export default async function MemberDashboard({
         <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle className="flex gap-2 items-center">
-              <Calendar className="text-blue-500" /> Deine nächsten Spiele
+              <Calendar className="club-primary-text" /> Deine nächsten Spiele
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -305,7 +308,7 @@ export default async function MemberDashboard({
         <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle className="flex gap-2 items-center">
-              <Calendar className="text-blue-500" /> Letzte Spiele
+              <Calendar className="club-primary-text" /> Letzte Spiele
             </CardTitle>
           </CardHeader>
           <CardContent>

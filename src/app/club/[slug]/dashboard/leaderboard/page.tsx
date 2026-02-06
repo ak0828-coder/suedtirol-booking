@@ -65,7 +65,7 @@ export default async function ClubLeaderboardPage({
         <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle className="flex gap-2 items-center">
-              <Trophy className="text-amber-500" /> Rangliste
+              <Trophy className="club-primary-text" /> Rangliste
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -80,15 +80,7 @@ export default async function ClubLeaderboardPage({
                   >
                     <div className="flex items-center gap-3">
                       {row.rank <= 3 ? (
-                        <span
-                          className={
-                            row.rank === 1
-                              ? "rounded-full bg-amber-100 text-amber-800 px-2 py-1 text-xs font-semibold"
-                              : row.rank === 2
-                              ? "rounded-full bg-slate-200 text-slate-700 px-2 py-1 text-xs font-semibold"
-                              : "rounded-full bg-amber-50 text-amber-700 px-2 py-1 text-xs font-semibold"
-                          }
-                        >
+                        <span className="rounded-full border club-primary-border px-2 py-1 text-xs font-semibold club-primary-text">
                           {row.rank}
                         </span>
                       ) : (
@@ -98,7 +90,7 @@ export default async function ClubLeaderboardPage({
                       )}
                       <span className="font-medium text-slate-800">{row.name}</span>
                     </div>
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    <span className="rounded-full border club-primary-border px-3 py-1 text-xs font-semibold club-primary-text">
                       <AnimatedNumber value={row.points} /> Punkte
                     </span>
                   </div>

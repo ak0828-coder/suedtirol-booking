@@ -94,8 +94,14 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
       {/* HEADER */}
       <header className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-slate-200/40 blur-3xl dark:bg-slate-700/30" />
-          <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-rose-200/50 blur-3xl dark:bg-rose-900/20" />
+          <div
+            className="absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl"
+            style={{ backgroundColor: "var(--club-primary)", opacity: 0.18 }}
+          />
+          <div
+            className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full blur-3xl"
+            style={{ backgroundColor: "var(--club-primary)", opacity: 0.1 }}
+          />
         </div>
 
         <div className="relative mx-auto max-w-5xl app-pad py-6 sm:py-10">
@@ -105,7 +111,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
             {/* LOGIN / DASHBOARD BUTTON */}
             {user ? (
-              <Link href="/login">
+              <Link href={`/club/${slug}/dashboard`}>
                 <Button variant="outline" className="gap-2 rounded-full btn-press">
                   <User className="w-4 h-4" /> Mein Bereich
                 </Button>
@@ -114,7 +120,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
               <Link href="/login">
                 <Button
                   variant="default"
-                  className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 btn-press"
+                  className="gap-2 rounded-full club-primary-bg hover:opacity-90 btn-press"
                 >
                   <LogIn className="w-4 h-4" /> Login
                 </Button>
@@ -147,7 +153,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                 <MapPin className="w-3.5 h-3.5" />
                 <span>{content.badges.locationText}</span>
                 <span className="mx-2 h-3 w-px bg-slate-200 dark:bg-slate-700" />
-                <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+                <span className="inline-flex items-center gap-1 club-primary-text">
                   <Check className="w-3 h-3" /> {content.badges.statusText}
                 </span>
               </div>
@@ -166,7 +172,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                   </Link>
                 )}
                 {isMember && (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+                  <span className="inline-flex items-center gap-2 rounded-full border club-primary-border bg-white/90 px-3 py-1 text-xs club-primary-text">
                     <Sparkles className="w-3.5 h-3.5" />
                     {content.hero.memberBadgeText}
                   </span>
@@ -201,7 +207,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                   <span className="text-sm text-slate-500 dark:text-slate-400">
                     {content.overview.labelStatus}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 text-sm font-medium club-primary-text">
                     <Check className="w-3.5 h-3.5" /> {content.badges.statusText}
                   </span>
                 </div>
@@ -236,7 +242,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                   <div className="flex flex-col">
                     <div className="flex p-6">
                       <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mr-4">
-                        <CalendarDays className="w-7 h-7 text-slate-500 dark:text-slate-400" />
+                        <CalendarDays className="w-7 h-7 club-primary-text" />
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start gap-4">
@@ -313,7 +319,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
         </Link>
       </div>
 
-      <MobileBottomNav slug={club.slug} active="home" />
+      {user && <MobileBottomNav slug={club.slug} active="home" />}
     </div>
   )
 }
