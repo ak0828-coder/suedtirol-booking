@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,37 @@ const PDFViewer = dynamic(
   () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
   { ssr: false }
 )
+
+class PdfPreviewBoundary extends React.Component<
+  { fallbackHref: string; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-full w-full flex flex-col items-center justify-center text-center text-sm text-slate-500 px-4">
+          <div className="font-medium text-slate-700">PDF Vorschau nicht verfÃ¼gbar</div>
+          <div className="mt-1">Bitte Ã¶ffne die PDF in einem neuen Tab.</div>
+          <a
+            href={this.props.fallbackHref}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
+          >
+            PDF Ã¶ffnen
+          </a>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 export function ContractEditor({
   clubSlug,
@@ -44,6 +75,11 @@ export function ContractEditor({
   const lastUpdated = updatedAt ? new Date(updatedAt).toLocaleDateString("de-DE") : "—"
   const [previewTitle, setPreviewTitle] = useState(initialTitle)
   const [previewBody, setPreviewBody] = useState(initialBody)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -124,15 +160,23 @@ export function ContractEditor({
         </CardHeader>
         <CardContent>
           <div className="aspect-[3/4] w-full rounded-xl border border-slate-200 bg-white overflow-hidden">
-            <PDFViewer width="100%" height="100%" showToolbar={false}>
-              <ContractPdfDocument
-                clubName={clubName}
-                title={previewTitle}
-                body={previewBody}
-                version={version}
-                updatedAt={lastUpdated}
-              />
-            </PDFViewer>
+            {isClient ? (
+              <PdfPreviewBoundary fallbackHref={`/api/contract-pdf/${clubSlug}`}>
+                <PDFViewer style={{ width: "100%", height: "100%" }} showToolbar={false}>
+                  <ContractPdfDocument
+                    clubName={clubName}
+                    title={previewTitle}
+                    body={previewBody}
+                    version={version}
+                    updatedAt={lastUpdated}
+                  />
+                </PDFViewer>
+              </PdfPreviewBoundary>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-slate-400">
+                PDF Vorschau wird geladen...
+              </div>
+            )}
           </div>
           <div className="mt-3 text-xs text-slate-500">Live‑Preview während du tippst.</div>
         </CardContent>
