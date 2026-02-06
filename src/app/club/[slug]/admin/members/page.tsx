@@ -1,5 +1,7 @@
-import { getClubMembers } from "@/app/actions"
+import { getClubMembers, getImportedMembersCount } from "@/app/actions"
 import { InviteMemberDialog } from "@/components/admin/invite-member-dialog"
+import { MemberImportWizard } from "@/components/admin/member-import-wizard"
+import { ActivationBanner } from "@/components/admin/activation-banner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -14,6 +16,7 @@ export default async function AdminMembersPage({
   const { slug } = await params
   await getAdminContext(slug)
   const members = await getClubMembers(slug)
+  const importedCount = await getImportedMembersCount(slug)
 
   return (
     <>
@@ -25,12 +28,17 @@ export default async function AdminMembersPage({
         <InviteMemberDialog clubSlug={slug} />
       </div>
 
+      <ActivationBanner importedCount={importedCount} clubSlug={slug} />
+
+      <MemberImportWizard clubSlug={slug} />
+
       <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/80">
               <TableHead>Name</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Einladung</TableHead>
               <TableHead>Attest</TableHead>
               <TableHead>Telefon</TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
@@ -45,6 +53,11 @@ export default async function AdminMembersPage({
                 </TableCell>
                 <TableCell>
                   <Badge variant={m.status === "active" ? "default" : "secondary"}>{m.status}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={m.invite_status === "imported" ? "secondary" : "outline"}>
+                    {m.invite_status || "none"}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">
@@ -96,7 +109,7 @@ export default async function AdminMembersPage({
             ))}
             {members.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-slate-500">
+                <TableCell colSpan={6} className="text-center py-10 text-slate-500">
                   Noch keine Mitglieder. Lade jemanden ein!
                 </TableCell>
               </TableRow>

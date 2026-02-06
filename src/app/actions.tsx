@@ -7,6 +7,7 @@ import { Resend } from 'resend'
 import React from "react"
 import { BookingEmailTemplate } from '@/components/emails/booking-template'
 import { WelcomeMemberEmailTemplate } from '@/components/emails/welcome-member-template'
+import { WelcomeImportEmailTemplate } from "@/components/emails/welcome-import-template"
 import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
 
@@ -2180,6 +2181,356 @@ export async function inviteMember(formData: FormData) {
 
   revalidatePath(`/club/${clubSlug}/admin/members`)
   return { success: true }
+}
+
+// ==============================
+// --- SWITCH-KIT (CSV IMPORT) ---
+// ==============================
+
+type CsvHeaderMapping = {
+  first_name?: string
+  last_name?: string
+  email?: string
+  phone?: string
+  credit_balance?: string
+  membership_start_date?: string
+  membership_end_date?: string
+}
+
+type ImportFallbackMode = "year_from_start" | "calendar_year_end" | "infinite" | "year_from_today"
+
+function parseCsvDate(value?: string | null): Date | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  // dd.mm.yyyy or dd/mm/yyyy
+  const m1 = trimmed.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/)
+  if (m1) {
+    const day = parseInt(m1[1], 10)
+    const month = parseInt(m1[2], 10) - 1
+    let year = parseInt(m1[3], 10)
+    if (year < 100) year += 2000
+    const d = new Date(year, month, day)
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  const parsed = new Date(trimmed)
+  return isNaN(parsed.getTime()) ? null : parsed
+}
+
+function computeValidUntil(
+  row: any,
+  fallbackMode: ImportFallbackMode
+): Date | null {
+  const end = parseCsvDate(row.membership_end_date)
+  if (end) return end
+
+  const start = parseCsvDate(row.membership_start_date)
+  if (start) {
+    if (fallbackMode === "calendar_year_end") {
+      return new Date(start.getFullYear(), 11, 31, 23, 59, 59)
+    }
+    if (fallbackMode === "infinite") return null
+    const d = new Date(start)
+    d.setFullYear(d.getFullYear() + 1)
+    return d
+  }
+
+  if (fallbackMode === "infinite") return null
+  if (fallbackMode === "calendar_year_end") {
+    const now = new Date()
+    return new Date(now.getFullYear(), 11, 31, 23, 59, 59)
+  }
+  const base = new Date()
+  base.setFullYear(base.getFullYear() + 1)
+  return base
+}
+
+export async function analyzeCsvHeaders(headers: string[]) {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) return { success: false, error: "OpenAI Key fehlt." }
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4.1-mini",
+      input: [
+        {
+          role: "system",
+          content:
+            "Du bist ein Daten-Experte für eine Sport-SaaS. " +
+            "Mappe CSV-Spalten auf unsere Felder. Gib ausschließlich JSON zurück.",
+        },
+        {
+          role: "user",
+          content:
+            "CSV-Header: " +
+            JSON.stringify(headers) +
+            "\n\nFelder: first_name, last_name, email, phone, credit_balance, membership_start_date, membership_end_date." +
+            "\nGib ein JSON-Objekt zurück, z.B. {\"first_name\":\"Vorname\",\"email\":\"E-Mail\"}.",
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "csv_mapping",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              first_name: { type: ["string", "null"] },
+              last_name: { type: ["string", "null"] },
+              email: { type: ["string", "null"] },
+              phone: { type: ["string", "null"] },
+              credit_balance: { type: ["string", "null"] },
+              membership_start_date: { type: ["string", "null"] },
+              membership_end_date: { type: ["string", "null"] },
+            },
+            required: [
+              "first_name",
+              "last_name",
+              "email",
+              "phone",
+              "credit_balance",
+              "membership_start_date",
+              "membership_end_date",
+            ],
+            additionalProperties: false,
+          },
+        },
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    return { success: false, error: "AI Anfrage fehlgeschlagen." }
+  }
+
+  const data = await response.json()
+  const text = data.output_text || data.output?.[0]?.content?.[0]?.text
+  if (!text) return { success: false, error: "Keine AI Antwort." }
+
+  try {
+    const mapping = JSON.parse(text) as CsvHeaderMapping
+    return { success: true, mapping }
+  } catch {
+    return { success: false, error: "Antwort konnte nicht geparst werden." }
+  }
+}
+
+export async function importMembersBatch(
+  clubSlug: string,
+  members: any[],
+  options: { activateNow: boolean; fallbackMode: ImportFallbackMode }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin.from("clubs").select("id, owner_id, name").eq("slug", clubSlug).single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return { success: false, error: "Keine Rechte" }
+
+  let imported = 0
+  let failed = 0
+
+  for (const row of members) {
+    const email = (row.email || "").toString().trim().toLowerCase()
+    const firstName = (row.first_name || "").toString().trim()
+    const lastName = (row.last_name || "").toString().trim()
+    if (!email) {
+      failed += 1
+      continue
+    }
+
+    const tempPassword = `Avaimo-${Math.random().toString(36).slice(-4).toUpperCase()}`
+
+    let userId: string | null = null
+    let sendTempPassword = true
+
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name: `${firstName} ${lastName}`.trim(),
+        must_change_password: true,
+      },
+    })
+
+    if (authError || !authUser?.user) {
+      // fallback: existing user
+      const { data: list } = await supabaseAdmin.auth.admin.listUsers()
+      const existing = list.users.find((u) => u.email?.toLowerCase() === email)
+      if (!existing) {
+        failed += 1
+        continue
+      }
+      userId = existing.id
+      sendTempPassword = false
+    } else {
+      userId = authUser.user.id
+    }
+
+    if (!userId) {
+      failed += 1
+      continue
+    }
+
+    const validUntil = computeValidUntil(row, options.fallbackMode)
+
+    const { error: memberError } = await supabaseAdmin
+      .from("club_members")
+      .upsert({
+        club_id: club.id,
+        user_id: userId,
+        status: "active",
+        valid_until: validUntil ? validUntil.toISOString() : null,
+        invite_status: options.activateNow ? "invited" : "imported",
+        imported_at: new Date().toISOString(),
+        invited_at: options.activateNow ? new Date().toISOString() : null,
+        import_email: email,
+        credit_balance: row.credit_balance ? parseFloat(row.credit_balance) : 0,
+      }, { onConflict: "club_id, user_id" })
+
+    if (memberError) {
+      failed += 1
+      continue
+    }
+
+    imported += 1
+
+    if (options.activateNow) {
+      try {
+        if (sendTempPassword) {
+          await resend.emails.send({
+            from: "Avaimo <onboarding@resend.dev>",
+            to: [email],
+            subject: `Willkommen bei ${club.name}`,
+            react: (
+              <WelcomeImportEmailTemplate
+                firstName={firstName || "Mitglied"}
+                clubName={club.name}
+                tempPassword={tempPassword}
+                loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/login`}
+                email={email}
+              />
+            ),
+          })
+        } else {
+          await resend.emails.send({
+            from: "Avaimo <onboarding@resend.dev>",
+            to: [email],
+            subject: `Avaimo Zugang für ${club.name}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; color: #0f172a;">
+                <h2>Willkommen bei Avaimo</h2>
+                <p>Dein Verein <strong>${club.name}</strong> nutzt ab sofort Avaimo.</p>
+                <p>Bitte logge dich mit deinem bestehenden Passwort ein. Falls du es nicht mehr weißt, nutze "Passwort vergessen".</p>
+                <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/login">Zum Login</a></p>
+              </div>
+            `,
+          })
+        }
+      } catch (err) {
+        console.error("Import invite mail failed:", err)
+      }
+    }
+  }
+
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true, imported, failed }
+}
+
+export async function getImportedMembersCount(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return 0
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return 0
+
+  const supabaseAdmin = getAdminClient()
+  const { count } = await supabaseAdmin
+    .from("club_members")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .eq("invite_status", "imported")
+
+  return count || 0
+}
+
+export async function activateImportedMembers(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id, name")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return { success: false, error: "Keine Rechte" }
+
+  const { data: members } = await supabaseAdmin
+    .from("club_members")
+    .select("id, user_id, import_email")
+    .eq("club_id", club.id)
+    .eq("invite_status", "imported")
+
+  let sent = 0
+  for (const m of members || []) {
+    const email = m.import_email
+    if (!email) continue
+    try {
+      await resend.emails.send({
+        from: "Avaimo <onboarding@resend.dev>",
+        to: [email],
+        subject: `Willkommen bei ${club.name}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #0f172a;">
+            <h2>Willkommen bei Avaimo</h2>
+            <p>Dein Verein <strong>${club.name}</strong> nutzt ab sofort Avaimo.</p>
+            <p>Bitte logge dich ein und setze dein Passwort.</p>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/login">Zum Login</a></p>
+          </div>
+        `,
+      })
+      sent += 1
+    } catch (err) {
+      console.error("Bulk invite mail failed:", err)
+    }
+  }
+
+  if (members && members.length > 0) {
+    await supabaseAdmin
+      .from("club_members")
+      .update({ invite_status: "invited", invited_at: new Date().toISOString() })
+      .eq("club_id", club.id)
+      .eq("invite_status", "imported")
+  }
+
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true, sent }
 }
 
 // --- NEU: CSV EXPORT ---
