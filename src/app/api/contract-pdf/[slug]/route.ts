@@ -42,7 +42,7 @@ export async function GET(
       : null,
   })
 
-  const buffer = await pdf(doc).toBuffer()
+  const buffer = (await pdf(doc).toBuffer()) as unknown as Uint8Array
   return new NextResponse(buffer, {
     status: 200,
     headers: {
