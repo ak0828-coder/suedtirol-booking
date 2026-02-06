@@ -5,25 +5,27 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, P
 import { Euro, CalendarCheck, Trophy } from "lucide-react"
 
 export function DashboardStats({ bookings, courts }: { bookings: any[], courts: any[] }) {
-  
+  const safeBookings = Array.isArray(bookings) ? bookings : []
+  const safeCourts = Array.isArray(courts) ? courts : []
+
   // 1. KPI: Gesamtumsatz berechnen (Nur 'paid_cash' oder 'paid_online')
   // Wir nehmen an, jede Buchung hat den Preis des Platzes.
   // Da wir den Preis aktuell nicht in der Buchung speichern (sondern im Platz),
   // müssen wir ihn uns holen. (Vereinfachung: Wir nehmen an, alle zahlen voll).
   
-  const totalRevenue = bookings.reduce((sum, booking) => {
+  const totalRevenue = safeBookings.reduce((sum, booking) => {
     // Finde den Preis des Platzes für diese Buchung
-    const court = courts.find(c => c.id === booking.court_id)
+    const court = safeCourts.find(c => c.id === booking.court_id)
     return sum + (court ? court.price_per_hour : 0)
   }, 0)
 
-  const totalBookings = bookings.length
+  const totalBookings = safeBookings.length
 
   // 2. DIAGRAMM DATEN: Umsatz pro Tag (Letzte 7 Tage oder alle)
   // Wir gruppieren die Buchungen nach Datum (YYYY-MM-DD)
-  const revenueByDayMap = bookings.reduce((acc: any, booking) => {
+  const revenueByDayMap = safeBookings.reduce((acc: any, booking) => {
     const date = new Date(booking.start_time).toLocaleDateString('de-DE', { weekday: 'short' }) // z.B. "Mo", "Di"
-    const court = courts.find(c => c.id === booking.court_id)
+    const court = safeCourts.find(c => c.id === booking.court_id)
     const price = court ? court.price_per_hour : 0
     
     acc[date] = (acc[date] || 0) + price
@@ -37,8 +39,8 @@ export function DashboardStats({ bookings, courts }: { bookings: any[], courts: 
   }))
 
   // 3. DIAGRAMM DATEN: Beliebteste Plätze
-  const popularityMap = bookings.reduce((acc: any, booking) => {
-    const court = courts.find(c => c.id === booking.court_id)
+  const popularityMap = safeBookings.reduce((acc: any, booking) => {
+    const court = safeCourts.find(c => c.id === booking.court_id)
     const name = court ? court.name : 'Unbekannt'
     acc[name] = (acc[name] || 0) + 1
     return acc
@@ -103,8 +105,13 @@ export function DashboardStats({ bookings, courts }: { bookings: any[], courts: 
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[240px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
+              {chartData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-slate-400">
+                  Keine Daten vorhanden
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
+                  <BarChart data={chartData}>
                   <XAxis 
                     dataKey="name" 
                     stroke="#888888" 
@@ -124,8 +131,9 @@ export function DashboardStats({ bookings, courts }: { bookings: any[], courts: 
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   />
                   <Bar dataKey="total" fill="#e11d48" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -137,24 +145,30 @@ export function DashboardStats({ bookings, courts }: { bookings: any[], courts: 
           </CardHeader>
           <CardContent>
             <div className="h-[240px] flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {pieData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-slate-400">
+                  Keine Daten vorhanden
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
             <div className="flex justify-center gap-4 text-xs text-slate-500 mt-2">
               {pieData.map((entry, index) => (
