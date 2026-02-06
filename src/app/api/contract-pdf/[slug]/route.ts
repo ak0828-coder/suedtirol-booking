@@ -4,6 +4,8 @@ import { ContractPdfDocument } from "@/lib/contract-pdf"
 import { pdf } from "@react-pdf/renderer"
 import React from "react"
 
+export const runtime = "nodejs"
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -42,9 +44,8 @@ export async function GET(
       : null,
   })
 
-  const buffer = await pdf(doc).toBuffer()
-  const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
-  return new Response(arrayBuffer, {
+  const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
+  return new Response(buffer as unknown as Uint8Array, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
