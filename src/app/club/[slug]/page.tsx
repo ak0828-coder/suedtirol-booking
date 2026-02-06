@@ -91,7 +91,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-rose-200/50 blur-3xl dark:bg-rose-900/20" />
         </div>
 
-        <div className="relative mx-auto max-w-5xl px-4 py-8">
+        <div className="relative mx-auto max-w-5xl px-4 py-6 sm:py-10">
           {/* Navigation Oben Rechts */}
           <div className="flex items-center justify-end gap-2">
             <ModeToggle />
@@ -99,7 +99,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
             {/* LOGIN / DASHBOARD BUTTON */}
             {user ? (
               <Link href="/login">
-                <Button variant="outline" className="gap-2 rounded-full">
+                <Button variant="outline" className="gap-2 rounded-full btn-press">
                   <User className="w-4 h-4" /> Mein Bereich
                 </Button>
               </Link>
@@ -107,7 +107,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
               <Link href="/login">
                 <Button
                   variant="default"
-                  className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+                  className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 btn-press"
                 >
                   <LogIn className="w-4 h-4" /> Login
                 </Button>
@@ -115,7 +115,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
             )}
           </div>
 
-          <div className="mt-8 grid items-center gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div className="mt-6 grid items-center gap-6 md:gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
             <div className="flex flex-col items-center text-center md:items-start md:text-left">
               {/* LOGO */}
               <div
@@ -145,15 +145,15 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                 </span>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                 <Link href="#courts">
-                  <Button className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900">
+                  <Button className="gap-2 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 btn-press w-full sm:w-auto">
                     {content.hero.primaryCtaText} <ChevronRight className="w-4 h-4" />
                   </Button>
                 </Link>
                 {plans && plans.length > 0 && !isMember && (
                   <Link href="#membership">
-                    <Button variant="outline" className="gap-2 rounded-full">
+                    <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
                       {content.hero.secondaryCtaText}
                     </Button>
                   </Link>
@@ -204,7 +204,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-4 mt-10">
+      <div className="mx-auto max-w-5xl px-4 mt-8 sm:mt-10">
         {/* SECTION 1: PLÄTZE */}
         <div id="courts" className="flex items-end justify-between mb-6 scroll-mt-24">
           <div>
@@ -217,7 +217,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-5 sm:gap-6">
           {courts?.map((court: any) => {
             const duration = court.duration_minutes || 60
             return (

@@ -158,12 +158,12 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full bg-slate-900 text-white hover:bg-slate-800">
+        <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 btn-press h-11">
            Platz buchen
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[450px] bg-white text-slate-900 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] sm:max-w-[520px] bg-white text-slate-900 max-h-[92vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>{courtName} buchen</span>
@@ -218,14 +218,14 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                 {isLoadingSlots && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
               </div>
                 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {timeSlots.map((time) => {
                   const isBooked = bookedSlots.includes(time)
                   return (
                     <Button
                       key={time}
                       variant={isBooked ? "ghost" : (selectedTime === time ? "default" : "outline")}
-                      className={`text-sm h-10 ${isBooked ? 'text-red-300 line-through bg-slate-50 opacity-60 cursor-not-allowed' : ''}`}
+                      className={`text-sm h-11 btn-press ${isBooked ? 'text-red-300 line-through bg-slate-50 opacity-60 cursor-not-allowed' : ''}`}
                       disabled={isBooked}
                       onClick={() => setSelectedTime(time)}
                     >
@@ -248,14 +248,14 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                     <input
                       type="text"
                       placeholder="Dein Name"
-                      className="border rounded px-3 py-2 text-sm"
+                      className="border rounded px-3 py-2 text-sm input-glow"
                       value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
                     />
                     <input
                       type="email"
                       placeholder="E-Mail für Bestätigung"
-                      className="border rounded px-3 py-2 text-sm"
+                      className="border rounded px-3 py-2 text-sm input-glow"
                       value={guestEmail}
                       onChange={(e) => setGuestEmail(e.target.value)}
                     />
