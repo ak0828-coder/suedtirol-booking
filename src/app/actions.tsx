@@ -2643,7 +2643,7 @@ export async function getMembershipContract(clubSlug: string) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
+    .select("id, name, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
     .eq("slug", clubSlug)
     .single()
 
