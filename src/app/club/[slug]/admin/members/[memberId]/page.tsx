@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { getAdminContext } from "../../_lib/get-admin-context"
-import { getMemberDocumentsForAdmin } from "@/app/actions"
+import { getMemberDocumentAuditForAdmin, getMemberDocumentsForAdmin } from "@/app/actions"
 import { MemberDocumentsAdmin } from "@/components/admin/member-documents-admin"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,7 @@ export default async function AdminMemberDetailPage({
   const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
 
   const documents = await getMemberDocumentsForAdmin(slug, member.user_id)
+  const audit = await getMemberDocumentAuditForAdmin(slug, member.user_id)
 
   return (
     <div className="space-y-6">
@@ -53,7 +54,7 @@ export default async function AdminMemberDetailPage({
         </div>
       </div>
 
-      <MemberDocumentsAdmin clubSlug={slug} documents={documents} />
+      <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
     </div>
   )
 }

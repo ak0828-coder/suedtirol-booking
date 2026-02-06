@@ -19,9 +19,10 @@ type AdminDoc = {
 type MemberDocumentsAdminProps = {
   clubSlug: string
   documents: AdminDoc[]
+  audit: { document_id: string; action: string; created_at: string; actor_user_id: string }[]
 }
 
-export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdminProps) {
+export function MemberDocumentsAdmin({ clubSlug, documents, audit }: MemberDocumentsAdminProps) {
   const [message, setMessage] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [openingId, setOpeningId] = useState<string | null>(null)
@@ -157,6 +158,21 @@ export function MemberDocumentsAdmin({ clubSlug, documents }: MemberDocumentsAdm
         <div className="rounded-xl border border-slate-200/60 bg-white/90 p-3">
           <div className="mb-2 text-xs text-slate-500">Vorschau</div>
           <iframe src={previewUrl} className="h-96 w-full rounded-lg border border-slate-200/60" />
+        </div>
+      )}
+      {audit.length > 0 && (
+        <div className="rounded-xl border border-slate-200/60 bg-white/90 p-3">
+          <div className="mb-2 text-xs text-slate-500">Audit‑Log</div>
+          <div className="space-y-1 text-xs text-slate-600">
+            {audit.slice(0, 8).map((a, i) => (
+              <div key={`${a.document_id}-${i}`} className="flex items-center justify-between">
+                <span>
+                  {a.action === "approved" ? "Bestätigt" : "Abgelehnt"}
+                </span>
+                <span>{new Date(a.created_at).toLocaleDateString("de-DE")}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

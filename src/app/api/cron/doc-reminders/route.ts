@@ -45,6 +45,7 @@ export async function GET(req: Request) {
 
   let sent = 0
   for (const doc of docs) {
+    if (!doc.temp_valid_until) continue
     const club = clubMap.get(doc.club_id)
     const adminEmail = club?.admin_email
     if (!adminEmail) continue

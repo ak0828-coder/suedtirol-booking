@@ -322,11 +322,21 @@ export async function updateMemberDetails(memberId: string, clubSlug: string, no
 
 export async function getClubMembers(clubSlug: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
 
-  const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+  const { data: club } = await supabase
+    .from('clubs')
+    .select('id, owner_id')
+    .eq('slug', clubSlug)
+    .single()
   if (!club) return []
 
-  const { data: members, error } = await supabase
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return []
+
+  const supabaseAdmin = getAdminClient()
+  const { data: members, error } = await supabaseAdmin
     .from('club_members')
     .select(`
             *,
@@ -339,7 +349,7 @@ export async function getClubMembers(clubSlug: string) {
     return []
   }
 
-  const { data: docs } = await supabase
+  const { data: docs } = await supabaseAdmin
     .from("member_documents")
     .select("user_id, doc_type, ai_status, review_status, temp_valid_until, valid_until, created_at")
     .eq("club_id", club.id)
@@ -1397,6 +1407,41 @@ export async function getMemberDocumentsForAdmin(clubSlug: string, memberId: str
     .order("created_at", { ascending: false })
 
   return data || []
+}
+
+export async function getMemberDocumentAuditForAdmin(clubSlug: string, memberId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  if (!club) return []
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return []
+
+  const supabaseAdmin = getAdminClient()
+  const { data: docs } = await supabaseAdmin
+    .from("member_documents")
+    .select("id")
+    .eq("club_id", club.id)
+    .eq("user_id", memberId)
+
+  const docIds = (docs || []).map((d: any) => d.id)
+  if (docIds.length === 0) return []
+
+  const { data: audit } = await supabaseAdmin
+    .from("member_document_audit")
+    .select("document_id, action, created_at, actor_user_id")
+    .in("document_id", docIds)
+    .order("created_at", { ascending: false })
+
+  return audit || []
 }
 
 export async function reviewMemberDocument(clubSlug: string, documentId: string, approve: boolean) {
