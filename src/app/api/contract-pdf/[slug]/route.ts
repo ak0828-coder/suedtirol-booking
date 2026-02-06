@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { ContractPdfDocument } from "@/lib/contract-pdf"
 import { pdf } from "@react-pdf/renderer"
+import React from "react"
 
 export async function GET(
   _req: Request,
@@ -31,19 +32,15 @@ export async function GET(
     return new NextResponse("Forbidden", { status: 403 })
   }
 
-  const doc = (
-    <ContractPdfDocument
-      clubName={club.name}
-      title={club.membership_contract_title || "Mitgliedsvertrag"}
-      body={club.membership_contract_body || ""}
-      version={club.membership_contract_version || 1}
-      updatedAt={
-        club.membership_contract_updated_at
-          ? new Date(club.membership_contract_updated_at).toLocaleDateString("de-DE")
-          : null
-      }
-    />
-  )
+  const doc = React.createElement(ContractPdfDocument, {
+    clubName: club.name,
+    title: club.membership_contract_title || "Mitgliedsvertrag",
+    body: club.membership_contract_body || "",
+    version: club.membership_contract_version || 1,
+    updatedAt: club.membership_contract_updated_at
+      ? new Date(club.membership_contract_updated_at).toLocaleDateString("de-DE")
+      : null,
+  })
 
   const buffer = await pdf(doc).toBuffer()
   return new NextResponse(buffer, {
