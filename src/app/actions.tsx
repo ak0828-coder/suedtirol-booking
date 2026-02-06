@@ -426,7 +426,7 @@ export async function updateClub(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || !user.email || user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) {
+  if (!user || !user.email) {
     return { success: false, error: "Nicht autorisiert!" }
   }
 
@@ -442,6 +442,17 @@ export async function updateClub(formData: FormData) {
   const supabaseAdmin = getAdminClient()
 
   let logoUrl = null
+
+  const { data: clubRow } = await supabaseAdmin
+    .from('clubs')
+    .select('owner_id')
+    .eq('id', clubId)
+    .single()
+
+  const isSuperAdmin = user.email.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (!clubRow || (clubRow.owner_id !== user.id && !isSuperAdmin)) {
+    return { success: false, error: "Nicht autorisiert!" }
+  }
 
   if (logoFile && logoFile.size > 0) {
     const fileExt = logoFile.name.split('.').pop()
