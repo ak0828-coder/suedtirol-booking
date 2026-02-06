@@ -1,11 +1,12 @@
-import { getClubMembers, getImportedMembersCount } from "@/app/actions"
+import { getClubMembers, getImportedMembersCount, getMemberAdminDashboardStats } from "@/app/actions"
 import { InviteMemberDialog } from "@/components/admin/invite-member-dialog"
 import { MemberImportWizard } from "@/components/admin/member-import-wizard"
 import { ActivationBanner } from "@/components/admin/activation-banner"
+import { MemberActionDialog } from "@/components/admin/member-action-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Edit } from "lucide-react"
+import { Edit, AlertTriangle, CheckCircle, FileText } from "lucide-react"
 import { getAdminContext } from "../_lib/get-admin-context"
 
 export default async function AdminMembersPage({
@@ -17,6 +18,7 @@ export default async function AdminMembersPage({
   await getAdminContext(slug)
   const members = await getClubMembers(slug)
   const importedCount = await getImportedMembersCount(slug)
+  const stats = await getMemberAdminDashboardStats(slug)
 
   return (
     <>
@@ -29,6 +31,45 @@ export default async function AdminMembersPage({
       </div>
 
       <ActivationBanner importedCount={importedCount} clubSlug={slug} />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm text-amber-700">Dokumente prüfen</div>
+              <div className="text-2xl font-semibold text-amber-900">{stats?.reviewNeeded || 0}</div>
+              <div className="text-xs text-amber-700">KI benötigt Bestätigung</div>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm text-red-700">Beiträge offen</div>
+              <div className="text-2xl font-semibold text-red-900">{stats?.paymentOpen || 0}</div>
+              <div className="text-xs text-red-700">Zahlung überfällig</div>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <CheckCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm text-emerald-700">Aktive Mitglieder</div>
+              <div className="text-2xl font-semibold text-emerald-900">{stats?.activeMembers || 0}</div>
+              <div className="text-xs text-emerald-700">Alles im grünen Bereich</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <MemberImportWizard clubSlug={slug} />
 
@@ -98,12 +139,23 @@ export default async function AdminMembersPage({
                 </TableCell>
                 <TableCell>{m.profiles?.phone || "-"}</TableCell>
                 <TableCell className="text-right">
-                  <Button asChild variant="ghost" size="sm" className="rounded-full">
-                    <a href={`/club/${slug}/admin/members/${m.id}`}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Details
-                    </a>
-                  </Button>
+                  <div className="flex items-center justify-end gap-2">
+                    <MemberActionDialog
+                      clubSlug={slug}
+                      member={m}
+                      trigger={
+                        <Button variant="outline" size="sm" className="rounded-full">
+                          Manuell
+                        </Button>
+                      }
+                    />
+                    <Button asChild variant="ghost" size="sm" className="rounded-full">
+                      <a href={`/club/${slug}/admin/members/${m.id}`}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Details
+                      </a>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

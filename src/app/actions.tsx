@@ -370,6 +370,105 @@ export async function getClubMembers(clubSlug: string) {
   }))
 }
 
+export async function getMemberAdminDashboardStats(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return null
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return null
+
+  const supabaseAdmin = getAdminClient()
+  const nowIso = new Date().toISOString()
+
+  const { count: reviewNeeded } = await supabaseAdmin
+    .from("member_documents")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .eq("doc_type", "medical_certificate")
+    .eq("review_status", "pending")
+
+  const { count: expiredMembers } = await supabaseAdmin
+    .from("club_members")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .lt("valid_until", nowIso)
+
+  const { count: paymentOpen } = await supabaseAdmin
+    .from("club_members")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .in("payment_status", ["unpaid", "overdue"])
+
+  const { count: activeMembers } = await supabaseAdmin
+    .from("club_members")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .eq("status", "active")
+
+  return {
+    reviewNeeded: reviewNeeded || 0,
+    expiredMembers: expiredMembers || 0,
+    paymentOpen: paymentOpen || 0,
+    activeMembers: activeMembers || 0,
+  }
+}
+
+export async function updateMemberStatusManual(memberId: string, clubSlug: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const status = formData.get("status") as string | null
+  const validUntil = formData.get("valid_until") as string | null
+  const medicalUntil = formData.get("medical_certificate_valid_until") as string | null
+  const paymentStatus = formData.get("payment_status") as string | null
+  const nextPaymentAt = formData.get("next_payment_at") as string | null
+  const notes = formData.get("notes") as string | null
+
+  const updatePayload: any = {
+    internal_notes: notes || null,
+  }
+
+  if (status) updatePayload.status = status
+  if (validUntil) updatePayload.valid_until = new Date(validUntil).toISOString()
+  if (medicalUntil) updatePayload.medical_certificate_valid_until = new Date(medicalUntil).toISOString()
+  if (paymentStatus) updatePayload.payment_status = paymentStatus
+  if (nextPaymentAt) updatePayload.next_payment_at = new Date(nextPaymentAt).toISOString()
+
+  const { error } = await supabaseAdmin
+    .from("club_members")
+    .update(updatePayload)
+    .eq("id", memberId)
+    .eq("club_id", club.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePath(`/club/${clubSlug}/admin/members/${memberId}`)
+  return { success: true }
+}
+
 // --- SUPER ADMIN ACTIONS ---
 
 export async function createClub(formData: FormData) {
