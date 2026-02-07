@@ -113,6 +113,12 @@ export default async function SuperAdminPage() {
                         >
                           Login als Admin
                         </a>
+                        <a
+                          href={`/super-admin/club/${club.slug}`}
+                          className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+                        >
+                          Feature-Matrix
+                        </a>
 
                         <EditClubDialog club={club} />
                         <DeleteClubButton clubId={club.id} />
