@@ -31,7 +31,8 @@ async function buildPdfResponse({
 
   try {
     const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
-    return new NextResponse(buffer, {
+    const bytes = new Uint8Array(buffer)
+    return new NextResponse(bytes, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
