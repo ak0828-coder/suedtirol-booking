@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { notFound } from "next/navigation"
 import { getAdminContext } from "../../_lib/get-admin-context"
-import { notFound } from "next/navigation"
 import { getMemberDocumentAuditForAdmin, getMemberDocumentsForAdmin } from "@/app/actions"
 import { MemberBookingsPanel } from "@/components/admin/member-bookings-panel"
 import { AdminMemberQuickActions } from "@/components/admin/member-quick-actions"
@@ -105,8 +104,7 @@ export default async function AdminMemberDetailPage({
           Guthaben: {member.credit_balance ?? 0}EUR
         </div>
         <div className="text-sm text-slate-600">
-          Einladung: {member.invite_status || "-"}
-        </div>
+          Einladung: {member.invite_status || "-"}</div>
         <div className="text-sm text-slate-600">
           Stripe Abo: {member.stripe_subscription_id ? "Aktiv" : "-"}
         </div>
