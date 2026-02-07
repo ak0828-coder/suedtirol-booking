@@ -1,11 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { defaultFeatures, type FeatureTree } from "@/lib/club-features"
 import { updateClubFeatureMatrix } from "@/app/actions"
 
-const featureSections = [
+export type FeatureSection = {
+  title: string
+  key: string
+  items: { key: string; label: string }[]
+}
+
+const defaultSections: FeatureSection[] = [
   {
     title: "Navigation",
     key: "admin",
@@ -47,12 +53,15 @@ export function FeatureMatrixForm({
   clubId,
   slug,
   initialFeatures,
+  sections,
 }: {
   clubId: string
   slug: string
   initialFeatures: FeatureTree
+  sections?: FeatureSection[]
 }) {
   const [features, setFeatures] = useState<FeatureTree>(initialFeatures)
+  const allSections = useMemo(() => sections || defaultSections, [sections])
 
   return (
     <form action={updateClubFeatureMatrix} className="space-y-6">
@@ -61,7 +70,7 @@ export function FeatureMatrixForm({
       <input type="hidden" name="feature_flags" value={JSON.stringify(features)} readOnly />
 
       <div className="grid gap-6 md:grid-cols-2">
-        {featureSections.map((section) => (
+        {allSections.map((section) => (
           <div key={section.key} className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>

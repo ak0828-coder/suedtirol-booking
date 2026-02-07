@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { FeatureToggle } from "@/components/admin/feature-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +15,7 @@ export default async function SuperAdminClubOverviewPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: courts } = await supabase
@@ -31,6 +32,20 @@ export default async function SuperAdminClubOverviewPage({
 
   return (
     <>
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200/60 bg-white/80 px-6 py-4 shadow-sm">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Ubersicht</h2>
+          <p className="text-xs text-slate-500">Admin Startseite fur den Verein.</p>
+        </div>
+        <FeatureToggle
+          clubId={club.id}
+          slug={slug}
+          path={["admin", "overview"]}
+          label="Tab aktiv"
+          checked={features.admin.overview}
+        />
+      </div>
+
       {bookings && courts && <DashboardStats bookings={bookings} courts={courts} />}
 
       <div className="grid xl:grid-cols-3 gap-6">

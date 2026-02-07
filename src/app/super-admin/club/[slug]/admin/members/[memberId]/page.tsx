@@ -9,6 +9,7 @@ import { MemberDocumentsAdmin } from "@/components/admin/member-documents-admin"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { notFound } from "next/navigation"
+import { FeatureToggle } from "@/components/admin/feature-toggle"
 
 export default async function SuperAdminMemberDetailPage({
   params,
@@ -16,7 +17,7 @@ export default async function SuperAdminMemberDetailPage({
   params: Promise<{ slug: string; memberId: string }>
 }) {
   const { slug, memberId } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
 
   const supabase = await createClient()
   const { data: member } = await supabase
@@ -121,9 +122,31 @@ export default async function SuperAdminMemberDetailPage({
 
       <MemberBookingsPanel bookings={bookings || []} clubSlug={slug} memberId={member.id} />
 
-      <MemberPaymentsPanel payments={paymentHistory} />
+      <div className="relative">
+        <div className="absolute right-4 top-4 z-10">
+          <FeatureToggle
+            clubId={club.id}
+            slug={slug}
+            path={["members", "payments"]}
+            label="Zahlungen"
+            checked={features.members.payments}
+          />
+        </div>
+        <MemberPaymentsPanel payments={paymentHistory} />
+      </div>
 
-      <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
+      <div className="relative">
+        <div className="absolute right-4 top-4 z-10">
+          <FeatureToggle
+            clubId={club.id}
+            slug={slug}
+            path={["members", "documents"]}
+            label="Dokumente"
+            checked={features.members.documents}
+          />
+        </div>
+        <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
+      </div>
     </div>
   )
 }

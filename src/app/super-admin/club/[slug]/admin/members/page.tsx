@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, AlertTriangle, CheckCircle, FileText } from "lucide-react"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { FeatureToggle } from "@/components/admin/feature-toggle"
 
 export default async function SuperAdminMembersPage({
   params,
@@ -16,7 +17,7 @@ export default async function SuperAdminMembersPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
   const members = await getClubMembers(slug)
   const importedCount = await getImportedMembersCount(slug)
   const stats = await getMemberAdminDashboardStats(slug)
@@ -29,7 +30,23 @@ export default async function SuperAdminMembersPage({
           <h2 className="text-2xl md:text-3xl font-semibold">Mitglieder-Kartei</h2>
           <p className="text-slate-500 text-sm">Verwaltung und Einladungen an einem Ort.</p>
         </div>
-        <InviteMemberDialog clubSlug={slug} />
+        <div className="flex flex-wrap items-center gap-3">
+          <FeatureToggle
+            clubId={club.id}
+            slug={slug}
+            path={["admin", "members"]}
+            label="Tab aktiv"
+            checked={features.admin.members}
+          />
+          <FeatureToggle
+            clubId={club.id}
+            slug={slug}
+            path={["members", "invite"]}
+            label="Einladungen"
+            checked={features.members.invite}
+          />
+          <InviteMemberDialog clubSlug={slug} />
+        </div>
       </div>
 
       <ActivationBanner importedCount={importedCount} clubSlug={slug} />
@@ -73,24 +90,46 @@ export default async function SuperAdminMembersPage({
         </div>
       </div>
 
-      <MemberImportWizard clubSlug={slug} />
+      <div className="relative">
+        <div className="absolute right-4 top-4 z-10">
+          <FeatureToggle
+            clubId={club.id}
+            slug={slug}
+            path={["members", "import"]}
+            label="Import"
+            checked={features.members.import}
+          />
+        </div>
+        <MemberImportWizard clubSlug={slug} />
+      </div>
 
       {contract && (
-        <ContractEditor
-          clubSlug={slug}
-          clubName={contract.club_name}
-          clubLogoUrl={contract.club_logo_url}
-          initialTitle={contract.title}
-          initialBody={contract.body}
-          initialFee={contract.membership_fee}
-          feeEnabled={contract.membership_fee_enabled}
-          allowSubscription={contract.membership_allow_subscription}
-          memberPricingMode={contract.member_booking_pricing_mode}
-          memberPricingValue={contract.member_booking_pricing_value}
-          contractFields={contract.membership_contract_fields || []}
-          version={contract.version}
-          updatedAt={contract.updated_at}
-        />
+        <div className="relative">
+          <div className="absolute right-4 top-4 z-10">
+            <FeatureToggle
+              clubId={club.id}
+              slug={slug}
+              path={["members", "contract_editor"]}
+              label="Vertrags-Editor"
+              checked={features.members.contract_editor}
+            />
+          </div>
+          <ContractEditor
+            clubSlug={slug}
+            clubName={contract.club_name}
+            clubLogoUrl={contract.club_logo_url}
+            initialTitle={contract.title}
+            initialBody={contract.body}
+            initialFee={contract.membership_fee}
+            feeEnabled={contract.membership_fee_enabled}
+            allowSubscription={contract.membership_allow_subscription}
+            memberPricingMode={contract.member_booking_pricing_mode}
+            memberPricingValue={contract.member_booking_pricing_value}
+            contractFields={contract.membership_contract_fields || []}
+            version={contract.version}
+            updatedAt={contract.updated_at}
+          />
+        </div>
       )}
 
       <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">

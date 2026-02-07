@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { FeatureToggle } from "@/components/admin/feature-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -12,7 +13,7 @@ export default async function SuperAdminBookingsPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: bookings } = await supabase
@@ -24,8 +25,19 @@ export default async function SuperAdminBookingsPage({
   return (
     <>
       <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
-        <h2 className="text-2xl md:text-3xl font-semibold">Buchungen</h2>
-        <p className="text-slate-500 text-sm">Alle Buchungen an einem Ort.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-semibold">Buchungen</h2>
+            <p className="text-slate-500 text-sm">Alle Buchungen an einem Ort.</p>
+          </div>
+          <FeatureToggle
+            clubId={club.id}
+            slug={slug}
+            path={["admin", "bookings"]}
+            label="Tab aktiv"
+            checked={features.admin.bookings}
+          />
+        </div>
       </div>
 
       <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
