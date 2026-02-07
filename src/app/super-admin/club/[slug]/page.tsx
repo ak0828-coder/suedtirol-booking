@@ -2,23 +2,10 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { SidebarNav } from "@/components/admin/sidebar-nav"
 import { FeatureMatrixForm } from "@/components/admin/feature-matrix-form"
 import { mergeFeatures } from "@/lib/club-features"
 
 export const dynamic = "force-dynamic"
-
-const navItems = [
-  { href: "", label: "Ubersicht" },
-  { href: "/bookings", label: "Buchungen" },
-  { href: "/courts", label: "Platze" },
-  { href: "/blocks", label: "Sperrzeiten" },
-  { href: "/plans", label: "Abos" },
-  { href: "/members", label: "Mitglieder" },
-  { href: "/vouchers", label: "Gutscheine" },
-  { href: "/settings", label: "Einstellungen" },
-  { href: "/export", label: "Export" },
-]
 
 export default async function SuperAdminClubPage({
   params,
@@ -48,7 +35,7 @@ export default async function SuperAdminClubPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[1400px] mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div
@@ -76,19 +63,26 @@ export default async function SuperAdminClubPage({
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
-          <aside className="space-y-4">
-            <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
-                Navigation
-              </div>
-              <SidebarNav slug={slug} items={navItems} accentColor={club.primary_color} />
-            </div>
-          </aside>
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
+          <div className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm overflow-hidden">
+            <iframe
+              title="Admin Vorschau"
+              src={`/club/${slug}/admin`}
+              className="w-full h-[85vh]"
+            />
+          </div>
 
-          <main className="space-y-6">
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                Feature Steuerung
+              </div>
+              <p className="text-xs text-slate-500">
+                Aktiviere oder deaktiviere jedes einzelne Modul. Der Admin sieht die Aenderung sofort.
+              </p>
+            </div>
             <FeatureMatrixForm clubId={club.id} slug={club.slug} initialFeatures={features} />
-          </main>
+          </div>
         </div>
       </div>
     </div>
