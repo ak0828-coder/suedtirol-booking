@@ -62,9 +62,9 @@ async function buildPdfResponse({
         doc.moveDown(0.8)
       }
 
-      const panel = (height: number) => {
+      const panel = (panelHeight: number) => {
         const y = doc.y
-        doc.roundedRect(contentLeft, y, contentWidth, height, 6).fillColor(colors.panel).fill()
+        doc.roundedRect(contentLeft, y, contentWidth, panelHeight, 6).fillColor(colors.panel).fill()
         doc.fillColor(colors.ink)
       }
 
@@ -84,7 +84,6 @@ async function buildPdfResponse({
         margins.top + 64
       )
 
-      doc.moveDown(7)
       doc.y = margins.top + headerHeight + 18
 
       // Club info panel
@@ -94,8 +93,8 @@ async function buildPdfResponse({
       doc.text("Adresse:", contentLeft + 16, doc.y + 12)
       doc.text("Kontakt (E-Mail/Telefon):", contentLeft + 16, doc.y + 32)
       doc.text("Vertreten durch:", contentLeft + 16, doc.y + 52)
-      doc.moveDown(5)
       doc.y += 70
+      doc.moveDown(0.2)
       rule()
 
       // Member info panel
@@ -106,8 +105,8 @@ async function buildPdfResponse({
       doc.text("Adresse:", contentLeft + 16, doc.y + 32)
       doc.text("E-Mail:", contentLeft + 16, doc.y + 52)
       doc.text("Telefon:", contentLeft + 16, doc.y + 72)
-      doc.moveDown(6)
       doc.y += 86
+      doc.moveDown(0.2)
       rule()
 
       // Custom fields
@@ -122,8 +121,8 @@ async function buildPdfResponse({
           const label = (field?.label || "Feld").trim()
           doc.text(`${label}:`, contentLeft + 16, doc.y + 12 + idx * rowHeight)
         })
-        doc.moveDown(6)
         doc.y += boxHeight
+        doc.moveDown(0.2)
         rule()
       }
 
@@ -160,7 +159,6 @@ async function buildPdfResponse({
       doc.text("Verein (Name/Unterschrift)", contentLeft + 12, y + 48, { width: colWidth - 24 })
       doc.text("Mitglied (Name/Unterschrift)", contentLeft + colWidth + colGap + 12, y + 48, { width: colWidth - 24 })
 
-      doc.moveDown(5)
       doc.y = y + 82
       doc.font("Helvetica").fontSize(9).fillColor(colors.light)
       doc.text("Ort, Datum: ____________________________________________")
