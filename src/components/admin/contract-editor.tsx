@@ -207,8 +207,8 @@ export function ContractEditor({
               placeholder="Schreibe hier die Mitgliedsbeitrag-Erklaerung / Vertrag..."
             />
             <p className="text-xs text-slate-500">
-              Platzhalter: <code>{{`{{name}}`}}</code>, <code>{{`{{email}}`}}</code>, <code>{{`{{address}}`}}</code>,{" "}
-              <code>{{`{{fee}}`}}</code> und eigene Felder z.B. <code>{{`{{mitgliedsnummer}}`}}</code>.
+              Platzhalter: <code>{"{{name}}"}</code>, <code>{"{{email}}"}</code>, <code>{"{{address}}"}</code>,{" "}
+              <code>{"{{fee}}"}</code> und eigene Felder z.B. <code>{"{{mitgliedsnummer}}"}</code>.
             </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-slate-50/60 p-4 space-y-3">
