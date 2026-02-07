@@ -37,7 +37,7 @@ async function buildPdfResponse({
       doc.on("end", () => resolve(Buffer.concat(chunks)))
       doc.on("error", (err) => reject(err))
 
-      const { width, height, margins } = doc.page
+      const { width, margins } = doc.page
       const contentWidth = width - margins.left - margins.right
       const contentLeft = margins.left
       const contentRight = contentLeft + contentWidth
@@ -68,7 +68,6 @@ async function buildPdfResponse({
         doc.fillColor(colors.ink)
       }
 
-      // Header band
       const headerHeight = 86
       doc.rect(contentLeft, margins.top, contentWidth, headerHeight).fillColor(colors.panel).fill()
       doc.rect(contentLeft, margins.top, 6, headerHeight).fillColor(colors.accent).fill()
@@ -79,14 +78,13 @@ async function buildPdfResponse({
       })
       doc.font("Helvetica").fontSize(11).fillColor(colors.muted).text(clubName, contentLeft + 16, margins.top + 46)
       doc.font("Helvetica").fontSize(9).fillColor(colors.light).text(
-        `Version ${version} • ${updatedAt || "-"}`,
+        `Version ${version} - ${updatedAt || "-"}`,
         contentLeft + 16,
         margins.top + 64
       )
 
       doc.y = margins.top + headerHeight + 18
 
-      // Club info panel
       sectionTitle("Vereinsangaben")
       panel(70)
       doc.font("Helvetica").fontSize(10).fillColor(colors.muted)
@@ -97,7 +95,6 @@ async function buildPdfResponse({
       doc.moveDown(0.2)
       rule()
 
-      // Member info panel
       sectionTitle("Mitgliedsdaten")
       panel(86)
       doc.font("Helvetica").fontSize(10).fillColor(colors.muted)
@@ -109,7 +106,6 @@ async function buildPdfResponse({
       doc.moveDown(0.2)
       rule()
 
-      // Custom fields
       if (fields && fields.length > 0) {
         sectionTitle("Zusatzangaben")
         const rows = fields.slice(0, 6)
@@ -126,7 +122,6 @@ async function buildPdfResponse({
         rule()
       }
 
-      // Contract content
       sectionTitle("Vertragsinhalt")
       doc.font("Helvetica").fontSize(11).fillColor(colors.ink)
       const paragraphs = String(body || "")
@@ -146,7 +141,6 @@ async function buildPdfResponse({
       doc.moveDown(0.6)
       rule()
 
-      // Signatures
       sectionTitle("Unterschriften")
       const colGap = 18
       const colWidth = (contentWidth - colGap) / 2
