@@ -102,7 +102,28 @@ const styles = StyleSheet.create({
 })
 
 export function ContractPDF({ data }: { data: ContractData }) {
-  const paragraphs = data.contractText
+  const normalized = {
+    clubName: data?.clubName || "",
+    clubLogoUrl:
+      typeof data?.clubLogoUrl === "string" && data.clubLogoUrl.trim()
+        ? data.clubLogoUrl
+        : null,
+    clubAddress: data?.clubAddress || "",
+    contractTitle: data?.contractTitle || "Mitgliedsvertrag",
+    memberName: data?.memberName || "",
+    memberAddress: data?.memberAddress || "",
+    memberEmail: data?.memberEmail || "",
+    memberPhone: data?.memberPhone || "",
+    contractText: typeof data?.contractText === "string" ? data.contractText : "",
+    signatureUrl:
+      typeof data?.signatureUrl === "string" && data.signatureUrl.trim()
+        ? data.signatureUrl
+        : null,
+    signedAt: data?.signedAt || "",
+    signedCity: data?.signedCity || "",
+  }
+
+  const paragraphs = normalized.contractText
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
@@ -112,26 +133,26 @@ export function ContractPDF({ data }: { data: ContractData }) {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View>
-            {data.clubLogoUrl ? (
-              <Image src={data.clubLogoUrl} style={styles.logo} />
+            {normalized.clubLogoUrl ? (
+              <Image src={normalized.clubLogoUrl} style={styles.logo} />
             ) : (
-              <Text style={{ fontSize: 18, fontWeight: 700 }}>{data.clubName}</Text>
+              <Text style={{ fontSize: 18, fontWeight: 700 }}>{normalized.clubName}</Text>
             )}
           </View>
           <View style={styles.clubInfo}>
-            <Text style={{ fontWeight: 700 }}>{data.clubName}</Text>
-            {data.clubAddress ? <Text>{data.clubAddress}</Text> : null}
+            <Text style={{ fontWeight: 700 }}>{normalized.clubName}</Text>
+            {normalized.clubAddress ? <Text>{normalized.clubAddress}</Text> : null}
           </View>
         </View>
 
-        <Text style={styles.title}>{data.contractTitle || "Mitgliedsvertrag"}</Text>
+        <Text style={styles.title}>{normalized.contractTitle}</Text>
 
         <View style={styles.memberBlock}>
           <Text style={styles.memberLabel}>Vertragspartner (Mitglied)</Text>
-          <Text style={styles.memberName}>{data.memberName}</Text>
-          <Text>{data.memberAddress}</Text>
+          <Text style={styles.memberName}>{normalized.memberName}</Text>
+          <Text>{normalized.memberAddress}</Text>
           <Text>
-            {data.memberEmail} · {data.memberPhone}
+            {normalized.memberEmail} · {normalized.memberPhone}
           </Text>
         </View>
 
@@ -149,19 +170,19 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         <View style={styles.signatureSection}>
           <View style={styles.signatureBox}>
-            <Text style={{ fontSize: 9 }}>Für den Verein ({data.clubName})</Text>
+            <Text style={{ fontSize: 9 }}>Für den Verein ({normalized.clubName})</Text>
           </View>
           <View style={styles.signatureBox}>
-            {data.signatureUrl ? <Image src={data.signatureUrl} style={styles.signatureImage} /> : null}
+            {normalized.signatureUrl ? <Image src={normalized.signatureUrl} style={styles.signatureImage} /> : null}
             <Text style={{ fontSize: 9 }}>
-              {data.signedCity}, am {data.signedAt}
+              {normalized.signedCity}, am {normalized.signedAt}
             </Text>
-            <Text style={{ fontSize: 9, fontWeight: 700 }}>{data.memberName}</Text>
+            <Text style={{ fontSize: 9, fontWeight: 700 }}>{normalized.memberName}</Text>
           </View>
         </View>
 
         <Text style={styles.footer}>
-          Dieses Dokument wurde digital über Avaimo erstellt am {data.signedAt}.
+          Dieses Dokument wurde digital über Avaimo erstellt am {normalized.signedAt}.
         </Text>
       </Page>
     </Document>
