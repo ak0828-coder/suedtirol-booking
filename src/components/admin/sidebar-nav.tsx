@@ -37,20 +37,6 @@ export function SidebarNav({
             )}
             style={isActive ? { color: accent } : undefined}
           >
-            {isActive && (
-              <>
-                <span
-                  className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full"
-                  style={{ backgroundColor: accent }}
-                  aria-hidden="true"
-                />
-                <span
-                  className="pointer-events-none absolute -left-2 top-1 bottom-1 w-6 rounded-full blur-md opacity-50"
-                  style={{ backgroundColor: accent }}
-                  aria-hidden="true"
-                />
-              </>
-            )}
             {item.label}
           </Link>
         )
