@@ -29,6 +29,7 @@ export default async function AdminMemberDetailPage({
   if (!member) return notFound()
 
   const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+  const plan = Array.isArray(member.membership_plans) ? member.membership_plans[0] : member.membership_plans
 
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,7 +79,7 @@ export default async function AdminMemberDetailPage({
           {member.valid_until ? new Date(member.valid_until).toLocaleDateString("de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Mitgliedschaftsplan: {member.membership_plans?.name || "Aktiv"}
+          Mitgliedschaftsplan: {plan?.name || "Aktiv"}
         </div>
         <div className="text-sm text-slate-600">Telefon: {profile?.phone || "-"}</div>
         <div className="text-sm text-slate-600">
