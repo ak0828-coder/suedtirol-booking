@@ -45,6 +45,7 @@ export default async function MemberOnboardingPage({
       contractTitle={contract.title}
       contractBody={contract.body}
       contractVersion={contract.version}
+      contractFields={contract.membership_contract_fields || []}
       allowSubscription={contract.membership_allow_subscription}
       feeEnabled={contract.membership_fee_enabled}
       feeAmount={contract.membership_fee}

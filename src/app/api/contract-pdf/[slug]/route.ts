@@ -11,6 +11,7 @@ async function buildPdfResponse({
   version,
   updatedAt,
   slug,
+  fields,
 }: {
   clubName: string
   title: string
@@ -18,6 +19,7 @@ async function buildPdfResponse({
   version: number
   updatedAt: string | null
   slug: string
+  fields?: { label?: string }[]
 }) {
   try {
     const buffer = await new Promise<Buffer>((resolve, reject) => {
@@ -64,6 +66,17 @@ async function buildPdfResponse({
       doc.text("Telefon: ______________________________________________")
       doc.moveDown(0.6)
       drawRule()
+
+      if (fields && fields.length > 0) {
+        doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Zusatzfelder")
+        doc.font("Helvetica").fontSize(10).fillColor("#475569")
+        fields.forEach((field) => {
+          const label = (field?.label || "Feld").trim()
+          doc.text(`${label}: ____________________________________________`)
+        })
+        doc.moveDown(0.6)
+        drawRule()
+      }
 
       const paragraphs = String(body || "")
         .split(/\r?\n/)
@@ -132,7 +145,7 @@ async function getClubContext(slug: string) {
   const { data: club } = await supabase
     .from("clubs")
     .select(
-      "id, name, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at"
+      "id, name, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_contract_fields"
     )
     .eq("slug", slug)
     .single()
@@ -168,6 +181,7 @@ export async function GET(
     version: club.membership_contract_version || 1,
     updatedAt,
     slug,
+    fields: Array.isArray(club.membership_contract_fields) ? club.membership_contract_fields : [],
   })
 }
 
@@ -205,5 +219,6 @@ export async function POST(
     version,
     updatedAt,
     slug,
+    fields: Array.isArray(payload?.fields) ? payload.fields : [],
   })
 }

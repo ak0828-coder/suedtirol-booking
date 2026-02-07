@@ -87,6 +87,7 @@ export default async function AdminMembersPage({
           allowSubscription={contract.membership_allow_subscription}
           memberPricingMode={contract.member_booking_pricing_mode}
           memberPricingValue={contract.member_booking_pricing_value}
+          contractFields={contract.membership_contract_fields || []}
           version={contract.version}
           updatedAt={contract.updated_at}
         />

@@ -10,6 +10,7 @@ export type ContractData = {
   memberAddress: string
   memberEmail: string
   memberPhone: string
+  customFields?: { label: string; value: string }[]
   contractText: string
   signatureUrl?: string | null
   signedAt: string
@@ -53,6 +54,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     padding: 10,
     borderRadius: 4,
+  },
+  customBlock: {
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    padding: 10,
+    borderRadius: 4,
+  },
+  customRow: {
+    marginBottom: 6,
   },
   memberLabel: {
     fontSize: 9,
@@ -114,6 +125,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
     memberAddress: data?.memberAddress || "",
     memberEmail: data?.memberEmail || "",
     memberPhone: data?.memberPhone || "",
+    customFields: Array.isArray(data?.customFields) ? data.customFields : [],
     contractText: typeof data?.contractText === "string" ? data.contractText : "",
     signatureUrl:
       typeof data?.signatureUrl === "string" && data.signatureUrl.trim()
@@ -152,9 +164,23 @@ export function ContractPDF({ data }: { data: ContractData }) {
           <Text style={styles.memberName}>{normalized.memberName}</Text>
           <Text>{normalized.memberAddress}</Text>
           <Text>
-            {normalized.memberEmail} · {normalized.memberPhone}
+            {normalized.memberEmail} - {normalized.memberPhone}
           </Text>
         </View>
+
+        {normalized.customFields.length > 0 ? (
+          <View style={styles.customBlock}>
+            <Text style={styles.memberLabel}>Zusaetzliche Angaben</Text>
+            {normalized.customFields.map((field, idx) => (
+              <View key={`${field.label}-${idx}`} style={styles.customRow}>
+                <Text>
+                  <Text style={{ fontWeight: 700 }}>{field.label}: </Text>
+                  {field.value || "-"}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <View>
           {paragraphs.length === 0 ? (
@@ -170,7 +196,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         <View style={styles.signatureSection}>
           <View style={styles.signatureBox}>
-            <Text style={{ fontSize: 9 }}>Für den Verein ({normalized.clubName})</Text>
+            <Text style={{ fontSize: 9 }}>Fuer den Verein ({normalized.clubName})</Text>
           </View>
           <View style={styles.signatureBox}>
             {normalized.signatureUrl ? <Image src={normalized.signatureUrl} style={styles.signatureImage} /> : null}
@@ -182,7 +208,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
         </View>
 
         <Text style={styles.footer}>
-          Dieses Dokument wurde digital über Avaimo erstellt am {normalized.signedAt}.
+          Dieses Dokument wurde digital ueber Avaimo erstellt am {normalized.signedAt}.
         </Text>
       </Page>
     </Document>

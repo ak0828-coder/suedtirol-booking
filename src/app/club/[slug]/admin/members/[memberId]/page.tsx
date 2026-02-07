@@ -21,7 +21,7 @@ export default async function AdminMemberDetailPage({
   const supabase = await createClient()
   const { data: member } = await supabase
     .from("club_members")
-    .select("id, user_id, status, payment_status, next_payment_at, valid_until, contract_signed_at, contract_version, credit_balance, invite_status, import_email, stripe_subscription_id, plan_id, profiles:user_id(first_name, last_name, phone, id), medical_certificate_valid_until, membership_plans(name)")
+    .select("id, user_id, status, payment_status, next_payment_at, valid_until, contract_signed_at, contract_version, credit_balance, invite_status, import_email, stripe_subscription_id, plan_id, extra_fields, profiles:user_id(first_name, last_name, phone, id), medical_certificate_valid_until, membership_plans(name)")
     .eq("id", memberId)
     .eq("club_id", club.id)
     .maybeSingle()
@@ -30,6 +30,10 @@ export default async function AdminMemberDetailPage({
 
   const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
   const plan = Array.isArray(member.membership_plans) ? member.membership_plans[0] : member.membership_plans
+  const extraFields =
+    member.extra_fields && typeof member.extra_fields === "object"
+      ? Object.entries(member.extra_fields)
+      : []
 
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,7 +66,7 @@ export default async function AdminMemberDetailPage({
           <div className="text-sm text-slate-500">{profile?.id}</div>
         </div>
         <Link href={`/club/${slug}/admin/members`}>
-          <Button variant="outline" className="rounded-full">Zurück</Button>
+          <Button variant="outline" className="rounded-full">Zurueck</Button>
         </Link>
       </div>
 
@@ -71,11 +75,11 @@ export default async function AdminMemberDetailPage({
         <div className="text-sm text-slate-600">Zahlungsstatus: {member.payment_status || "unbekannt"}</div>
         <div className="text-sm text-slate-600">E-Mail: {email}</div>
         <div className="text-sm text-slate-600">
-          Nächster Beitrag:{" "}
+          Naechster Beitrag:{" "}
           {member.next_payment_at ? new Date(member.next_payment_at).toLocaleDateString("de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Mitglied gültig bis:{" "}
+          Mitglied gueltig bis:{" "}
           {member.valid_until ? new Date(member.valid_until).toLocaleDateString("de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">
@@ -83,7 +87,7 @@ export default async function AdminMemberDetailPage({
         </div>
         <div className="text-sm text-slate-600">Telefon: {profile?.phone || "-"}</div>
         <div className="text-sm text-slate-600">
-          Attest gültig bis:{" "}
+          Attest gueltig bis:{" "}
           {member.medical_certificate_valid_until
             ? new Date(member.medical_certificate_valid_until).toLocaleDateString("de-DE")
             : "Fehlt"}
@@ -96,14 +100,26 @@ export default async function AdminMemberDetailPage({
           Vertragsversion: {member.contract_version || "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Guthaben: {member.credit_balance ?? 0}€
+          Guthaben: {member.credit_balance ?? 0}EUR
         </div>
         <div className="text-sm text-slate-600">
           Einladung: {member.invite_status || "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Stripe Abo: {member.stripe_subscription_id ? "Aktiv" : "—"}
+          Stripe Abo: {member.stripe_subscription_id ? "Aktiv" : "-"}
         </div>
+        {extraFields.length > 0 ? (
+          <div className="pt-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Zusatzangaben</div>
+            <div className="mt-2 space-y-1">
+              {extraFields.map(([key, value]) => (
+                <div key={key} className="text-sm text-slate-600">
+                  {key}: {typeof value === "boolean" ? (value ? "Ja" : "Nein") : String(value || "-")}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <AdminMemberQuickActions

@@ -33,6 +33,14 @@ type InitialMember = {
   city: string
 }
 
+type ContractField = {
+  key: string
+  label: string
+  type?: "text" | "textarea" | "checkbox"
+  required?: boolean
+  placeholder?: string | null
+}
+
 export function MemberOnboardingForm({
   clubSlug,
   clubName,
@@ -40,6 +48,7 @@ export function MemberOnboardingForm({
   contractTitle,
   contractBody,
   contractVersion,
+  contractFields,
   allowSubscription,
   feeEnabled,
   feeAmount,
@@ -52,6 +61,7 @@ export function MemberOnboardingForm({
   contractTitle: string
   contractBody: string
   contractVersion: number
+  contractFields: ContractField[]
   allowSubscription: boolean
   feeEnabled: boolean
   feeAmount: number
@@ -69,6 +79,7 @@ export function MemberOnboardingForm({
   )
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id || "")
   const [formData, setFormData] = useState(initialMember)
+  const [customValues, setCustomValues] = useState<Record<string, string | boolean>>({})
 
   useEffect(() => {
     if (plans.length === 1) setSelectedPlanId(plans[0].id)
@@ -87,7 +98,7 @@ export function MemberOnboardingForm({
 
   const replaceTokens = (text: string) => {
     const fee = feeEnabled ? `${feeAmount.toFixed(2).replace(".", ",")} EUR` : "0 EUR"
-    return text
+    let result = text
       .replace(/{{\s*name\s*}}/gi, `${formData.firstName} ${formData.lastName}`.trim())
       .replace(/{{\s*first_name\s*}}/gi, formData.firstName)
       .replace(/{{\s*last_name\s*}}/gi, formData.lastName)
@@ -98,6 +109,16 @@ export function MemberOnboardingForm({
       .replace(/{{\s*city\s*}}/gi, formData.city)
       .replace(/{{\s*fee\s*}}/gi, fee)
       .replace(/{{\s*date\s*}}/gi, formattedDate)
+
+    for (const field of contractFields) {
+      const value = customValues[field.key]
+      const asText =
+        typeof value === "boolean" ? (value ? "Ja" : "Nein") : value || ""
+      if (!field.key) continue
+      const pattern = new RegExp(`{{\\s*${field.key}\\s*}}`, "gi")
+      result = result.replace(pattern, asText)
+    }
+    return result
   }
 
   const contractText = useMemo(() => replaceTokens(contractBody || ""), [
@@ -107,6 +128,8 @@ export function MemberOnboardingForm({
     feeAmount,
     feeEnabled,
     formattedDate,
+    contractFields,
+    customValues,
   ])
 
   const pdfData: ContractData = {
@@ -118,6 +141,15 @@ export function MemberOnboardingForm({
     memberAddress: formData.address,
     memberEmail: formData.email,
     memberPhone: formData.phone,
+    customFields: contractFields
+      .filter((field) => field.key && field.label)
+      .map((field) => {
+        const value = customValues[field.key]
+        return {
+          label: field.label,
+          value: typeof value === "boolean" ? (value ? "Ja" : "Nein") : value || "",
+        }
+      }),
     contractText,
     signatureUrl: signature || undefined,
     signedAt: formattedDate,
@@ -126,6 +158,10 @@ export function MemberOnboardingForm({
 
   const setField = (key: keyof InitialMember, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const setCustomValue = (key: string, value: string | boolean) => {
+    setCustomValues((prev) => ({ ...prev, [key]: value }))
   }
 
   const updateSignaturePreview = (trim = false) => {
@@ -161,6 +197,17 @@ export function MemberOnboardingForm({
       setError("Bitte unterschreibe in das Feld.")
       return
     }
+
+    const missingRequired = contractFields.find((field) => {
+      if (!field.required) return false
+      const value = customValues[field.key]
+      if (field.type === "checkbox") return value === true
+      return typeof value === "string" ? value.trim().length === 0 : true
+    })
+    if (missingRequired) {
+      setError(`Bitte fÃ¼lle das Feld "${missingRequired.label}" aus.`)
+      return
+    }
     setSaving(true)
 
     const profileData = new FormData()
@@ -182,6 +229,13 @@ export function MemberOnboardingForm({
         signedAt: formattedDate,
         contractTitle,
         contractText,
+        customFields: contractFields
+          .filter((field) => field.key && field.label)
+          .map((field) => ({
+            key: field.key,
+            label: field.label,
+            value: customValues[field.key] ?? "",
+          })),
       }
     )
     if (!res?.success) {
@@ -264,6 +318,43 @@ export function MemberOnboardingForm({
               <Input value={formData.phone} onChange={(e) => setField("phone", e.target.value)} />
             </div>
           </Card>
+
+          {contractFields.length > 0 ? (
+            <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
+              <div className="text-sm font-semibold text-slate-900">Weitere Angaben</div>
+              {contractFields.map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <Label>
+                    {field.label}
+                    {field.required ? " *" : ""}
+                  </Label>
+                  {field.type === "textarea" ? (
+                    <Textarea
+                      value={String(customValues[field.key] ?? "")}
+                      onChange={(e) => setCustomValue(field.key, e.target.value)}
+                      rows={3}
+                      placeholder={field.placeholder || undefined}
+                    />
+                  ) : field.type === "checkbox" ? (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={customValues[field.key] === true}
+                        onChange={(e) => setCustomValue(field.key, e.target.checked)}
+                      />
+                      <span>{field.placeholder || "Ich stimme zu"}</span>
+                    </label>
+                  ) : (
+                    <Input
+                      value={String(customValues[field.key] ?? "")}
+                      onChange={(e) => setCustomValue(field.key, e.target.value)}
+                      placeholder={field.placeholder || undefined}
+                    />
+                  )}
+                </div>
+              ))}
+            </Card>
+          ) : null}
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">

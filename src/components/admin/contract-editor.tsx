@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { updateMembershipContract } from "@/app/actions"
 
+type ContractField = {
+  key: string
+  label: string
+  type?: "text" | "textarea" | "checkbox"
+  required?: boolean
+  placeholder?: string | null
+}
+
 export function ContractEditor({
   clubSlug,
   clubName,
@@ -18,6 +26,7 @@ export function ContractEditor({
   allowSubscription,
   memberPricingMode,
   memberPricingValue,
+  contractFields,
   version,
   updatedAt,
 }: {
@@ -31,6 +40,7 @@ export function ContractEditor({
   allowSubscription: boolean
   memberPricingMode: string
   memberPricingValue: number
+  contractFields: ContractField[]
   version: number
   updatedAt?: string | null
 }) {
@@ -41,6 +51,7 @@ export function ContractEditor({
   const [allowSub, setAllowSub] = useState(!!allowSubscription)
   const [pricingMode, setPricingMode] = useState(memberPricingMode || "full_price")
   const [pricingValue, setPricingValue] = useState(String(memberPricingValue || 0))
+  const [fields, setFields] = useState<ContractField[]>(Array.isArray(contractFields) ? contractFields : [])
   const [saving, setSaving] = useState(false)
   const lastUpdated = updatedAt ? new Date(updatedAt).toLocaleDateString("de-DE") : "-"
   const [previewTitle, setPreviewTitle] = useState(initialTitle)
@@ -83,6 +94,7 @@ export function ContractEditor({
             body: previewBody,
             version,
             updatedAt: lastUpdated,
+            fields,
           }),
           signal: controller.signal,
         })
@@ -110,7 +122,7 @@ export function ContractEditor({
     return () => {
       controller.abort()
     }
-  }, [clubSlug, isClient, lastUpdated, previewBody, previewTitle, version])
+  }, [clubSlug, isClient, lastUpdated, previewBody, previewTitle, version, fields])
 
   useEffect(() => {
     return () => {
@@ -130,10 +142,47 @@ export function ContractEditor({
       feeIsEnabled,
       allowSub,
       pricingMode,
-      Number(pricingValue || 0)
+      Number(pricingValue || 0),
+      fields
     )
     setSaving(false)
   }
+
+  const addField = () => {
+    setFields((prev) => [
+      ...(Array.isArray(prev) ? prev : []),
+      {
+        key: `feld_${Date.now()}`,
+        label: "Neues Feld",
+        type: "text",
+        required: false,
+        placeholder: "",
+      },
+    ])
+  }
+
+  const updateField = (index: number, patch: Partial<ContractField>) => {
+    setFields((prev) => {
+      const next = Array.isArray(prev) ? [...prev] : []
+      next[index] = { ...next[index], ...patch }
+      return next
+    })
+  }
+
+  const removeField = (index: number) => {
+    setFields((prev) => {
+      const next = Array.isArray(prev) ? [...prev] : []
+      next.splice(index, 1)
+      return next
+    })
+  }
+
+  const normalizeKey = (raw: string) =>
+    raw
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "")
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -157,6 +206,84 @@ export function ContractEditor({
               rows={10}
               placeholder="Schreibe hier die Mitgliedsbeitrag-Erklaerung / Vertrag..."
             />
+            <p className="text-xs text-slate-500">
+              Platzhalter: <code>{{`{{name}}`}}</code>, <code>{{`{{email}}`}}</code>, <code>{{`{{address}}`}}</code>,{" "}
+              <code>{{`{{fee}}`}}</code> und eigene Felder z.B. <code>{{`{{mitgliedsnummer}}`}}</code>.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200/70 bg-slate-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-slate-900">Zusatzfelder</div>
+                <div className="text-xs text-slate-500">Diese Felder sehen Mitglieder im Formular.</div>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={addField}>
+                Feld hinzufuegen
+              </Button>
+            </div>
+            {fields.length === 0 ? (
+              <div className="text-xs text-slate-500">Keine Zusatzfelder definiert.</div>
+            ) : (
+              <div className="space-y-3">
+                {fields.map((field, idx) => (
+                  <div key={`${field.key}-${idx}`} className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium">Label</label>
+                        <Input
+                          value={field.label}
+                          onChange={(e) => updateField(idx, { label: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium">Key</label>
+                        <Input
+                          value={field.key}
+                          onChange={(e) => updateField(idx, { key: normalizeKey(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium">Typ</label>
+                        <select
+                          className="h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-xs"
+                          value={field.type || "text"}
+                          onChange={(e) => updateField(idx, { type: e.target.value as ContractField["type"] })}
+                        >
+                          <option value="text">Text</option>
+                          <option value="textarea">Textfeld</option>
+                          <option value="checkbox">Checkbox</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium">Placeholder</label>
+                        <Input
+                          value={field.placeholder || ""}
+                          onChange={(e) => updateField(idx, { placeholder: e.target.value })}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-5">
+                        <input
+                          type="checkbox"
+                          checked={!!field.required}
+                          onChange={(e) => updateField(idx, { required: e.target.checked })}
+                        />
+                        <span className="text-xs">Pflichtfeld</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <div>
+                        Platzhalter: <code>{{`{{${field.key || "feld"}}}`}}</code>
+                      </div>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeField(idx)}>
+                        Entfernen
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-2">

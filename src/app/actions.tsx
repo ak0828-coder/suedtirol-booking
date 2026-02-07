@@ -3024,7 +3024,7 @@ export async function getMembershipContract(clubSlug: string) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, owner_id, logo_url, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription, member_booking_pricing_mode, member_booking_pricing_value")
+    .select("id, name, owner_id, logo_url, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_contract_fields, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription, member_booking_pricing_mode, member_booking_pricing_value")
     .eq("slug", clubSlug)
     .single()
 
@@ -3045,7 +3045,8 @@ export async function getMembershipContract(clubSlug: string) {
     membership_fee_enabled: club.membership_fee_enabled ?? false,
     membership_allow_subscription: club.membership_allow_subscription ?? true,
     member_booking_pricing_mode: club.member_booking_pricing_mode || "full_price",
-    member_booking_pricing_value: club.member_booking_pricing_value ?? 0
+    member_booking_pricing_value: club.member_booking_pricing_value ?? 0,
+    membership_contract_fields: club.membership_contract_fields || []
   }
 }
 
@@ -3057,7 +3058,8 @@ export async function updateMembershipContract(
   feeEnabled: boolean,
   allowSubscription: boolean,
   memberPricingMode: string,
-  memberPricingValue: number
+  memberPricingValue: number,
+  membershipFields: any[]
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -3089,7 +3091,8 @@ export async function updateMembershipContract(
       membership_fee_enabled: feeEnabled,
       membership_allow_subscription: allowSubscription,
       member_booking_pricing_mode: memberPricingMode,
-      member_booking_pricing_value: memberPricingValue
+      member_booking_pricing_value: memberPricingValue,
+      membership_contract_fields: membershipFields || []
     })
     .eq("id", club.id)
 
@@ -3106,7 +3109,7 @@ export async function getMembershipContractForMember(clubSlug: string) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
+    .select("id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_contract_fields, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
     .eq("slug", clubSlug)
     .single()
   if (!club) return null
@@ -3129,7 +3132,8 @@ export async function getMembershipContractForMember(clubSlug: string) {
     membership_fee: club.membership_fee || 0,
     membership_fee_currency: club.membership_fee_currency || "EUR",
     membership_fee_enabled: club.membership_fee_enabled ?? false,
-    membership_allow_subscription: club.membership_allow_subscription ?? true
+    membership_allow_subscription: club.membership_allow_subscription ?? true,
+    membership_contract_fields: club.membership_contract_fields || []
   }
 }
 
@@ -3146,6 +3150,7 @@ export async function submitMembershipSignature(
     signedAt: string
     contractTitle: string
     contractText: string
+    customFields?: { key: string; label: string; value: string | boolean }[]
   }
 ) {
   const supabase = await createClient()
@@ -3196,6 +3201,12 @@ export async function submitMembershipSignature(
         memberAddress: payload.memberAddress,
         memberEmail: payload.memberEmail,
         memberPhone: payload.memberPhone,
+        customFields: payload.customFields
+          ? payload.customFields.map((field) => ({
+              label: field.label,
+              value: typeof field.value === "boolean" ? (field.value ? "Ja" : "Nein") : String(field.value || ""),
+            }))
+          : [],
         contractText: payload.contractText,
         signatureUrl: signatureDataUrl,
         signedAt: payload.signedAt,
@@ -3231,7 +3242,13 @@ export async function submitMembershipSignature(
     .from("club_members")
     .update({
       contract_signed_at: new Date().toISOString(),
-      contract_version: contractVersion
+      contract_version: contractVersion,
+      extra_fields: payload.customFields
+        ? payload.customFields.reduce((acc, field) => {
+            acc[field.key] = field.value
+            return acc
+          }, {} as Record<string, string | boolean>)
+        : {}
     })
     .eq("club_id", club.id)
     .eq("user_id", user.id)
