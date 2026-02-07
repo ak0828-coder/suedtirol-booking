@@ -1,0 +1,76 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import { createTrainerCheckoutSession } from "@/app/actions"
+import { Button } from "@/components/ui/button"
+
+export function TrainerBookingCard({
+  clubSlug,
+  trainer,
+}: {
+  clubSlug: string
+  trainer: any
+}) {
+  const [date, setDate] = useState("")
+  const [time, setTime] = useState("")
+  const [duration, setDuration] = useState(60)
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  const handleBooking = () => {
+    if (!date || !time) {
+      setError("Bitte Datum und Zeit waehlen.")
+      return
+    }
+    setError(null)
+    startTransition(async () => {
+      const res = await createTrainerCheckoutSession(clubSlug, trainer.id, date, time, duration)
+      if (res?.url) {
+        window.location.href = res.url
+      } else if (res?.error) {
+        setError(res.error)
+      }
+    })
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm space-y-3">
+      <div>
+        <div className="text-lg font-semibold text-slate-900">
+          {trainer.first_name} {trainer.last_name}
+        </div>
+        <div className="text-sm text-slate-500">{trainer.bio || "Trainerprofil"}</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <input
+          type="date"
+          className="border rounded-md px-2 py-1"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <input
+          type="time"
+          className="border rounded-md px-2 py-1"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+        />
+        <input
+          type="number"
+          className="border rounded-md px-2 py-1"
+          value={duration}
+          min={30}
+          step={30}
+          onChange={(e) => setDuration(Number(e.target.value))}
+        />
+        <div className="text-xs text-slate-500 flex items-center">Minuten</div>
+      </div>
+
+      {error ? <div className="text-xs text-red-500">{error}</div> : null}
+
+      <Button className="rounded-full w-full" onClick={handleBooking} disabled={pending}>
+        {pending ? "Weiter..." : "Trainer buchen"}
+      </Button>
+    </div>
+  )
+}

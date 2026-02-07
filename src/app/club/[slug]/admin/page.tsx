@@ -137,6 +137,24 @@ export default async function AdminPage({
                   Mitglieder
                 </Link>
                 <Link
+                  href={`/club/${slug}/admin/trainers`}
+                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
+                >
+                  Trainer
+                </Link>
+                <Link
+                  href={`/club/${slug}/admin/courses`}
+                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
+                >
+                  Kurse
+                </Link>
+                <Link
+                  href={`/club/${slug}/admin/finance`}
+                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
+                >
+                  Finanzen
+                </Link>
+                <Link
                   href={`/club/${slug}/admin/export`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 col-span-2"
                 >

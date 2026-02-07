@@ -9,6 +9,9 @@ export type FeatureTree = {
     vouchers: boolean
     settings: boolean
     export: boolean
+    trainers: boolean
+    courses: boolean
+    finance: boolean
   }
   members: {
     contract_editor: boolean
@@ -35,6 +38,9 @@ export type FeatureLockTree = {
     vouchers: boolean
     settings: boolean
     export: boolean
+    trainers: boolean
+    courses: boolean
+    finance: boolean
   }
   members: {
     contract_editor: boolean
@@ -61,6 +67,9 @@ export const defaultFeatures: FeatureTree = {
     vouchers: true,
     settings: true,
     export: true,
+    trainers: true,
+    courses: true,
+    finance: true,
   },
   members: {
     contract_editor: true,
@@ -87,6 +96,9 @@ export const defaultFeatureLocks: FeatureLockTree = {
     vouchers: false,
     settings: false,
     export: false,
+    trainers: false,
+    courses: false,
+    finance: false,
   },
   members: {
     contract_editor: false,

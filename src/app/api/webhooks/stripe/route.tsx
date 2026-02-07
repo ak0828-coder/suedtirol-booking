@@ -237,6 +237,103 @@ export async function POST(req: Request) {
         }
     }
 
+    // --- C) TRAINER SESSION ---
+    if (session.metadata?.type === "trainer_session") {
+        const bookingId = session.metadata?.bookingId
+        const trainerId = session.metadata?.trainerId
+        const clubSlug = session.metadata?.clubSlug
+        const amountTotal = session.amount_total ? session.amount_total / 100 : 0
+        const customerEmail = session.customer_details?.email
+
+        if (bookingId) {
+            await supabaseAdmin.from('bookings').update({
+                status: 'confirmed',
+                payment_status: 'paid_stripe',
+                price_paid: amountTotal,
+                guest_email: customerEmail || null
+            }).eq('id', bookingId)
+        }
+
+        if (trainerId) {
+            const { data: trainer } = await supabaseAdmin
+              .from('trainers')
+              .select('*')
+              .eq('id', trainerId)
+              .single()
+
+            if (trainer) {
+              let trainerEarnings = 0
+              if (trainer.salary_type === 'commission') {
+                trainerEarnings = amountTotal * (Number(trainer.default_rate || 0) / 100)
+              } else if (trainer.salary_type === 'hourly') {
+                trainerEarnings = Number(trainer.default_rate || 0)
+              } else {
+                trainerEarnings = 0
+              }
+
+              if (trainerEarnings > 0) {
+                const payoutStatus = trainer.payout_method === 'stripe_connect' ? 'paid' : 'pending'
+                await supabaseAdmin.from('trainer_payouts').insert({
+                  trainer_id: trainer.id,
+                  booking_id: bookingId || null,
+                  amount: trainerEarnings,
+                  status: payoutStatus,
+                  payout_date: payoutStatus === 'paid' ? new Date().toISOString() : null
+                })
+              }
+            }
+        }
+    }
+
+    // --- D) COURSE ENROLLMENT ---
+    if (session.metadata?.type === "course_enrollment") {
+        const participantId = session.metadata?.participantId
+        const courseId = session.metadata?.courseId
+        const amountTotal = session.amount_total ? session.amount_total / 100 : 0
+
+        if (participantId) {
+            await supabaseAdmin.from('course_participants')
+              .update({ payment_status: 'paid_stripe' })
+              .eq('id', participantId)
+        }
+
+        if (courseId) {
+            const { data: course } = await supabaseAdmin
+              .from('courses')
+              .select('id, trainer_id, price')
+              .eq('id', courseId)
+              .single()
+
+            if (course?.trainer_id) {
+              const { data: trainer } = await supabaseAdmin
+                .from('trainers')
+                .select('*')
+                .eq('id', course.trainer_id)
+                .single()
+
+              if (trainer) {
+                let trainerEarnings = 0
+                if (trainer.salary_type === 'commission') {
+                  trainerEarnings = amountTotal * (Number(trainer.default_rate || 0) / 100)
+                } else if (trainer.salary_type === 'hourly') {
+                  trainerEarnings = Number(trainer.default_rate || 0)
+                }
+
+                if (trainerEarnings > 0) {
+                  const payoutStatus = trainer.payout_method === 'stripe_connect' ? 'paid' : 'pending'
+                  await supabaseAdmin.from('trainer_payouts').insert({
+                    trainer_id: trainer.id,
+                    course_id: course.id,
+                    amount: trainerEarnings,
+                    status: payoutStatus,
+                    payout_date: payoutStatus === 'paid' ? new Date().toISOString() : null
+                  })
+                }
+              }
+            }
+        }
+    }
+
     // --- A2) MITGLIEDSCHAFT (EINMALZAHLUNG) ---
     if (session.metadata?.type === 'membership_one_time') {
         const clubId = session.metadata?.clubId

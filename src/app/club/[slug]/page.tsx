@@ -108,6 +108,11 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           {/* Navigation Oben Rechts */}
           <div className="flex items-center justify-end gap-2">
             <ModeToggle />
+            <Link href={`/club/${slug}/training`}>
+              <Button variant="outline" className="gap-2 rounded-full btn-press">
+                <Sparkles className="w-4 h-4" /> Training
+              </Button>
+            </Link>
 
             {/* LOGIN / DASHBOARD BUTTON */}
             {user ? (

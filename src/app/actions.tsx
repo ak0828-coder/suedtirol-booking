@@ -21,7 +21,7 @@ if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nich
 
 const MEMBER_DOC_BUCKET = "member-documents"
 
-type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'unpaid'
+type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'unpaid' | 'internal'
 
 function logAction(action: string, details: Record<string, any>) {
   try {
@@ -948,9 +948,22 @@ export async function updateClubFeatureMatrix(formData: FormData): Promise<void>
   }
 
   const supabaseAdmin = getAdminClient()
+  let nextFlags = featureFlags
+  const { data: existing } = await supabaseAdmin
+    .from("clubs")
+    .select("feature_flags")
+    .eq("id", clubId)
+    .single()
+  if (existing?.feature_flags && typeof existing.feature_flags === "object") {
+    const locks = (existing.feature_flags as any).locks
+    if (locks && typeof locks === "object") {
+      nextFlags = { ...(featureFlags || {}), locks }
+    }
+  }
+
   const { error } = await supabaseAdmin
     .from("clubs")
-    .update({ feature_flags: featureFlags })
+    .update({ feature_flags: nextFlags })
     .eq("id", clubId)
 
   if (error) return
@@ -1112,6 +1125,540 @@ export async function updateMembershipPlanText(
   revalidatePath(`/club/${club.slug}`)
   revalidatePath(`/club/${club.slug}/admin/plans`)
   return { success: true }
+}
+
+// --- TRAINERS & COURSES (SaaS Module) ---
+
+async function assertClubAdmin(clubSlug: string, userId?: string, userEmail?: string) {
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id, slug")
+    .eq("slug", clubSlug)
+    .single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  const isSuperAdmin = !!SUPER_ADMIN && userEmail?.toLowerCase() === SUPER_ADMIN
+  if (!club || (!isSuperAdmin && club.owner_id !== userId)) return { error: "Keine Berechtigung" }
+  return { club }
+}
+
+export async function getClubTrainers(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: trainers } = await supabase
+    .from("trainers")
+    .select("*")
+    .eq("club_id", (await supabase.from("clubs").select("id").eq("slug", clubSlug).single()).data?.id || "")
+    .order("last_name", { ascending: true })
+  return trainers || []
+}
+
+export async function createTrainer(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const clubSlug = String(formData.get("clubSlug") || "")
+  const firstName = String(formData.get("firstName") || "")
+  const lastName = String(formData.get("lastName") || "")
+  if (!clubSlug || !firstName || !lastName) return { error: "Pflichtfelder fehlen" }
+
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const hourlyRate = Number(formData.get("hourlyRate") || 0)
+  const salaryType = String(formData.get("salaryType") || "hourly")
+  const defaultRate = Number(formData.get("defaultRate") || 0)
+  const payoutMethod = String(formData.get("payoutMethod") || "manual")
+
+  const { error: insertError } = await getAdminClient().from("trainers").insert({
+    club_id: club!.id,
+    first_name: firstName,
+    last_name: lastName,
+    email: String(formData.get("email") || ""),
+    phone: String(formData.get("phone") || ""),
+    bio: String(formData.get("bio") || ""),
+    image_url: String(formData.get("imageUrl") || ""),
+    hourly_rate: hourlyRate,
+    salary_type: salaryType,
+    default_rate: defaultRate,
+    payout_method: payoutMethod,
+    iban: String(formData.get("iban") || ""),
+    stripe_account_id: String(formData.get("stripeAccountId") || ""),
+    include_court_fee: formData.get("includeCourtFee") === "on",
+    is_active: formData.get("isActive") !== "off",
+  })
+
+  if (insertError) return { error: insertError.message }
+  revalidatePath(`/club/${clubSlug}/admin/trainers`)
+  return { success: true }
+}
+
+export async function updateTrainer(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const clubSlug = String(formData.get("clubSlug") || "")
+  const trainerId = String(formData.get("trainerId") || "")
+  if (!clubSlug || !trainerId) return { error: "Fehlende Daten" }
+
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const payload: any = {
+    first_name: String(formData.get("firstName") || ""),
+    last_name: String(formData.get("lastName") || ""),
+    email: String(formData.get("email") || ""),
+    phone: String(formData.get("phone") || ""),
+    bio: String(formData.get("bio") || ""),
+    image_url: String(formData.get("imageUrl") || ""),
+    hourly_rate: Number(formData.get("hourlyRate") || 0),
+    salary_type: String(formData.get("salaryType") || "hourly"),
+    default_rate: Number(formData.get("defaultRate") || 0),
+    payout_method: String(formData.get("payoutMethod") || "manual"),
+    iban: String(formData.get("iban") || ""),
+    stripe_account_id: String(formData.get("stripeAccountId") || ""),
+    include_court_fee: formData.get("includeCourtFee") === "on",
+    is_active: formData.get("isActive") !== "off",
+  }
+
+  const { error: updateError } = await getAdminClient()
+    .from("trainers")
+    .update(payload)
+    .eq("id", trainerId)
+    .eq("club_id", club!.id)
+
+  if (updateError) return { error: updateError.message }
+  revalidatePath(`/club/${clubSlug}/admin/trainers`)
+  return { success: true }
+}
+
+export async function deleteTrainer(clubSlug: string, trainerId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const { error: deleteError } = await getAdminClient()
+    .from("trainers")
+    .delete()
+    .eq("id", trainerId)
+    .eq("club_id", club!.id)
+  if (deleteError) return { error: deleteError.message }
+  revalidatePath(`/club/${clubSlug}/admin/trainers`)
+  return { success: true }
+}
+
+export async function getClubCourses(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: club } = await supabase.from("clubs").select("id").eq("slug", clubSlug).single()
+  if (!club) return []
+
+  const { data: courses } = await supabase
+    .from("courses")
+    .select("*, trainers(first_name, last_name)")
+    .eq("club_id", club.id)
+    .order("created_at", { ascending: false })
+  return courses || []
+}
+
+export async function getCourseSessions(courseId: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("course_sessions")
+    .select("*, courts(name)")
+    .eq("course_id", courseId)
+    .order("start_time", { ascending: true })
+  return data || []
+}
+
+export async function createCourseWithSessions(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const clubSlug = String(formData.get("clubSlug") || "")
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const title = String(formData.get("title") || "")
+  if (!title) return { error: "Titel fehlt" }
+
+  const sessionsRaw = String(formData.get("sessions") || "[]")
+  let sessions: any[] = []
+  try {
+    sessions = JSON.parse(sessionsRaw)
+  } catch {
+    return { error: "Sessions JSON ungultig" }
+  }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: course, error: courseError } = await supabaseAdmin
+    .from("courses")
+    .insert({
+      club_id: club!.id,
+      trainer_id: String(formData.get("trainerId") || "") || null,
+      title,
+      description: String(formData.get("description") || ""),
+      price: Number(formData.get("price") || 0),
+      max_participants: Number(formData.get("maxParticipants") || 8),
+      start_date: formData.get("startDate") ? String(formData.get("startDate")) : null,
+      end_date: formData.get("endDate") ? String(formData.get("endDate")) : null,
+      is_published: formData.get("isPublished") === "on",
+    })
+    .select()
+    .single()
+  if (courseError || !course) return { error: courseError?.message || "Kurs konnte nicht erstellt werden" }
+
+  for (const s of sessions) {
+    const startIso = new Date(`${s.date}T${s.start}:00`).toISOString()
+    const endIso = new Date(`${s.date}T${s.end}:00`).toISOString()
+
+    const { data: sessionRow, error: sessionError } = await supabaseAdmin
+      .from("course_sessions")
+      .insert({
+        course_id: course.id,
+        court_id: s.courtId || null,
+        start_time: startIso,
+        end_time: endIso,
+      })
+      .select()
+      .single()
+    if (sessionError || !sessionRow) {
+      return { error: sessionError?.message || "Session konnte nicht erstellt werden" }
+    }
+
+    await supabaseAdmin.from("bookings").insert({
+      club_id: club!.id,
+      court_id: s.courtId || null,
+      start_time: startIso,
+      end_time: endIso,
+      status: "confirmed",
+      payment_status: "internal",
+      price_paid: 0,
+      guest_name: `Kurs: ${title}`,
+      booking_type: "course",
+      trainer_id: course.trainer_id,
+      course_session_id: sessionRow.id,
+    })
+  }
+
+  revalidatePath(`/club/${clubSlug}/admin/courses`)
+  return { success: true }
+}
+
+export async function deleteCourse(clubSlug: string, courseId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const { error: del } = await getAdminClient()
+    .from("courses")
+    .delete()
+    .eq("id", courseId)
+    .eq("club_id", club!.id)
+  if (del) return { error: del.message }
+  revalidatePath(`/club/${clubSlug}/admin/courses`)
+  return { success: true }
+}
+
+export async function getTrainerPayoutSummary(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: club } = await supabase.from("clubs").select("id").eq("slug", clubSlug).single()
+  if (!club) return []
+
+  const { data: payouts } = await supabase
+    .from("trainer_payouts")
+    .select("id, trainer_id, amount, status, trainers(first_name, last_name, iban, payout_method)")
+    .eq("status", "pending")
+
+  const byTrainer = new Map<string, any>()
+  for (const p of payouts || []) {
+    const t = (p as any).trainers
+    const key = p.trainer_id
+    if (!byTrainer.has(key)) {
+      byTrainer.set(key, {
+        trainer_id: key,
+        name: t ? `${t.first_name} ${t.last_name}` : "Trainer",
+        iban: t?.iban || "-",
+        payout_method: t?.payout_method || "manual",
+        total: 0,
+        count: 0,
+      })
+    }
+    const entry = byTrainer.get(key)
+    entry.total += Number(p.amount || 0)
+    entry.count += 1
+  }
+  return Array.from(byTrainer.values())
+}
+
+export async function markTrainerPayoutsPaid(clubSlug: string, trainerId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const { error: update } = await getAdminClient()
+    .from("trainer_payouts")
+    .update({ status: "paid", payout_date: new Date().toISOString() })
+    .eq("trainer_id", trainerId)
+  if (update) return { error: update.message }
+  revalidatePath(`/club/${clubSlug}/admin/finance`)
+  return { success: true }
+}
+
+export async function createTrainerCheckoutSession(
+  clubSlug: string,
+  trainerId: string,
+  dateIso: string,
+  time: string,
+  durationMinutes: number,
+  guestName?: string,
+  guestEmail?: string
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Bitte einloggen, um Trainerstunden zu buchen." }
+  const supabaseAdmin = getAdminClient()
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, name")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { error: "Club nicht gefunden" }
+
+  const { data: trainer } = await supabase
+    .from("trainers")
+    .select("*")
+    .eq("id", trainerId)
+    .eq("club_id", club.id)
+    .single()
+  if (!trainer) return { error: "Trainer nicht gefunden" }
+
+  const date = new Date(dateIso)
+  const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
+
+  const { data: trainerConflicts } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("club_id", club.id)
+    .eq("trainer_id", trainerId)
+    .lt("start_time", endTime.toISOString())
+    .gt("end_time", startTime.toISOString())
+  if (trainerConflicts && trainerConflicts.length > 0) {
+    return { error: "Trainer ist zu dieser Zeit nicht verfuegbar." }
+  }
+
+  const { data: courts } = await supabase
+    .from("courts")
+    .select("id, name, price_per_hour")
+    .eq("club_id", club.id)
+    .order("name")
+  if (!courts || courts.length === 0) return { error: "Keine Plaetze vorhanden." }
+
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("court_id, start_time, end_time")
+    .eq("club_id", club.id)
+    .lt("start_time", endTime.toISOString())
+    .gt("end_time", startTime.toISOString())
+
+  const bookedCourtIds = new Set((bookings || []).map((b: any) => b.court_id))
+  const freeCourt = courts.find((c: any) => !bookedCourtIds.has(c.id))
+  if (!freeCourt) return { error: "Kein freier Platz verfuegbar." }
+
+  const courtFee = trainer.include_court_fee ? Number(freeCourt.price_per_hour || 0) : 0
+  const finalPrice = Math.max(0, Number(trainer.hourly_rate || 0) + courtFee)
+
+  const { data: booking, error: bookingError } = await supabaseAdmin
+    .from("bookings")
+    .insert({
+      club_id: club.id,
+      court_id: freeCourt.id,
+      trainer_id: trainer.id,
+      booking_type: "trainer",
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
+      status: "awaiting_payment",
+      payment_status: finalPrice > 0 ? "unpaid" : "paid_member",
+      price_paid: finalPrice,
+      guest_name: user ? "Mitglied" : guestName || "Gast",
+      guest_email: user?.email || guestEmail || null,
+      user_id: user?.id || null,
+    })
+    .select("id")
+    .single()
+
+  if (bookingError) return { error: "Fehler beim Reservieren: " + bookingError.message }
+
+  if (finalPrice <= 0) {
+    await supabaseAdmin.from("bookings").update({ status: "confirmed" }).eq("id", booking.id)
+    return { success: true }
+  }
+
+  let paymentIntentData: any = undefined
+  if (trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
+    let trainerShare = 0
+    if (trainer.salary_type === "commission") {
+      trainerShare = finalPrice * (Number(trainer.default_rate || 0) / 100)
+    } else if (trainer.salary_type === "hourly") {
+      trainerShare = Number(trainer.default_rate || 0)
+    }
+    if (trainerShare > finalPrice) trainerShare = finalPrice
+    if (trainerShare > 0) {
+      paymentIntentData = {
+        transfer_data: {
+          destination: trainer.stripe_account_id,
+          amount: Math.round(trainerShare * 100),
+        },
+      }
+    }
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          product_data: { name: `Trainerstunde: ${trainer.first_name} ${trainer.last_name}` },
+          unit_amount: Math.round(finalPrice * 100),
+        },
+        quantity: 1,
+      },
+    ],
+    mode: "payment",
+    payment_intent_data: paymentIntentData,
+    metadata: {
+      type: "trainer_session",
+      bookingId: booking.id,
+      trainerId: trainer.id,
+      clubSlug,
+      date: date.toISOString(),
+      time,
+      durationMinutes: durationMinutes.toString(),
+      guestName: guestName || "",
+      userId: user?.id || "",
+    },
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+    customer_email: user?.email || guestEmail,
+    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+  })
+
+  return { url: session.url }
+}
+
+export async function createCourseCheckoutSession(clubSlug: string, courseId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Bitte einloggen" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, name")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { error: "Club nicht gefunden" }
+
+  const { data: course } = await supabase
+    .from("courses")
+    .select("*")
+    .eq("id", courseId)
+    .eq("club_id", club.id)
+    .single()
+  if (!course) return { error: "Kurs nicht gefunden" }
+
+  const { count: participantCount } = await supabase
+    .from("course_participants")
+    .select("*", { count: "exact", head: true })
+    .eq("course_id", courseId)
+  if ((participantCount || 0) >= Number(course.max_participants || 0)) {
+    return { error: "Kurs ist ausgebucht." }
+  }
+
+  const { data: existing } = await supabase
+    .from("course_participants")
+    .select("id")
+    .eq("course_id", courseId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+  if (existing) return { error: "Du bist bereits angemeldet." }
+
+  const { data: participant, error: insertError } = await getAdminClient()
+    .from("course_participants")
+    .insert({
+      course_id: courseId,
+      user_id: user.id,
+      status: "confirmed",
+      payment_status: course.price > 0 ? "unpaid" : "paid_cash",
+    })
+    .select("id")
+    .single()
+  if (insertError) return { error: insertError.message }
+
+  if (course.price <= 0) return { success: true }
+
+  let coursePaymentIntentData: any = undefined
+  if (course.trainer_id) {
+    const { data: trainer } = await supabase
+      .from("trainers")
+      .select("*")
+      .eq("id", course.trainer_id)
+      .single()
+    if (trainer && trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
+      let trainerShare = 0
+      if (trainer.salary_type === "commission") {
+        trainerShare = Number(course.price || 0) * (Number(trainer.default_rate || 0) / 100)
+      } else if (trainer.salary_type === "hourly") {
+        trainerShare = Number(trainer.default_rate || 0)
+      }
+      if (trainerShare > Number(course.price || 0)) trainerShare = Number(course.price || 0)
+      if (trainerShare > 0) {
+        coursePaymentIntentData = {
+          transfer_data: {
+            destination: trainer.stripe_account_id,
+            amount: Math.round(trainerShare * 100),
+          },
+        }
+      }
+    }
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          product_data: { name: `Kurs: ${course.title}` },
+          unit_amount: Math.round(Number(course.price) * 100),
+        },
+        quantity: 1,
+      },
+    ],
+    mode: "payment",
+    payment_intent_data: coursePaymentIntentData,
+    metadata: {
+      type: "course_enrollment",
+      courseId: course.id,
+      clubSlug,
+      participantId: participant.id,
+      userId: user.id,
+    },
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+    customer_email: user.email || undefined,
+    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+  })
+
+  return { url: session.url }
 }
 
 export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {
