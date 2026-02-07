@@ -25,7 +25,20 @@ type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'pending'
 
 function logAction(action: string, details: Record<string, any>) {
   try {
+    const payload = {
+      action,
+      details,
+      timestamp: new Date().toISOString(),
+    }
     console.info(`[${action}]`, details)
+    const webhook = process.env.LOG_WEBHOOK_URL
+    if (webhook) {
+      void fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => undefined)
+    }
   } catch {
     // no-op
   }
@@ -618,6 +631,57 @@ export async function resendMembershipContract(clubSlug: string, memberId: strin
   })
 
   return { success: true }
+}
+
+export async function exportMemberBookingsCsv(clubSlug: string, memberId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const { data: member } = await supabaseAdmin
+    .from("club_members")
+    .select("user_id")
+    .eq("id", memberId)
+    .eq("club_id", club.id)
+    .single()
+
+  if (!member?.user_id) return { success: false, error: "Mitglied nicht gefunden" }
+
+  const { data: bookings } = await supabaseAdmin
+    .from("bookings")
+    .select("start_time, end_time, status, payment_status, price_paid, courts(name)")
+    .eq("club_id", club.id)
+    .eq("user_id", member.user_id)
+    .order("start_time", { ascending: false })
+
+  const rows = [
+    ["Datum", "Von", "Bis", "Platz", "Status", "Zahlung", "Betrag"],
+    ...(bookings || []).map((b: any) => [
+      new Date(b.start_time).toLocaleDateString("de-DE"),
+      new Date(b.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+      new Date(b.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+      b.courts?.name || "Platz",
+      b.status || "-",
+      b.payment_status || "-",
+      (b.price_paid ?? 0).toString().replace(".", ","),
+    ]),
+  ]
+
+  const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/\"/g, '""')}"`).join(";")).join("\n")
+  return { success: true, csv }
 }
 
 // --- SUPER ADMIN ACTIONS ---

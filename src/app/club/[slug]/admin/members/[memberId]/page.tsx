@@ -5,6 +5,7 @@ import { getAdminContext } from "../../_lib/get-admin-context"
 import { getMemberDocumentAuditForAdmin, getMemberDocumentsForAdmin } from "@/app/actions"
 import { MemberBookingsPanel } from "@/components/admin/member-bookings-panel"
 import { AdminMemberQuickActions } from "@/components/admin/member-quick-actions"
+import { MemberPaymentsPanel } from "@/components/admin/member-payments-panel"
 import { MemberDocumentsAdmin } from "@/components/admin/member-documents-admin"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -111,26 +112,9 @@ export default async function AdminMemberDetailPage({
         contractAvailable={documents.some((d) => d.doc_type === "contract")}
       />
 
-      <MemberBookingsPanel bookings={bookings || []} />
+      <MemberBookingsPanel bookings={bookings || []} clubSlug={slug} memberId={member.id} />
 
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-slate-800">Zahlungsverlauf</h3>
-        {paymentHistory.length > 0 ? (
-          <div className="max-h-56 overflow-auto space-y-2 pr-1">
-            {paymentHistory.map((p: any) => (
-              <div key={p.id} className="rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm">
-                <div className="font-medium text-slate-800">{p.courts?.name || "Platz"}</div>
-                <div className="text-xs text-slate-500">
-                  {new Date(p.start_time).toLocaleDateString("de-DE")} · {new Date(p.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
-                </div>
-                <div className="text-xs text-slate-500">Betrag: {p.price_paid}€ · Status: {p.payment_status}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">Keine Zahlungen erfasst.</p>
-        )}
-      </div>
+      <MemberPaymentsPanel payments={paymentHistory} />
 
       <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
     </div>

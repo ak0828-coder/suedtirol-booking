@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { exportMemberBookingsCsv } from "@/app/actions"
 
 type BookingRow = {
   id: string
@@ -13,8 +14,18 @@ type BookingRow = {
   courts?: { name?: string | null } | null
 }
 
-export function MemberBookingsPanel({ bookings }: { bookings: BookingRow[] }) {
+export function MemberBookingsPanel({
+  bookings,
+  clubSlug,
+  memberId,
+}: {
+  bookings: BookingRow[]
+  clubSlug: string
+  memberId: string
+}) {
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all")
+  const [visibleCount, setVisibleCount] = useState(8)
+  const [exporting, setExporting] = useState(false)
 
   const filtered = useMemo(() => {
     if (filter === "all") return bookings
@@ -25,28 +36,22 @@ export function MemberBookingsPanel({ bookings }: { bookings: BookingRow[] }) {
     })
   }, [bookings, filter])
 
-  const handleExport = () => {
+  const visible = filtered.slice(0, visibleCount)
+
+  const handleExport = async () => {
     if (!bookings || bookings.length === 0) return
-    const rows = [
-      ["Datum", "Von", "Bis", "Platz", "Status", "Zahlung", "Betrag"],
-      ...bookings.map((b) => [
-        new Date(b.start_time).toLocaleDateString("de-DE"),
-        new Date(b.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-        new Date(b.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-        b.courts?.name || "Platz",
-        b.status || "-",
-        b.payment_status || "-",
-        (b.price_paid ?? 0).toString().replace(".", ","),
-      ]),
-    ]
-    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/\"/g, '""')}"`).join(";")).join("\n")
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = "mitglied-buchungen.csv"
-    link.click()
-    URL.revokeObjectURL(url)
+    setExporting(true)
+    const res = await exportMemberBookingsCsv(clubSlug, memberId)
+    if (res?.success && res.csv) {
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = "mitglied-buchungen.csv"
+      link.click()
+      URL.revokeObjectURL(url)
+    }
+    setExporting(false)
   }
 
   return (
@@ -75,15 +80,15 @@ export function MemberBookingsPanel({ bookings }: { bookings: BookingRow[] }) {
           >
             Vergangen
           </Button>
-          <Button variant="outline" className="rounded-full text-xs" onClick={handleExport}>
-            CSV Export
+          <Button variant="outline" className="rounded-full text-xs" onClick={handleExport} disabled={exporting}>
+            {exporting ? "Export..." : "CSV Export"}
           </Button>
         </div>
       </div>
 
-      {filtered && filtered.length > 0 ? (
+      {visible && visible.length > 0 ? (
         <div className="max-h-72 overflow-auto space-y-2 pr-1">
-          {filtered.map((b) => (
+          {visible.map((b) => (
             <div key={b.id} className="rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm">
               <div className="font-medium text-slate-800">{b.courts?.name || "Platz"}</div>
               <div className="text-xs text-slate-500">
@@ -94,6 +99,11 @@ export function MemberBookingsPanel({ bookings }: { bookings: BookingRow[] }) {
               <div className="text-xs text-slate-500">Status: {b.status || "-"} · Zahlung: {b.payment_status || "-"}</div>
             </div>
           ))}
+          {visibleCount < filtered.length && (
+            <Button variant="outline" className="w-full rounded-full text-xs" onClick={() => setVisibleCount((v) => v + 8)}>
+              Mehr anzeigen
+            </Button>
+          )}
         </div>
       ) : (
         <p className="text-sm text-slate-500">Keine Buchungen vorhanden.</p>
