@@ -23,6 +23,22 @@ const MEMBER_DOC_BUCKET = "member-documents"
 
 type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'pending'
 
+function logAction(action: string, details: Record<string, any>) {
+  try {
+    console.info(`[${action}]`, details)
+  } catch {
+    // no-op
+  }
+}
+
+function buildBookingTimes(date: Date, time: string, durationMinutes: number) {
+  const [hours, minutes] = time.split(':').map(Number)
+  const startTime = new Date(date)
+  startTime.setHours(hours, minutes, 0, 0)
+  const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
+  return { startTime, endTime }
+}
+
 // --- HELPER: ADMIN CLIENT ---
 // Wird benötigt, um Gutscheine zu validieren (für Gäste ohne Account) 
 // oder Updates zu machen, die RLS verbietet.
@@ -975,11 +991,8 @@ export async function createBooking(
       }
     }
 
-  // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlösen)
-  const [hours, minutes] = time.split(':').map(Number)
-  const startTime = new Date(date)
-  startTime.setHours(hours, minutes, 0, 0)
-  const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
+    // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlösen)
+    const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
 
   const { data: existing } = await supabase
     .from('bookings')
@@ -1028,10 +1041,10 @@ export async function createBooking(
     }
 
   // 4. Buchung speichern (Via normalem Client, da wir die User-ID brauchen, falls vorhanden)
-  const { error } = await supabase
-    .from('bookings')
-    .insert({
-      court_id: courtId,
+    const { error } = await supabase
+      .from('bookings')
+      .insert({
+        court_id: courtId,
       club_id: club.id,
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
@@ -1048,11 +1061,21 @@ export async function createBooking(
     if ((error as any).code === '23505') {
       return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
     }
-    return { success: false, error: "Datenbankfehler." }
-  }
+      return { success: false, error: "Datenbankfehler." }
+    }
 
-  // Mail versenden
-  try {
+    logAction("booking_created", {
+      clubSlug,
+      courtId,
+      userId: user?.id || null,
+      price,
+      finalPrice,
+      paymentStatus: finalPaymentStatus,
+      voucherUsed: !!creditCode,
+    })
+
+    // Mail versenden
+    try {
     const orderId = "ORD-" + Math.floor(Math.random() * 100000)
     const customerEmail = user?.email || guestEmail || null
     const adminEmail = club.admin_email || SUPER_ADMIN_EMAIL || null
@@ -1298,10 +1321,7 @@ export async function createCheckoutSession(
     }
   }
 
-  const [hours, minutes] = time.split(':').map(Number)
-  const startTime = new Date(date)
-  startTime.setHours(hours, minutes, 0, 0)
-  const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
+  const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
 
   const { data: booking, error: bookingError } = await supabaseAdmin
     .from('bookings')
@@ -1333,6 +1353,12 @@ export async function createCheckoutSession(
       .update({ status: "confirmed" })
       .eq("id", booking.id)
 
+    logAction("booking_confirmed_free", {
+      clubSlug,
+      bookingId: booking.id,
+      userId: user?.id || null,
+    })
+
     return { success: true }
   }
 
@@ -1358,6 +1384,14 @@ export async function createCheckoutSession(
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
       customer_email: user?.email || guestEmail,
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
+    })
+
+    logAction("checkout_created", {
+      clubSlug,
+      bookingId: booking.id,
+      finalPrice,
+      voucherUsed: !!creditCode,
+      memberAdjusted,
     })
 
     return { url: session.url }
@@ -1708,6 +1742,14 @@ export async function uploadMemberDocument(formData: FormData) {
     .single()
 
   if (insertError) return { success: false, error: insertError.message }
+
+  logAction("member_document_uploaded", {
+    clubSlug,
+    userId: user.id,
+    docType,
+    fileName: file.name,
+    fileSize: file.size,
+  })
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -2501,6 +2543,13 @@ export async function inviteMember(formData: FormData) {
   }, { onConflict: 'club_id, user_id' })
 
   if (memberError) return { success: false, error: "Datenbank Fehler: " + memberError.message }
+
+  logAction("member_invited", {
+    clubSlug,
+    email,
+    isNewUser,
+    invitedBy: user.id,
+  })
 
   // 4. E-Mail senden
   try {

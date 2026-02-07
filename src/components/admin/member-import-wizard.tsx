@@ -32,6 +32,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
   const [importing, setImporting] = useState(false)
   const [fallbackMode, setFallbackMode] = useState<"year_from_start" | "calendar_year_end" | "infinite" | "year_from_today">("year_from_start")
   const [importStats, setImportStats] = useState<{ imported: number; failed: number } | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -65,6 +66,15 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
   }
 
   const runImport = async (activateNow: boolean) => {
+    setErrorMessage(null)
+    if (!mapping.email) {
+      setErrorMessage("Bitte ordne eine E-Mail-Spalte zu (Pflichtfeld).")
+      return
+    }
+    if (csvData.length === 0) {
+      setErrorMessage("Keine Datensätze gefunden.")
+      return
+    }
     setImporting(true)
     setStep(3)
 
@@ -203,6 +213,11 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
                     </>
                   )}
                 </Button>
+              </div>
+            )}
+            {errorMessage && (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                {errorMessage}
               </div>
             )}
           </div>
