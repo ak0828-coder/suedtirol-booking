@@ -64,7 +64,7 @@ export default async function AdminPage({
                     <div className="flex items-center gap-4">
                       <div className="text-right hidden sm:block">
                         <div className="font-medium text-slate-900">
-                          {booking.status === "awaiting_payment" || booking.payment_status === "pending"
+                          {booking.status === "awaiting_payment" || booking.payment_status === "unpaid"
                             ? "Ausstehend"
                             : booking.payment_status === "paid_cash"
                               ? "Vor Ort"

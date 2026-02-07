@@ -21,7 +21,7 @@ if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nich
 
 const MEMBER_DOC_BUCKET = "member-documents"
 
-type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'pending'
+type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'unpaid'
 
 function logAction(action: string, details: Record<string, any>) {
   try {
@@ -1395,7 +1395,7 @@ export async function createCheckoutSession(
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'awaiting_payment',
-      payment_status: finalPrice <= 0 && memberAdjusted ? 'paid_member' : 'pending',
+      payment_status: finalPrice <= 0 && memberAdjusted ? 'paid_member' : 'unpaid',
       price_paid: finalPrice,
       guest_name: user ? 'Mitglied' : (guestName || 'Gast'),
       guest_email: user?.email || guestEmail || null,
@@ -3422,7 +3422,7 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
 
     // Payment Status übersetzen
     let payStatus = "Unbekannt"
-    if (b.status === 'awaiting_payment' || b.payment_status === 'pending') payStatus = "Ausstehend"
+    if (b.status === 'awaiting_payment' || b.payment_status === 'unpaid') payStatus = "Ausstehend"
     if (b.payment_status === 'paid_stripe') payStatus = "Online (Stripe)"
     if (b.payment_status === 'paid_cash') payStatus = "Bar / Vor Ort"
     if (b.payment_status === 'paid_member') payStatus = "Mitglied (Kostenlos)"
