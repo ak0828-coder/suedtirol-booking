@@ -113,6 +113,7 @@ export function MemberOnboardingForm({
     clubName,
     clubLogoUrl: clubLogoUrl || undefined,
     clubAddress: "",
+    contractTitle,
     memberName: `${formData.firstName} ${formData.lastName}`.trim(),
     memberAddress: formData.address,
     memberEmail: formData.email,
@@ -168,7 +169,21 @@ export function MemberOnboardingForm({
     profileData.set("phone", formData.phone)
     await updateProfile(profileData)
 
-    const res = await submitMembershipSignature(clubSlug, signature, contractVersion)
+    const res = await submitMembershipSignature(
+      clubSlug,
+      signature,
+      contractVersion,
+      {
+        memberName: `${formData.firstName} ${formData.lastName}`.trim(),
+        memberAddress: formData.address,
+        memberEmail: formData.email,
+        memberPhone: formData.phone,
+        signedCity: formData.city || "Ort",
+        signedAt: formattedDate,
+        contractTitle,
+        contractText,
+      }
+    )
     if (!res?.success) {
       setSaving(false)
       setError("Signatur konnte nicht gespeichert werden.")

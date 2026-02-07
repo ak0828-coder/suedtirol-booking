@@ -5,6 +5,7 @@ export type ContractData = {
   clubName: string
   clubLogoUrl?: string | null
   clubAddress?: string | null
+  contractTitle?: string | null
   memberName: string
   memberAddress: string
   memberEmail: string
@@ -123,7 +124,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
           </View>
         </View>
 
-        <Text style={styles.title}>Mitgliedsvertrag</Text>
+        <Text style={styles.title}>{data.contractTitle || "Mitgliedsvertrag"}</Text>
 
         <View style={styles.memberBlock}>
           <Text style={styles.memberLabel}>Vertragspartner (Mitglied)</Text>

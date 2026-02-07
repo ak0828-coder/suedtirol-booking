@@ -10,6 +10,8 @@ import { WelcomeMemberEmailTemplate } from '@/components/emails/welcome-member-t
 import { WelcomeImportEmailTemplate } from "@/components/emails/welcome-import-template"
 import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
+import { pdf } from "@react-pdf/renderer"
+import { ContractPDF } from "@/components/contract/contract-pdf"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -2767,7 +2769,17 @@ export async function getMembershipContractForMember(clubSlug: string) {
 export async function submitMembershipSignature(
   clubSlug: string,
   signatureDataUrl: string,
-  contractVersion: number
+  contractVersion: number,
+  payload: {
+    memberName: string
+    memberAddress: string
+    memberEmail: string
+    memberPhone: string
+    signedCity: string
+    signedAt: string
+    contractTitle: string
+    contractText: string
+  }
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -2776,7 +2788,7 @@ export async function submitMembershipSignature(
   const supabaseAdmin = getAdminClient()
   const { data: club } = await supabaseAdmin
     .from("clubs")
-    .select("id")
+    .select("id, name, logo_url, admin_email")
     .eq("slug", clubSlug)
     .single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
@@ -2806,6 +2818,48 @@ export async function submitMembershipSignature(
       review_status: "approved"
     })
 
+  const pdfDoc = (
+    <ContractPDF
+      data={{
+        clubName: club.name,
+        clubLogoUrl: club.logo_url,
+        clubAddress: "",
+        contractTitle: payload.contractTitle,
+        memberName: payload.memberName,
+        memberAddress: payload.memberAddress,
+        memberEmail: payload.memberEmail,
+        memberPhone: payload.memberPhone,
+        contractText: payload.contractText,
+        signatureUrl: signatureDataUrl,
+        signedAt: payload.signedAt,
+        signedCity: payload.signedCity,
+      }}
+    />
+  )
+
+  const pdfBuffer = (await pdf(pdfDoc).toBuffer()) as unknown as Buffer
+  const pdfPath = `${club.id}/${user.id}/membership-contract-${Date.now()}.pdf`
+
+  const { error: pdfUploadError } = await supabaseAdmin.storage
+    .from(MEMBER_DOC_BUCKET)
+    .upload(pdfPath, pdfBuffer, { contentType: "application/pdf", upsert: true })
+
+  if (!pdfUploadError) {
+    await supabaseAdmin
+      .from("member_documents")
+      .insert({
+        club_id: club.id,
+        user_id: user.id,
+        doc_type: "contract",
+        file_path: pdfPath,
+        file_name: "mitgliedsvertrag.pdf",
+        file_size: pdfBuffer.length,
+        mime_type: "application/pdf",
+        ai_status: "ok",
+        review_status: "approved"
+      })
+  }
+
   await supabaseAdmin
     .from("club_members")
     .update({
@@ -2814,6 +2868,48 @@ export async function submitMembershipSignature(
     })
     .eq("club_id", club.id)
     .eq("user_id", user.id)
+
+  if (!pdfUploadError && (user.email || club.admin_email)) {
+    const { data: signed } = await supabaseAdmin.storage
+      .from(MEMBER_DOC_BUCKET)
+      .createSignedUrl(pdfPath, 60 * 60 * 24 * 7)
+
+    const downloadUrl = signed?.signedUrl
+    const subject = `Mitgliedsvertrag ${club.name}`
+    const html = `
+      <div style="font-family: Arial, sans-serif; color: #0f172a;">
+        <h2>Dein Mitgliedsvertrag</h2>
+        <p>Vielen Dank für deine Unterschrift. Dein Vertrag wurde erfolgreich erstellt.</p>
+        ${downloadUrl ? `<p><a href="${downloadUrl}">PDF herunterladen</a></p>` : ""}
+        <p>Verein: <strong>${club.name}</strong></p>
+      </div>
+    `
+
+    if (user.email) {
+      await resend.emails.send({
+        from: "Avaimo <onboarding@resend.dev>",
+        to: [user.email],
+        subject,
+        html,
+      })
+    }
+
+    const adminEmail = club.admin_email || SUPER_ADMIN_EMAIL
+    if (adminEmail) {
+      await resend.emails.send({
+        from: "Avaimo <onboarding@resend.dev>",
+        to: [adminEmail],
+        subject: `Neuer Mitgliedsvertrag – ${club.name}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #0f172a;">
+            <h2>Neuer Mitgliedsvertrag unterschrieben</h2>
+            <p>Mitglied: ${payload.memberName}</p>
+            ${downloadUrl ? `<p><a href="${downloadUrl}">PDF öffnen</a></p>` : ""}
+          </div>
+        `,
+      })
+    }
+  }
 
   return { success: true }
 }
