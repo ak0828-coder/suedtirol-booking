@@ -64,7 +64,8 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
-    borderBottom: "1px solid #e2e8f0",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
     paddingBottom: 12,
   },
   kicker: {
@@ -99,7 +100,8 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 24,
     paddingTop: 12,
-    borderTop: "1px solid #e2e8f0",
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
   },
   footerText: {
     fontSize: 9,
