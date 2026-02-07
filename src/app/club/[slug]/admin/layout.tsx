@@ -6,14 +6,14 @@ import { getAdminContext } from "./_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-const navItems = [
+const buildNavItems = (club: any) => [
   { href: "", label: "Ubersicht" },
   { href: "/bookings", label: "Buchungen" },
   { href: "/courts", label: "Platze" },
   { href: "/blocks", label: "Sperrzeiten" },
   { href: "/plans", label: "Abos" },
   { href: "/members", label: "Mitglieder" },
-  { href: "/vouchers", label: "Gutscheine" },
+  ...(club?.has_vouchers ? [{ href: "/vouchers", label: "Gutscheine" }] : []),
   { href: "/settings", label: "Einstellungen" },
   { href: "/export", label: "Export" },
 ]
@@ -86,7 +86,7 @@ export default async function AdminLayout({
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
                 Navigation
               </div>
-              <SidebarNav slug={slug} items={navItems} accentColor={club.primary_color} />
+              <SidebarNav slug={slug} items={buildNavItems(club)} accentColor={club.primary_color} />
             </div>
           </aside>
 

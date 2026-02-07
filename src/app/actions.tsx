@@ -749,6 +749,10 @@ export async function updateClub(formData: FormData) {
   const name = formData.get("name") as string
   const primaryColor = formData.get("primary_color") as string
   const logoFile = formData.get("logo") as File
+  const hasAiCheck = formData.get("has_ai_check") === "on"
+  const hasContractSigning = formData.get("has_contract_signing") === "on"
+  const hasGamification = formData.get("has_gamification") === "on"
+  const hasVouchers = formData.get("has_vouchers") === "on"
 
   const cancellationHours = formData.get("cancellation_buffer_hours")
     ? parseInt(formData.get("cancellation_buffer_hours") as string)
@@ -800,7 +804,11 @@ export async function updateClub(formData: FormData) {
   const updateData: any = {
     name: name,
     primary_color: primaryColor,
-    cancellation_buffer_hours: cancellationHours
+    cancellation_buffer_hours: cancellationHours,
+    has_ai_check: hasAiCheck,
+    has_contract_signing: hasContractSigning,
+    has_gamification: hasGamification,
+    has_vouchers: hasVouchers
   }
 
   if (logoUrl) {

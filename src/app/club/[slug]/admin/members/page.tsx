@@ -16,7 +16,7 @@ export default async function AdminMembersPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  await getAdminContext(slug)
+  const { club } = await getAdminContext(slug)
   const members = await getClubMembers(slug)
   const importedCount = await getImportedMembersCount(slug)
   const stats = await getMemberAdminDashboardStats(slug)
@@ -75,7 +75,7 @@ export default async function AdminMembersPage({
 
       <MemberImportWizard clubSlug={slug} />
 
-      {contract && (
+      {contract && club.has_contract_signing ? (
         <ContractEditor
           clubSlug={slug}
           clubName={contract.club_name}
@@ -91,6 +91,13 @@ export default async function AdminMembersPage({
           version={contract.version}
           updatedAt={contract.updated_at}
         />
+      ) : (
+        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+          <h3 className="text-lg font-semibold">Digitaler Mitgliedsvertrag</h3>
+          <p className="text-sm text-slate-500">
+            Dieses Modul ist fÃ¼r deinen Verein nicht freigeschaltet.
+          </p>
+        </div>
       )}
 
       <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">

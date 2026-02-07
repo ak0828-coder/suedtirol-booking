@@ -13,6 +13,12 @@ export function EditClubDialog({ club }: { club: any }) {
   const [isLoading, setIsLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [color, setColor] = useState(club.primary_color || "#0f172a")
+  const [flags, setFlags] = useState({
+    has_ai_check: !!club.has_ai_check,
+    has_contract_signing: !!club.has_contract_signing,
+    has_gamification: !!club.has_gamification,
+    has_vouchers: club.has_vouchers !== false,
+  })
   const router = useRouter()
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -25,6 +31,10 @@ export function EditClubDialog({ club }: { club: any }) {
     formData.append("slug", club.slug)
     // Farbe explizit setzen, falls der Color Picker spinnt
     formData.set("primary_color", color)
+    if (flags.has_ai_check) formData.set("has_ai_check", "on")
+    if (flags.has_contract_signing) formData.set("has_contract_signing", "on")
+    if (flags.has_gamification) formData.set("has_gamification", "on")
+    if (flags.has_vouchers) formData.set("has_vouchers", "on")
 
     const result = await updateClub(formData)
     
@@ -96,6 +106,44 @@ export function EditClubDialog({ club }: { club: any }) {
                     <span className="text-xs text-slate-500">Aktuelles Logo</span>
                 </div>
             )}
+          </div>
+
+          <div className="space-y-3 border-t border-slate-200 pt-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Aktivierte Module
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={flags.has_ai_check}
+                onChange={(e) => setFlags((prev) => ({ ...prev, has_ai_check: e.target.checked }))}
+              />
+              KI Dokumenten-Check
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={flags.has_contract_signing}
+                onChange={(e) => setFlags((prev) => ({ ...prev, has_contract_signing: e.target.checked }))}
+              />
+              Digitaler Vertrag & Unterschrift
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={flags.has_gamification}
+                onChange={(e) => setFlags((prev) => ({ ...prev, has_gamification: e.target.checked }))}
+              />
+              Gamification (Leaderboard)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={flags.has_vouchers}
+                onChange={(e) => setFlags((prev) => ({ ...prev, has_vouchers: e.target.checked }))}
+              />
+              Gutscheine
+            </label>
           </div>
 
           <div className="pt-2 flex justify-end gap-2">
