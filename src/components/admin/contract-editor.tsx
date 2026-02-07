@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { updateMembershipContract } from "@/app/actions"
-import { ContractPDF } from "@/components/contract/contract-pdf"
+import { ContractPdfDocument } from "@/lib/contract-pdf"
 
 const PDFViewer = dynamic(
   () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
@@ -197,20 +197,12 @@ export function ContractEditor({
             {isClient ? (
               <PdfPreviewBoundary fallbackHref={`/api/contract-pdf/${clubSlug}`}>
                 <PDFViewer style={{ width: "100%", height: "100%" }} showToolbar={false}>
-                  <ContractPDF
-                    data={{
-                      clubName,
-                      clubLogoUrl,
-                      clubAddress: "",
-                      contractTitle: previewTitle,
-                      memberName: "Max Mustermann",
-                      memberAddress: "Musterstraße 1, 39100 Bozen",
-                      memberEmail: "max@example.com",
-                      memberPhone: "+39 123 4567",
-                      contractText: previewBody,
-                      signedAt: lastUpdated,
-                      signedCity: "Bozen",
-                    }}
+                  <ContractPdfDocument
+                    clubName={clubName}
+                    title={previewTitle}
+                    body={previewBody}
+                    version={version}
+                    updatedAt={lastUpdated}
                   />
                 </PDFViewer>
               </PdfPreviewBoundary>
