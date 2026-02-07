@@ -11,7 +11,6 @@ async function buildPdfResponse({
   version,
   updatedAt,
   slug,
-  debug,
 }: {
   clubName: string
   title: string
@@ -19,7 +18,6 @@ async function buildPdfResponse({
   version: number
   updatedAt: string | null
   slug: string
-  debug?: boolean
 }) {
   try {
     const buffer = await new Promise<Buffer>((resolve, reject) => {
@@ -32,37 +30,49 @@ async function buildPdfResponse({
       doc.on("end", () => resolve(Buffer.concat(chunks)))
       doc.on("error", (err) => reject(err))
 
-      doc.font("Helvetica")
-        .fontSize(10)
-        .fillColor("#64748b")
-        .text("Avaimo - Mitgliedschaft", {
-        align: "left",
-      })
-      doc.moveDown(0.4)
-      doc.font("Helvetica-Bold")
-        .fontSize(20)
-        .fillColor("#0f172a")
-        .text(title)
-      doc.moveDown(0.2)
-      doc.font("Helvetica")
-        .fontSize(12)
-        .fillColor("#475569")
-        .text(clubName)
-      doc.moveDown(0.2)
-      doc.font("Helvetica")
-        .fontSize(9)
-        .fillColor("#94a3b8")
-        .text(`Version ${version} - ${updatedAt || "-"}`)
-      doc.moveDown(1)
+      const pageWidth = doc.page.width
+      const margin = doc.page.margins.left
+      const contentWidth = pageWidth - margin - doc.page.margins.right
+
+      const drawRule = () => {
+        const y = doc.y
+        doc.moveTo(margin, y).lineTo(margin + contentWidth, y).strokeColor("#e2e8f0").lineWidth(1).stroke()
+        doc.moveDown(0.6)
+      }
+
+      doc.font("Helvetica").fontSize(9).fillColor("#64748b").text("Avaimo - Mitgliedschaft")
+      doc.moveDown(0.3)
+      doc.font("Helvetica-Bold").fontSize(22).fillColor("#0f172a").text(title)
+      doc.font("Helvetica").fontSize(12).fillColor("#475569").text(clubName)
+      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8").text(`Version ${version} - ${updatedAt || "-"}`)
+      doc.moveDown(0.8)
+      drawRule()
+
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Vereinsangaben")
+      doc.font("Helvetica").fontSize(10).fillColor("#475569")
+      doc.text("Adresse: ______________________________________________")
+      doc.text("Kontakt (E-Mail/Telefon): _____________________________")
+      doc.text("Vertreten durch: _______________________________________")
+      doc.moveDown(0.6)
+      drawRule()
+
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Mitgliedsdaten")
+      doc.font("Helvetica").fontSize(10).fillColor("#475569")
+      doc.text("Name: _________________________________________________")
+      doc.text("Adresse: ______________________________________________")
+      doc.text("E-Mail: _______________________________________________")
+      doc.text("Telefon: ______________________________________________")
+      doc.moveDown(0.6)
+      drawRule()
 
       const paragraphs = String(body || "")
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean)
 
-      doc.font("Helvetica")
-        .fontSize(11)
-        .fillColor("#0f172a")
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Vertragsinhalt")
+      doc.moveDown(0.4)
+      doc.font("Helvetica").fontSize(11).fillColor("#0f172a")
       if (paragraphs.length === 0) {
         doc.text("Kein Vertragstext hinterlegt.")
       } else {
@@ -72,13 +82,28 @@ async function buildPdfResponse({
         })
       }
 
-      doc.moveDown(1)
-      doc.font("Helvetica")
-        .fontSize(9)
-        .fillColor("#94a3b8")
-      doc.text("Dieses Dokument wurde digital ueber Avaimo erstellt.", {
-        align: "left",
-      })
+      doc.moveDown(0.8)
+      drawRule()
+
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Unterschriften")
+      const yStart = doc.y + 18
+      const colGap = 20
+      const colWidth = (contentWidth - colGap) / 2
+
+      doc.moveTo(margin, yStart).lineTo(margin + colWidth, yStart).strokeColor("#0f172a").lineWidth(0.8).stroke()
+      doc.moveTo(margin + colWidth + colGap, yStart)
+        .lineTo(margin + colWidth + colGap + colWidth, yStart)
+        .stroke()
+
+      doc.font("Helvetica").fontSize(9).fillColor("#64748b")
+      doc.text("Verein (Name/Unterschrift)", margin, yStart + 6, { width: colWidth })
+      doc.text("Mitglied (Name/Unterschrift)", margin + colWidth + colGap, yStart + 6, { width: colWidth })
+
+      doc.moveDown(3)
+      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8")
+      doc.text("Ort, Datum: ____________________________________________", { align: "left" })
+      doc.moveDown(0.6)
+      doc.text("Dieses Dokument wurde digital ueber Avaimo erstellt.", { align: "left" })
 
       doc.end()
     })
@@ -93,11 +118,6 @@ async function buildPdfResponse({
     })
   } catch (err) {
     console.error("contract-pdf render failed", err)
-    if (debug) {
-      const message =
-        err instanceof Error ? `${err.name}: ${err.message}\n${err.stack || ""}` : String(err)
-      return NextResponse.json({ error: message }, { status: 500 })
-    }
     return new NextResponse("PDF render failed", { status: 500 })
   }
 }
@@ -148,7 +168,6 @@ export async function GET(
     version: club.membership_contract_version || 1,
     updatedAt,
     slug,
-    debug: false,
   })
 }
 
@@ -179,8 +198,6 @@ export async function POST(
       ? new Date(club.membership_contract_updated_at).toLocaleDateString("de-DE")
       : null
 
-  const debug = req.headers.get("x-debug") === "1"
-
   return buildPdfResponse({
     clubName: club.name,
     title,
@@ -188,6 +205,5 @@ export async function POST(
     version,
     updatedAt,
     slug,
-    debug,
   })
 }

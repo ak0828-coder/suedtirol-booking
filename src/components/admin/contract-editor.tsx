@@ -77,7 +77,7 @@ export function ContractEditor({
       try {
         const res = await fetch(`/api/contract-pdf/${clubSlug}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-debug": "1" },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: previewTitle,
             body: previewBody,
@@ -87,8 +87,7 @@ export function ContractEditor({
           signal: controller.signal,
         })
         if (!res.ok) {
-          const detail = await res.text().catch(() => "")
-          throw new Error(detail || "Preview request failed")
+          throw new Error("Preview request failed")
         }
         const blob = await res.blob()
         const nextUrl = URL.createObjectURL(blob)
