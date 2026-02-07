@@ -11,7 +11,7 @@ type BookingRow = {
   status: string | null
   payment_status: string | null
   price_paid: number | null
-  courts?: { name?: string | null } | null
+  courts?: { name?: string | null }[] | null
 }
 
 export function MemberBookingsPanel({
@@ -90,7 +90,7 @@ export function MemberBookingsPanel({
         <div className="max-h-72 overflow-auto space-y-2 pr-1">
           {visible.map((b) => (
             <div key={b.id} className="rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm">
-              <div className="font-medium text-slate-800">{b.courts?.name || "Platz"}</div>
+              <div className="font-medium text-slate-800">{b.courts?.[0]?.name || "Platz"}</div>
               <div className="text-xs text-slate-500">
                 {new Date(b.start_time).toLocaleDateString("de-DE")} ·{" "}
                 {new Date(b.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} –{" "}
