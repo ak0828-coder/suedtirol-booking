@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { PlanManager } from "@/components/admin/plan-manager"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
-import { FeatureToggle } from "@/components/admin/feature-toggle"
+import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -11,7 +11,7 @@ export default async function SuperAdminPlansPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: plans } = await supabase
@@ -27,12 +27,14 @@ export default async function SuperAdminPlansPage({
             <h2 className="text-2xl md:text-3xl font-semibold">Abos</h2>
             <p className="text-slate-500 text-sm">Mitgliedschaftsplane verwalten.</p>
           </div>
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["admin", "plans"]}
+            lockPath={["locks", "admin", "plans"]}
             label="Tab aktiv"
-            checked={features.admin.plans}
+            enabled={features.admin.plans}
+            locked={locks.admin.plans}
           />
         </div>
       </div>

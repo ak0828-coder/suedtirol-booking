@@ -9,6 +9,7 @@ import { MemberPaymentsPanel } from "@/components/admin/member-payments-panel"
 import { MemberDocumentsAdmin } from "@/components/admin/member-documents-admin"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 
 export default async function AdminMemberDetailPage({
   params,
@@ -16,8 +17,9 @@ export default async function AdminMemberDetailPage({
   params: Promise<{ slug: string; memberId: string }>
 }) {
   const { slug, memberId } = await params
-  const { club, features } = await getAdminContext(slug)
-  if (!features.admin.members) return notFound()
+  const { club, features, locks } = await getAdminContext(slug)
+  if (!features.admin.members && !locks.admin.members) return notFound()
+  const lockedPage = !features.admin.members && locks.admin.members
 
   const supabase = await createClient()
   const { data: member } = await supabase
@@ -58,7 +60,7 @@ export default async function AdminMemberDetailPage({
   const audit = await getMemberDocumentAuditForAdmin(slug, member.user_id)
 
   return (
-    <div className="space-y-6">
+    <FeatureLockWrapper locked={lockedPage} className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div>
           <h2 className="text-2xl font-semibold">
@@ -122,24 +124,34 @@ export default async function AdminMemberDetailPage({
         ) : null}
       </div>
 
-      {features.members.contract_editor ? (
-        <AdminMemberQuickActions
-          clubSlug={slug}
-          memberId={member.id}
-          memberEmail={email}
-          contractAvailable={documents.some((d) => d.doc_type === "contract")}
-        />
+      {features.members.contract_editor || locks.members.contract_editor ? (
+        <FeatureLockWrapper locked={!features.members.contract_editor && locks.members.contract_editor}>
+          <AdminMemberQuickActions
+            clubSlug={slug}
+            memberId={member.id}
+            memberEmail={email}
+            contractAvailable={documents.some((d) => d.doc_type === "contract")}
+          />
+        </FeatureLockWrapper>
       ) : null}
 
-      {features.admin.bookings ? (
-        <MemberBookingsPanel bookings={bookings || []} clubSlug={slug} memberId={member.id} />
+      {features.admin.bookings || locks.admin.bookings ? (
+        <FeatureLockWrapper locked={!features.admin.bookings && locks.admin.bookings}>
+          <MemberBookingsPanel bookings={bookings || []} clubSlug={slug} memberId={member.id} />
+        </FeatureLockWrapper>
       ) : null}
 
-      {features.members.payments ? <MemberPaymentsPanel payments={paymentHistory} /> : null}
-
-      {features.members.documents ? (
-        <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
+      {features.members.payments || locks.members.payments ? (
+        <FeatureLockWrapper locked={!features.members.payments && locks.members.payments}>
+          <MemberPaymentsPanel payments={paymentHistory} />
+        </FeatureLockWrapper>
       ) : null}
-    </div>
+
+      {features.members.documents || locks.members.documents ? (
+        <FeatureLockWrapper locked={!features.members.documents && locks.members.documents}>
+          <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
+        </FeatureLockWrapper>
+      ) : null}
+    </FeatureLockWrapper>
   )
 }

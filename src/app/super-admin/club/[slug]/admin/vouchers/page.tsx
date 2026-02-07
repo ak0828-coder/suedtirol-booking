@@ -1,7 +1,7 @@
 import { getClubVouchers } from "@/app/actions"
 import { VoucherManager } from "@/components/admin/voucher-manager"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
-import { FeatureToggle } from "@/components/admin/feature-toggle"
+import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -11,7 +11,7 @@ export default async function SuperAdminVouchersPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
   const vouchers = await getClubVouchers(slug)
 
   return (
@@ -22,12 +22,14 @@ export default async function SuperAdminVouchersPage({
             <h2 className="text-2xl md:text-3xl font-semibold">Gutscheine</h2>
             <p className="text-slate-500 text-sm">Gutscheine erstellen und verwalten.</p>
           </div>
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["admin", "vouchers"]}
+            lockPath={["locks", "admin", "vouchers"]}
             label="Tab aktiv"
-            checked={features.admin.vouchers}
+            enabled={features.admin.vouchers}
+            locked={locks.admin.vouchers}
           />
         </div>
       </div>

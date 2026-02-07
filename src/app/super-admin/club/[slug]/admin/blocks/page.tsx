@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { BlockManager } from "@/components/admin/block-manager"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
-import { FeatureToggle } from "@/components/admin/feature-toggle"
+import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -11,7 +11,7 @@ export default async function SuperAdminBlocksPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: courts } = await supabase
@@ -34,12 +34,14 @@ export default async function SuperAdminBlocksPage({
             <h2 className="text-2xl md:text-3xl font-semibold">Sperrzeiten</h2>
             <p className="text-slate-500 text-sm">Verwaltung von Blockierungen und Wartungsfenstern.</p>
           </div>
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["admin", "blocks"]}
+            lockPath={["locks", "admin", "blocks"]}
             label="Tab aktiv"
-            checked={features.admin.blocks}
+            enabled={features.admin.blocks}
+            locked={locks.admin.blocks}
           />
         </div>
       </div>

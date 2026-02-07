@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Edit, AlertTriangle, CheckCircle, FileText } from "lucide-react"
 import { getAdminContext } from "../_lib/get-admin-context"
 import { notFound } from "next/navigation"
+import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 
 export default async function AdminMembersPage({
   params,
@@ -17,21 +18,26 @@ export default async function AdminMembersPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
-  if (!features.admin.members) return notFound()
+  const { club, features, locks } = await getAdminContext(slug)
+  if (!features.admin.members && !locks.admin.members) return notFound()
+  const lockedPage = !features.admin.members && locks.admin.members
   const members = await getClubMembers(slug)
   const importedCount = await getImportedMembersCount(slug)
   const stats = await getMemberAdminDashboardStats(slug)
   const contract = await getMembershipContract(slug)
 
   return (
-    <>
+    <FeatureLockWrapper locked={lockedPage}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div>
           <h2 className="text-2xl md:text-3xl font-semibold">Mitglieder-Kartei</h2>
           <p className="text-slate-500 text-sm">Verwaltung und Einladungen an einem Ort.</p>
         </div>
-        {features.members.invite ? <InviteMemberDialog clubSlug={slug} /> : null}
+        {features.members.invite || locks.members.invite ? (
+          <FeatureLockWrapper locked={!features.members.invite && locks.members.invite}>
+            <InviteMemberDialog clubSlug={slug} />
+          </FeatureLockWrapper>
+        ) : null}
       </div>
 
       <ActivationBanner importedCount={importedCount} clubSlug={slug} />
@@ -75,24 +81,30 @@ export default async function AdminMembersPage({
         </div>
       </div>
 
-      {features.members.import ? <MemberImportWizard clubSlug={slug} /> : null}
+      {features.members.import || locks.members.import ? (
+        <FeatureLockWrapper locked={!features.members.import && locks.members.import}>
+          <MemberImportWizard clubSlug={slug} />
+        </FeatureLockWrapper>
+      ) : null}
 
-      {contract && features.members.contract_editor ? (
-        <ContractEditor
-          clubSlug={slug}
-          clubName={contract.club_name}
-          clubLogoUrl={contract.club_logo_url}
-          initialTitle={contract.title}
-          initialBody={contract.body}
-          initialFee={contract.membership_fee}
-          feeEnabled={contract.membership_fee_enabled}
-          allowSubscription={contract.membership_allow_subscription}
-          memberPricingMode={contract.member_booking_pricing_mode}
-          memberPricingValue={contract.member_booking_pricing_value}
-          contractFields={contract.membership_contract_fields || []}
-          version={contract.version}
-          updatedAt={contract.updated_at}
-        />
+      {contract && (features.members.contract_editor || locks.members.contract_editor) ? (
+        <FeatureLockWrapper locked={!features.members.contract_editor && locks.members.contract_editor}>
+          <ContractEditor
+            clubSlug={slug}
+            clubName={contract.club_name}
+            clubLogoUrl={contract.club_logo_url}
+            initialTitle={contract.title}
+            initialBody={contract.body}
+            initialFee={contract.membership_fee}
+            feeEnabled={contract.membership_fee_enabled}
+            allowSubscription={contract.membership_allow_subscription}
+            memberPricingMode={contract.member_booking_pricing_mode}
+            memberPricingValue={contract.member_booking_pricing_value}
+            contractFields={contract.membership_contract_fields || []}
+            version={contract.version}
+            updatedAt={contract.updated_at}
+          />
+        </FeatureLockWrapper>
       ) : null}
 
       <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">
@@ -191,6 +203,6 @@ export default async function AdminMembersPage({
           </TableBody>
         </Table>
       </div>
-    </>
+    </FeatureLockWrapper>
   )
 }

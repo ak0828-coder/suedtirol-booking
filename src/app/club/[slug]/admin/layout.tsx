@@ -26,7 +26,7 @@ export default async function AdminLayout({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, user, isSuperAdmin, hasAccess, features } = await getAdminContext(slug)
+  const { club, user, isSuperAdmin, hasAccess, features, locks } = await getAdminContext(slug)
 
   if (!hasAccess) {
     return (
@@ -41,17 +41,25 @@ export default async function AdminLayout({
     )
   }
 
-  const filtered = [
-    ...(features.admin.overview ? [{ href: "", label: "Ubersicht" }] : []),
-    ...(features.admin.bookings ? [{ href: "/bookings", label: "Buchungen" }] : []),
-    ...(features.admin.courts ? [{ href: "/courts", label: "Platze" }] : []),
-    ...(features.admin.blocks ? [{ href: "/blocks", label: "Sperrzeiten" }] : []),
-    ...(features.admin.plans ? [{ href: "/plans", label: "Abos" }] : []),
-    ...(features.admin.members ? [{ href: "/members", label: "Mitglieder" }] : []),
-    ...(features.admin.vouchers ? [{ href: "/vouchers", label: "Gutscheine" }] : []),
-    ...(features.admin.settings ? [{ href: "/settings", label: "Einstellungen" }] : []),
-    ...(features.admin.export ? [{ href: "/export", label: "Export" }] : []),
+  const nav = [
+    { href: "", label: "Ubersicht", enabled: features.admin.overview, locked: locks.admin.overview },
+    { href: "/bookings", label: "Buchungen", enabled: features.admin.bookings, locked: locks.admin.bookings },
+    { href: "/courts", label: "Platze", enabled: features.admin.courts, locked: locks.admin.courts },
+    { href: "/blocks", label: "Sperrzeiten", enabled: features.admin.blocks, locked: locks.admin.blocks },
+    { href: "/plans", label: "Abos", enabled: features.admin.plans, locked: locks.admin.plans },
+    { href: "/members", label: "Mitglieder", enabled: features.admin.members, locked: locks.admin.members },
+    { href: "/vouchers", label: "Gutscheine", enabled: features.admin.vouchers, locked: locks.admin.vouchers },
+    { href: "/settings", label: "Einstellungen", enabled: features.admin.settings, locked: locks.admin.settings },
+    { href: "/export", label: "Export", enabled: features.admin.export, locked: locks.admin.export },
   ]
+
+  const filtered = nav
+    .filter((item) => item.enabled || item.locked)
+    .map((item) => ({
+      href: item.href,
+      label: item.label,
+      locked: !item.enabled && item.locked,
+    }))
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-6">

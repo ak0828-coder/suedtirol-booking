@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
-import { mergeFeatures } from "@/lib/club-features"
+import { mergeFeatures, mergeFeatureLocks } from "@/lib/club-features"
 
 export async function getAdminContext(slug: string) {
   const supabase = await createClient()
@@ -21,6 +21,7 @@ export async function getAdminContext(slug: string) {
   const hasAccess = club.owner_id === user.id || isSuperAdmin
 
   const features = mergeFeatures(club.feature_flags)
+  const locks = mergeFeatureLocks(club.feature_flags?.locks)
 
-  return { club, user, isSuperAdmin, hasAccess, features }
+  return { club, user, isSuperAdmin, hasAccess, features, locks }
 }

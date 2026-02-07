@@ -6,6 +6,7 @@ import { DashboardStats } from "@/components/admin/dashboard-stats"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "./_lib/get-admin-context"
 import { notFound } from "next/navigation"
+import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 
 export const dynamic = "force-dynamic"
 
@@ -15,8 +16,9 @@ export default async function AdminPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
-  if (!features.admin.overview) return notFound()
+  const { club, features, locks } = await getAdminContext(slug)
+  if (!features.admin.overview && !locks.admin.overview) return notFound()
+  const locked = !features.admin.overview && locks.admin.overview
   const supabase = await createClient()
 
   const { data: courts } = await supabase
@@ -32,7 +34,7 @@ export default async function AdminPage({
     .order("start_time", { ascending: false })
 
   return (
-    <>
+    <FeatureLockWrapper locked={locked}>
       {bookings && courts && <DashboardStats bookings={bookings} courts={courts} />}
 
       <div className="grid xl:grid-cols-3 gap-6">
@@ -145,7 +147,6 @@ export default async function AdminPage({
           </Card>
         </div>
       </div>
-
-    </>
+    </FeatureLockWrapper>
   )
 }

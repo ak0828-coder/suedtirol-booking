@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
-import { FeatureToggle } from "@/components/admin/feature-toggle"
+import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -15,7 +15,7 @@ export default async function SuperAdminClubOverviewPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
   const supabase = await createClient()
 
   const { data: courts } = await supabase
@@ -37,12 +37,14 @@ export default async function SuperAdminClubOverviewPage({
           <h2 className="text-lg font-semibold text-slate-900">Ubersicht</h2>
           <p className="text-xs text-slate-500">Admin Startseite fur den Verein.</p>
         </div>
-        <FeatureToggle
+        <FeatureGateToggle
           clubId={club.id}
           slug={slug}
           path={["admin", "overview"]}
+          lockPath={["locks", "admin", "overview"]}
           label="Tab aktiv"
-          checked={features.admin.overview}
+          enabled={features.admin.overview}
+          locked={locks.admin.overview}
         />
       </div>
 

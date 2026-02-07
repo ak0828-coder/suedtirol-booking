@@ -4,7 +4,7 @@ import { getClubAiSettings, getClubContent } from "@/app/actions"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
 import { AiDocumentSettings } from "@/components/admin/ai-document-settings"
-import { FeatureToggle } from "@/components/admin/feature-toggle"
+import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +14,7 @@ export default async function SuperAdminSettingsPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
   const storedContent = await getClubContent(slug)
   const initialContent = applyClubDefaults(mergeClubContent(storedContent), club.name)
   const aiSettings = await getClubAiSettings(slug)
@@ -29,12 +29,14 @@ export default async function SuperAdminSettingsPage({
               Hier bearbeitest du Vereinsdaten und alle Texte der Club-Seite. Aenderungen sind sofort live.
             </p>
           </div>
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["admin", "settings"]}
+            lockPath={["locks", "admin", "settings"]}
             label="Tab aktiv"
-            checked={features.admin.settings}
+            enabled={features.admin.settings}
+            locked={locks.admin.settings}
           />
         </div>
         <div className="mt-4 rounded-xl border border-slate-200/60 bg-slate-50 px-4 py-3 text-sm text-slate-600">
@@ -57,12 +59,14 @@ export default async function SuperAdminSettingsPage({
               <p className="text-sm text-slate-500">Logo, Farben und grundlegende Infos.</p>
             </div>
             </div>
-            <FeatureToggle
+            <FeatureGateToggle
               clubId={club.id}
               slug={slug}
               path={["settings", "club"]}
+              lockPath={["locks", "settings", "club"]}
               label="Bereich aktiv"
-              checked={features.settings.club}
+              enabled={features.settings.club}
+              locked={locks.settings.club}
             />
           </div>
           <div className="mt-5">
@@ -79,12 +83,14 @@ export default async function SuperAdminSettingsPage({
               <p className="text-sm text-slate-500">Vorpruefung und Gueltigkeitslogik steuern.</p>
             </div>
             </div>
-            <FeatureToggle
+            <FeatureGateToggle
               clubId={club.id}
               slug={slug}
               path={["settings", "ai"]}
+              lockPath={["locks", "settings", "ai"]}
               label="Bereich aktiv"
-              checked={features.settings.ai}
+              enabled={features.settings.ai}
+              locked={locks.settings.ai}
             />
           </div>
           <div className="mt-5">
@@ -105,12 +111,14 @@ export default async function SuperAdminSettingsPage({
               <p className="text-sm text-slate-500">Hero, Texte, Buttons und Impressum.</p>
             </div>
             </div>
-            <FeatureToggle
+            <FeatureGateToggle
               clubId={club.id}
               slug={slug}
               path={["settings", "cms"]}
+              lockPath={["locks", "settings", "cms"]}
               label="Bereich aktiv"
-              checked={features.settings.cms}
+              enabled={features.settings.cms}
+              locked={locks.settings.cms}
             />
           </div>
           <div className="mt-5">

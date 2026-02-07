@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, AlertTriangle, CheckCircle, FileText } from "lucide-react"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
-import { FeatureToggle } from "@/components/admin/feature-toggle"
+import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export default async function SuperAdminMembersPage({
   params,
@@ -17,7 +17,7 @@ export default async function SuperAdminMembersPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
   const members = await getClubMembers(slug)
   const importedCount = await getImportedMembersCount(slug)
   const stats = await getMemberAdminDashboardStats(slug)
@@ -31,19 +31,23 @@ export default async function SuperAdminMembersPage({
           <p className="text-slate-500 text-sm">Verwaltung und Einladungen an einem Ort.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["admin", "members"]}
+            lockPath={["locks", "admin", "members"]}
             label="Tab aktiv"
-            checked={features.admin.members}
+            enabled={features.admin.members}
+            locked={locks.admin.members}
           />
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["members", "invite"]}
+            lockPath={["locks", "members", "invite"]}
             label="Einladungen"
-            checked={features.members.invite}
+            enabled={features.members.invite}
+            locked={locks.members.invite}
           />
           <InviteMemberDialog clubSlug={slug} />
         </div>
@@ -92,12 +96,14 @@ export default async function SuperAdminMembersPage({
 
       <div className="relative">
         <div className="absolute right-4 top-4 z-10">
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["members", "import"]}
+            lockPath={["locks", "members", "import"]}
             label="Import"
-            checked={features.members.import}
+            enabled={features.members.import}
+            locked={locks.members.import}
           />
         </div>
         <MemberImportWizard clubSlug={slug} />
@@ -106,12 +112,14 @@ export default async function SuperAdminMembersPage({
       {contract && (
         <div className="relative">
           <div className="absolute right-4 top-4 z-10">
-            <FeatureToggle
+            <FeatureGateToggle
               clubId={club.id}
               slug={slug}
               path={["members", "contract_editor"]}
+              lockPath={["locks", "members", "contract_editor"]}
               label="Vertrags-Editor"
-              checked={features.members.contract_editor}
+              enabled={features.members.contract_editor}
+              locked={locks.members.contract_editor}
             />
           </div>
           <ContractEditor

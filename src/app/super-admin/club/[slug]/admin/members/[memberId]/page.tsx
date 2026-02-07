@@ -9,7 +9,7 @@ import { MemberDocumentsAdmin } from "@/components/admin/member-documents-admin"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { notFound } from "next/navigation"
-import { FeatureToggle } from "@/components/admin/feature-toggle"
+import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export default async function SuperAdminMemberDetailPage({
   params,
@@ -17,7 +17,7 @@ export default async function SuperAdminMemberDetailPage({
   params: Promise<{ slug: string; memberId: string }>
 }) {
   const { slug, memberId } = await params
-  const { club, features } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
 
   const supabase = await createClient()
   const { data: member } = await supabase
@@ -124,12 +124,14 @@ export default async function SuperAdminMemberDetailPage({
 
       <div className="relative">
         <div className="absolute right-4 top-4 z-10">
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["members", "payments"]}
+            lockPath={["locks", "members", "payments"]}
             label="Zahlungen"
-            checked={features.members.payments}
+            enabled={features.members.payments}
+            locked={locks.members.payments}
           />
         </div>
         <MemberPaymentsPanel payments={paymentHistory} />
@@ -137,12 +139,14 @@ export default async function SuperAdminMemberDetailPage({
 
       <div className="relative">
         <div className="absolute right-4 top-4 z-10">
-          <FeatureToggle
+          <FeatureGateToggle
             clubId={club.id}
             slug={slug}
             path={["members", "documents"]}
+            lockPath={["locks", "members", "documents"]}
             label="Dokumente"
-            checked={features.members.documents}
+            enabled={features.members.documents}
+            locked={locks.members.documents}
           />
         </div>
         <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />

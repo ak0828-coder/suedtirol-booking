@@ -1010,6 +1010,59 @@ export async function updateClubFeaturePath(formData: FormData): Promise<void> {
   }
 }
 
+export async function updateClubFeatureGate(formData: FormData): Promise<void> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user || !user.email) return
+
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!SUPER_ADMIN || user.email.toLowerCase() !== SUPER_ADMIN) return
+
+  const clubId = formData.get("clubId") as string
+  const slug = formData.get("slug") as string
+  const path = (formData.get("path") as string) || ""
+  const value = formData.get("value") === "true"
+  const lockPath = (formData.get("lockPath") as string) || ""
+  const lockValueRaw = formData.get("lockValue") as string | null
+  const lockValue = lockValueRaw === null ? null : lockValueRaw === "true"
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("feature_flags")
+    .eq("id", clubId)
+    .single()
+  const current = club?.feature_flags && typeof club.feature_flags === "object" ? club.feature_flags : {}
+
+  const next = { ...current }
+
+  const setPath = (target: any, pathValue: string, nextValue: boolean) => {
+    const parts = pathValue.split(".").filter(Boolean)
+    if (parts.length === 0) return
+    let cursor: any = target
+    for (let i = 0; i < parts.length - 1; i++) {
+      const key = parts[i]
+      if (!cursor[key] || typeof cursor[key] !== "object") cursor[key] = {}
+      cursor = cursor[key]
+    }
+    cursor[parts[parts.length - 1]] = nextValue
+  }
+
+  if (path) setPath(next, path, value)
+  if (lockPath && lockValue !== null) setPath(next, lockPath, lockValue)
+
+  await supabaseAdmin.from("clubs").update({ feature_flags: next }).eq("id", clubId)
+
+  revalidatePath("/super-admin")
+  if (slug) {
+    revalidatePath(`/super-admin/club/${slug}`)
+    revalidatePath(`/super-admin/club/${slug}/admin`)
+    revalidatePath(`/club/${slug}/admin`)
+  }
+}
+
 export async function deleteMembershipPlan(id: string) {
   const supabase = await createClient()
   await supabase.from('membership_plans').delete().eq('id', id)
