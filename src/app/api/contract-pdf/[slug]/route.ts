@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { ContractPdfDocument } from "@/lib/contract-pdf"
-import { pdf, type DocumentProps } from "@react-pdf/renderer"
-import React from "react"
+import PDFDocument from "pdfkit"
 
 export const runtime = "nodejs"
 
@@ -23,18 +21,53 @@ async function buildPdfResponse({
   slug: string
   debug?: boolean
 }) {
-  const doc = React.createElement(ContractPdfDocument, {
-    clubName,
-    title,
-    body,
-    version,
-    updatedAt,
-  }) as React.ReactElement<DocumentProps>
-
   try {
-    const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
-    const bytes = new Uint8Array(buffer)
-    return new NextResponse(bytes, {
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: "A4",
+        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+      })
+      const chunks: Buffer[] = []
+      doc.on("data", (chunk) => chunks.push(chunk))
+      doc.on("end", () => resolve(Buffer.concat(chunks)))
+      doc.on("error", (err) => reject(err))
+
+      doc.font("Helvetica").fontSize(10).fillColor("#64748b").text("Avaimo - Mitgliedschaft", {
+        align: "left",
+      })
+      doc.moveDown(0.4)
+      doc.font("Helvetica-Bold").fontSize(20).fillColor("#0f172a").text(title)
+      doc.moveDown(0.2)
+      doc.font("Helvetica").fontSize(12).fillColor("#475569").text(clubName)
+      doc.moveDown(0.2)
+      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8").text(`Version ${version} - ${updatedAt || "-"}`)
+      doc.moveDown(1)
+
+      const paragraphs = String(body || "")
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+
+      doc.font("Helvetica").fontSize(11).fillColor("#0f172a")
+      if (paragraphs.length === 0) {
+        doc.text("Kein Vertragstext hinterlegt.")
+      } else {
+        paragraphs.forEach((p) => {
+          doc.text(p, { align: "left" })
+          doc.moveDown(0.6)
+        })
+      }
+
+      doc.moveDown(1)
+      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8")
+      doc.text("Dieses Dokument wurde digital ueber Avaimo erstellt.", {
+        align: "left",
+      })
+
+      doc.end()
+    })
+
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
