@@ -12,10 +12,9 @@ export default async function SuperAdminPage() {
   // 1. Auth Check
   const { data: { user } } = await supabase.auth.getUser()
   
-  // Env Variable nutzen (falls gesetzt), sonst Fallback
-  const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "alexander.kofler06@gmail.com" 
+  const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL
 
-  if (!user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
+  if (!SUPER_ADMIN_EMAIL || !user || user.email?.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
     return redirect("/login")
   }
 

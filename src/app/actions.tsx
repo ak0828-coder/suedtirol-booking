@@ -993,9 +993,9 @@ export async function createBooking(
   }
 
   // 3. UPDATE: Gutschein einlösen (Mit Zähler Logik & Admin Client für RLS Bypass)
-  if (finalPrice > 0 && creditCode) {
-    const check = await validateCreditCode(clubSlug, creditCode)
-    if (!check.success) return { success: false, error: check.error }
+    if (finalPrice > 0 && creditCode) {
+      const check = await validateCreditCode(clubSlug, creditCode)
+      if (!check.success) return { success: false, error: check.error }
 
     const supabaseAdmin = getAdminClient()
 
@@ -1020,10 +1020,12 @@ export async function createBooking(
           .eq('code', creditCode.toUpperCase())
     }
 
-    usedCreditAmount = check.amount || 0
-    finalPrice = usedCreditAmount 
-    finalPaymentStatus = 'paid_stripe'
-  }
+      usedCreditAmount = check.amount || 0
+      finalPrice = Math.max(0, finalPrice - usedCreditAmount)
+      if (finalPrice <= 0) {
+        finalPaymentStatus = 'paid_stripe'
+      }
+    }
 
   // 4. Buchung speichern (Via normalem Client, da wir die User-ID brauchen, falls vorhanden)
   const { error } = await supabase
@@ -1654,6 +1656,19 @@ export async function uploadMemberDocument(formData: FormData) {
   const file = formData.get("file") as File | null
 
   if (!clubSlug || !file) return { success: false, error: "Datei fehlt." }
+
+  const MAX_FILE_MB = 10
+  const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024
+  const allowedTypes = ["application/pdf"]
+  const isImage = file.type.startsWith("image/")
+
+  if (!isImage && !allowedTypes.includes(file.type)) {
+    return { success: false, error: "Dateityp nicht erlaubt (nur PDF/Bilder)." }
+  }
+
+  if (file.size > MAX_FILE_BYTES) {
+    return { success: false, error: `Datei zu groß (max. ${MAX_FILE_MB}MB).` }
+  }
 
   const { data: club } = await supabase
     .from("clubs")
@@ -2438,9 +2453,8 @@ export async function inviteMember(formData: FormData) {
   let tempPassword = ""
 
   // Wir suchen, ob der User global in Supabase schon existiert
-  const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers()
-  // Einfacher Check (in Produktion besser: getUserByEmail, aber listUsers ist hier ok für kleine Mengen)
-  const existingUser = listUsers.users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+    const { data: existingUserData } = await supabaseAdmin.auth.admin.getUserByEmail(email)
+    const existingUser = existingUserData?.user || null
 
   if (existingUser) {
     targetUserId = existingUser.id

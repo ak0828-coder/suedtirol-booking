@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { getUserRole } from "@/app/actions"
 import { Loader2 } from "lucide-react"
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -16,11 +17,23 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        // Keiner da? Dann ab zum Login!
         router.push("/login")
-      } else {
-        // User da? Darf rein!
+        setIsLoading(false)
+        return
+      }
+
+      const role = await getUserRole()
+      if (role?.type === "super_admin") {
         setIsAuthorized(true)
+      } else if (role?.type === "multi") {
+        const isAdmin = (role.roles || []).some((r: any) => r.role === "club_admin")
+        if (isAdmin) {
+          setIsAuthorized(true)
+        } else {
+          router.push("/login")
+        }
+      } else {
+        router.push("/login")
       }
       setIsLoading(false)
     }
