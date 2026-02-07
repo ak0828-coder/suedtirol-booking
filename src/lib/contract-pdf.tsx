@@ -16,20 +16,25 @@ export function ContractPdfDocument({
   version,
   updatedAt,
 }: ContractPdfProps) {
-  const paragraphs = body
+  const safeClubName = typeof clubName === "string" ? clubName : String(clubName ?? "")
+  const safeTitle = typeof title === "string" ? title : String(title ?? "")
+  const safeBody = typeof body === "string" ? body : String(body ?? "")
+  const safeUpdatedAt = typeof updatedAt === "string" ? updatedAt : updatedAt ? String(updatedAt) : null
+
+  const paragraphs = safeBody
     .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+    .map((line) => String(line).trim())
+    .filter((line) => line.length > 0)
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.kicker}>Avaimo · Mitgliedschaft</Text>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subTitle}>{clubName}</Text>
+          <Text style={styles.kicker}>Avaimo - Mitgliedschaft</Text>
+          <Text style={styles.title}>{safeTitle}</Text>
+          <Text style={styles.subTitle}>{safeClubName}</Text>
           <Text style={styles.meta}>
-            Version {version} · {updatedAt || "—"}
+            Version {version} - {safeUpdatedAt || "-"}
           </Text>
         </View>
 
@@ -47,7 +52,7 @@ export function ContractPdfDocument({
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Dieses Dokument wurde digital über Avaimo erstellt.
+            Dieses Dokument wurde digital ueber Avaimo erstellt.
           </Text>
         </View>
       </Page>
