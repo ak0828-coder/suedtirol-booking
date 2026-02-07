@@ -921,17 +921,17 @@ export async function createMembershipPlan(
   }
 }
 
-export async function updateClubFeatureMatrix(formData: FormData) {
+export async function updateClubFeatureMatrix(formData: FormData): Promise<void> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user || !user.email) {
-    return { success: false, error: "Nicht autorisiert!" }
+    return
   }
 
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
   if (!SUPER_ADMIN || user.email.toLowerCase() !== SUPER_ADMIN) {
-    return { success: false, error: "Nicht autorisiert!" }
+    return
   }
 
   const clubId = formData.get("clubId") as string
@@ -953,7 +953,7 @@ export async function updateClubFeatureMatrix(formData: FormData) {
     .update({ feature_flags: featureFlags })
     .eq("id", clubId)
 
-  if (error) return { success: false, error: error.message }
+  if (error) return
 
   revalidatePath("/super-admin")
   if (slug) {
@@ -961,7 +961,7 @@ export async function updateClubFeatureMatrix(formData: FormData) {
     revalidatePath(`/club/${slug}/admin`)
   }
 
-  return { success: true }
+  return
 }
 
 export async function deleteMembershipPlan(id: string) {
