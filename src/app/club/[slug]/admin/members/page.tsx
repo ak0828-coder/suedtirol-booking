@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, AlertTriangle, CheckCircle, FileText } from "lucide-react"
 import { getAdminContext } from "../_lib/get-admin-context"
+import { notFound } from "next/navigation"
 
 export default async function AdminMembersPage({
   params,
@@ -16,7 +17,8 @@ export default async function AdminMembersPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
+  if (!features.admin.members) return notFound()
   const members = await getClubMembers(slug)
   const importedCount = await getImportedMembersCount(slug)
   const stats = await getMemberAdminDashboardStats(slug)
@@ -29,7 +31,7 @@ export default async function AdminMembersPage({
           <h2 className="text-2xl md:text-3xl font-semibold">Mitglieder-Kartei</h2>
           <p className="text-slate-500 text-sm">Verwaltung und Einladungen an einem Ort.</p>
         </div>
-        <InviteMemberDialog clubSlug={slug} />
+        {features.members.invite ? <InviteMemberDialog clubSlug={slug} /> : null}
       </div>
 
       <ActivationBanner importedCount={importedCount} clubSlug={slug} />
@@ -73,9 +75,9 @@ export default async function AdminMembersPage({
         </div>
       </div>
 
-      <MemberImportWizard clubSlug={slug} />
+      {features.members.import ? <MemberImportWizard clubSlug={slug} /> : null}
 
-      {contract && club.has_contract_signing ? (
+      {contract && features.members.contract_editor ? (
         <ContractEditor
           clubSlug={slug}
           clubName={contract.club_name}
@@ -91,14 +93,7 @@ export default async function AdminMembersPage({
           version={contract.version}
           updatedAt={contract.updated_at}
         />
-      ) : (
-        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold">Digitaler Mitgliedsvertrag</h3>
-          <p className="text-sm text-slate-500">
-            Dieses Modul ist fÃ¼r deinen Verein nicht freigeschaltet.
-          </p>
-        </div>
-      )}
+      ) : null}
 
       <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">
         <Table>

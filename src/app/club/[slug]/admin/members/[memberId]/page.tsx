@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { notFound } from "next/navigation"
 import { getAdminContext } from "../../_lib/get-admin-context"
+import { notFound } from "next/navigation"
 import { getMemberDocumentAuditForAdmin, getMemberDocumentsForAdmin } from "@/app/actions"
 import { MemberBookingsPanel } from "@/components/admin/member-bookings-panel"
 import { AdminMemberQuickActions } from "@/components/admin/member-quick-actions"
@@ -16,7 +17,8 @@ export default async function AdminMemberDetailPage({
   params: Promise<{ slug: string; memberId: string }>
 }) {
   const { slug, memberId } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
+  if (!features.admin.members) return notFound()
 
   const supabase = await createClient()
   const { data: member } = await supabase
@@ -122,18 +124,24 @@ export default async function AdminMemberDetailPage({
         ) : null}
       </div>
 
-      <AdminMemberQuickActions
-        clubSlug={slug}
-        memberId={member.id}
-        memberEmail={email}
-        contractAvailable={documents.some((d) => d.doc_type === "contract")}
-      />
+      {features.members.contract_editor ? (
+        <AdminMemberQuickActions
+          clubSlug={slug}
+          memberId={member.id}
+          memberEmail={email}
+          contractAvailable={documents.some((d) => d.doc_type === "contract")}
+        />
+      ) : null}
 
-      <MemberBookingsPanel bookings={bookings || []} clubSlug={slug} memberId={member.id} />
+      {features.admin.bookings ? (
+        <MemberBookingsPanel bookings={bookings || []} clubSlug={slug} memberId={member.id} />
+      ) : null}
 
-      <MemberPaymentsPanel payments={paymentHistory} />
+      {features.members.payments ? <MemberPaymentsPanel payments={paymentHistory} /> : null}
 
-      <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
+      {features.members.documents ? (
+        <MemberDocumentsAdmin clubSlug={slug} documents={documents} audit={audit} />
+      ) : null}
     </div>
   )
 }

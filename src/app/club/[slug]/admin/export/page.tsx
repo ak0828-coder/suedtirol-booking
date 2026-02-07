@@ -1,5 +1,6 @@
 import { ExportManager } from "@/components/admin/export-manager"
 import { getAdminContext } from "../_lib/get-admin-context"
+import { notFound } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -9,7 +10,8 @@ export default async function AdminExportPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  await getAdminContext(slug)
+  const { features } = await getAdminContext(slug)
+  if (!features.admin.export) return notFound()
 
   return (
     <>

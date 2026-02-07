@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { BlockManager } from "@/components/admin/block-manager"
 import { getAdminContext } from "../_lib/get-admin-context"
+import { notFound } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -10,7 +11,8 @@ export default async function AdminBlocksPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
+  if (!features.admin.blocks) return notFound()
   const supabase = await createClient()
 
   const { data: courts } = await supabase

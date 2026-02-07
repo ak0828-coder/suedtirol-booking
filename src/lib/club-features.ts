@@ -1,0 +1,76 @@
+export type FeatureTree = {
+  admin: {
+    overview: boolean
+    bookings: boolean
+    courts: boolean
+    blocks: boolean
+    plans: boolean
+    members: boolean
+    vouchers: boolean
+    settings: boolean
+    export: boolean
+  }
+  members: {
+    contract_editor: boolean
+    import: boolean
+    invite: boolean
+    documents: boolean
+    payments: boolean
+  }
+  settings: {
+    club: boolean
+    ai: boolean
+    cms: boolean
+  }
+}
+
+export const defaultFeatures: FeatureTree = {
+  admin: {
+    overview: true,
+    bookings: true,
+    courts: true,
+    blocks: true,
+    plans: true,
+    members: true,
+    vouchers: true,
+    settings: true,
+    export: true,
+  },
+  members: {
+    contract_editor: true,
+    import: true,
+    invite: true,
+    documents: true,
+    payments: true,
+  },
+  settings: {
+    club: true,
+    ai: true,
+    cms: true,
+  },
+}
+
+export function mergeFeatures(stored: any): FeatureTree {
+  const result: FeatureTree = JSON.parse(JSON.stringify(defaultFeatures))
+  if (!stored || typeof stored !== "object") return result
+
+  for (const section of Object.keys(defaultFeatures) as (keyof FeatureTree)[]) {
+    const current = stored[section]
+    if (!current || typeof current !== "object") continue
+    for (const key of Object.keys(defaultFeatures[section]) as (keyof FeatureTree[typeof section])[]) {
+      if (typeof current[key] === "boolean") {
+        ;(result[section] as any)[key] = current[key]
+      }
+    }
+  }
+  return result
+}
+
+export function isFeatureEnabled(features: FeatureTree, path: string[]) {
+  let cursor: any = features
+  for (const part of path) {
+    if (!cursor || typeof cursor !== "object") return false
+    cursor = cursor[part]
+  }
+  return cursor === true
+}

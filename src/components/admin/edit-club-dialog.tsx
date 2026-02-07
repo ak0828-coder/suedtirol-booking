@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { updateClub } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Settings, Loader2, Upload, Palette } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { defaultFeatures, mergeFeatures, type FeatureTree } from "@/lib/club-features"
 
 export function EditClubDialog({ club }: { club: any }) {
   const [isLoading, setIsLoading] = useState(false)
@@ -19,7 +20,49 @@ export function EditClubDialog({ club }: { club: any }) {
     has_gamification: !!club.has_gamification,
     has_vouchers: club.has_vouchers !== false,
   })
+  const [featureFlags, setFeatureFlags] = useState<FeatureTree>(() => mergeFeatures(club.feature_flags))
   const router = useRouter()
+
+  const featureSections = useMemo(
+    () => [
+      {
+        title: "Navigation",
+        key: "admin",
+        items: [
+          { key: "overview", label: "Ubersicht" },
+          { key: "bookings", label: "Buchungen" },
+          { key: "courts", label: "Platze" },
+          { key: "blocks", label: "Sperrzeiten" },
+          { key: "plans", label: "Abos" },
+          { key: "members", label: "Mitglieder" },
+          { key: "vouchers", label: "Gutscheine" },
+          { key: "settings", label: "Einstellungen" },
+          { key: "export", label: "Export" },
+        ],
+      },
+      {
+        title: "Mitgliederbereich",
+        key: "members",
+        items: [
+          { key: "contract_editor", label: "Vertrags-Editor" },
+          { key: "import", label: "Import" },
+          { key: "invite", label: "Einladungen" },
+          { key: "documents", label: "Dokumente" },
+          { key: "payments", label: "Zahlungen" },
+        ],
+      },
+      {
+        title: "Einstellungen",
+        key: "settings",
+        items: [
+          { key: "club", label: "Vereinsdaten" },
+          { key: "ai", label: "Dokumenten-KI" },
+          { key: "cms", label: "Seiten-Inhalte" },
+        ],
+      },
+    ],
+    []
+  )
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -35,6 +78,7 @@ export function EditClubDialog({ club }: { club: any }) {
     if (flags.has_contract_signing) formData.set("has_contract_signing", "on")
     if (flags.has_gamification) formData.set("has_gamification", "on")
     if (flags.has_vouchers) formData.set("has_vouchers", "on")
+    formData.set("feature_flags", JSON.stringify(featureFlags))
 
     const result = await updateClub(formData)
     
@@ -144,6 +188,45 @@ export function EditClubDialog({ club }: { club: any }) {
               />
               Gutscheine
             </label>
+          </div>
+
+          <div className="space-y-3 border-t border-slate-200 pt-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Feature-Matrix
+            </div>
+            {featureSections.map((section) => (
+              <div key={section.key} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div className="text-xs font-semibold text-slate-600">{section.title}</div>
+                <div className="grid gap-2">
+                  {section.items.map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={(featureFlags as any)[section.key]?.[item.key] ?? false}
+                        onChange={(e) =>
+                          setFeatureFlags((prev) => ({
+                            ...prev,
+                            [section.key]: {
+                              ...(prev as any)[section.key],
+                              [item.key]: e.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setFeatureFlags(defaultFeatures)}
+              className="w-full"
+            >
+              Alle aktivieren
+            </Button>
           </div>
 
           <div className="pt-2 flex justify-end gap-2">

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
+import { mergeFeatures } from "@/lib/club-features"
 
 export async function getAdminContext(slug: string) {
   const supabase = await createClient()
@@ -19,5 +20,7 @@ export async function getAdminContext(slug: string) {
   const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
   const hasAccess = club.owner_id === user.id || isSuperAdmin
 
-  return { club, user, isSuperAdmin, hasAccess }
+  const features = mergeFeatures(club.feature_flags)
+
+  return { club, user, isSuperAdmin, hasAccess, features }
 }

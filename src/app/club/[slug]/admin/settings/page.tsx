@@ -3,6 +3,7 @@ import { ClubCmsEditor } from "@/components/admin/club-cms-editor"
 import { getClubAiSettings, getClubContent } from "@/app/actions"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
 import { getAdminContext } from "../_lib/get-admin-context"
+import { notFound } from "next/navigation"
 import { AiDocumentSettings } from "@/components/admin/ai-document-settings"
 
 export const dynamic = "force-dynamic"
@@ -13,7 +14,8 @@ export default async function AdminSettingsPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
+  if (!features.admin.settings) return notFound()
   const storedContent = await getClubContent(slug)
   const initialContent = applyClubDefaults(mergeClubContent(storedContent), club.name)
   const aiSettings = await getClubAiSettings(slug)
@@ -36,6 +38,7 @@ export default async function AdminSettingsPage({
       </div>
 
       <div className="space-y-8">
+        {features.settings.club ? (
         <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
@@ -50,8 +53,9 @@ export default async function AdminSettingsPage({
             <ClubSettings club={club} />
           </div>
         </section>
+        ) : null}
 
-        {club.has_ai_check ? (
+        {features.settings.ai ? (
           <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
@@ -72,6 +76,7 @@ export default async function AdminSettingsPage({
           </section>
         ) : null}
 
+        {features.settings.cms ? (
         <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
@@ -86,6 +91,7 @@ export default async function AdminSettingsPage({
             <ClubCmsEditor clubSlug={slug} initialContent={initialContent} clubName={club.name} />
           </div>
         </section>
+        ) : null}
       </div>
     </>
   )

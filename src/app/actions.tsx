@@ -753,6 +753,15 @@ export async function updateClub(formData: FormData) {
   const hasContractSigning = formData.get("has_contract_signing") === "on"
   const hasGamification = formData.get("has_gamification") === "on"
   const hasVouchers = formData.get("has_vouchers") === "on"
+  const featureFlagsRaw = formData.get("feature_flags") as string | null
+  let featureFlags: any = null
+  if (featureFlagsRaw) {
+    try {
+      featureFlags = JSON.parse(featureFlagsRaw)
+    } catch {
+      featureFlags = null
+    }
+  }
 
   const cancellationHours = formData.get("cancellation_buffer_hours")
     ? parseInt(formData.get("cancellation_buffer_hours") as string)
@@ -808,7 +817,8 @@ export async function updateClub(formData: FormData) {
     has_ai_check: hasAiCheck,
     has_contract_signing: hasContractSigning,
     has_gamification: hasGamification,
-    has_vouchers: hasVouchers
+    has_vouchers: hasVouchers,
+    feature_flags: featureFlags
   }
 
   if (logoUrl) {

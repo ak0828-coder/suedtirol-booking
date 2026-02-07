@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "../_lib/get-admin-context"
+import { notFound } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -12,7 +13,8 @@ export default async function AdminBookingsPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
+  if (!features.admin.bookings) return notFound()
   const supabase = await createClient()
 
   const { data: bookings } = await supabase

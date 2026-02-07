@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "./_lib/get-admin-context"
+import { notFound } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +15,8 @@ export default async function AdminPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club } = await getAdminContext(slug)
+  const { club, features } = await getAdminContext(slug)
+  if (!features.admin.overview) return notFound()
   const supabase = await createClient()
 
   const { data: courts } = await supabase
