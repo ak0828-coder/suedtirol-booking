@@ -2559,8 +2559,8 @@ export async function inviteMember(formData: FormData) {
   let tempPassword = ""
 
   // Wir suchen, ob der User global in Supabase schon existiert
-    const { data: existingUserData } = await supabaseAdmin.auth.admin.getUserByEmail(email)
-    const existingUser = existingUserData?.user || null
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const existingUser = existingUsers.users.find(u => u.email?.toLowerCase() === email.toLowerCase()) || null
 
   if (existingUser) {
     targetUserId = existingUser.id
