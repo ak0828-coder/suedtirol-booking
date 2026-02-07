@@ -1405,10 +1405,19 @@ export async function createCheckoutSession(
     .single()
 
   if (bookingError) {
+    logAction("booking_reserve_failed", {
+      clubSlug,
+      courtId,
+      startTime: startTime.toISOString(),
+      error: bookingError.message,
+      code: (bookingError as any).code || null,
+      details: (bookingError as any).details || null,
+      hint: (bookingError as any).hint || null,
+    })
     if (bookingError.code === '23505') {
       return { error: "Dieser Termin wurde gerade gebucht. Bitte wähle eine andere Zeit." }
     }
-    return { error: "Fehler beim Reservieren des Slots." }
+    return { error: "Fehler beim Reservieren des Slots: " + bookingError.message }
   }
 
   if (finalPrice <= 0 && memberAdjusted) {
@@ -3433,3 +3442,4 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
 
   return { success: true, csv: csvContent, filename: `buchungen_${year}_${month}.csv` }
 }
+
