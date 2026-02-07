@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import PDFDocument from "pdfkit"
+import path from "path"
+import fs from "fs"
 
 export const runtime = "nodejs"
 
@@ -27,20 +29,40 @@ async function buildPdfResponse({
         size: "A4",
         margins: { top: 40, bottom: 40, left: 40, right: 40 },
       })
+      const helveticaPath = path.resolve(process.cwd(), "node_modules/pdfkit/js/data/Helvetica.afm")
+      const helveticaBoldPath = path.resolve(process.cwd(), "node_modules/pdfkit/js/data/Helvetica-Bold.afm")
+      if (fs.existsSync(helveticaPath)) {
+        doc.registerFont("Helv", helveticaPath)
+      }
+      if (fs.existsSync(helveticaBoldPath)) {
+        doc.registerFont("HelvBold", helveticaBoldPath)
+      }
       const chunks: Buffer[] = []
       doc.on("data", (chunk) => chunks.push(chunk))
       doc.on("end", () => resolve(Buffer.concat(chunks)))
       doc.on("error", (err) => reject(err))
 
-      doc.font("Helvetica").fontSize(10).fillColor("#64748b").text("Avaimo - Mitgliedschaft", {
+      doc.font(fs.existsSync(helveticaPath) ? "Helv" : "Helvetica")
+        .fontSize(10)
+        .fillColor("#64748b")
+        .text("Avaimo - Mitgliedschaft", {
         align: "left",
       })
       doc.moveDown(0.4)
-      doc.font("Helvetica-Bold").fontSize(20).fillColor("#0f172a").text(title)
+      doc.font(fs.existsSync(helveticaBoldPath) ? "HelvBold" : "Helvetica-Bold")
+        .fontSize(20)
+        .fillColor("#0f172a")
+        .text(title)
       doc.moveDown(0.2)
-      doc.font("Helvetica").fontSize(12).fillColor("#475569").text(clubName)
+      doc.font(fs.existsSync(helveticaPath) ? "Helv" : "Helvetica")
+        .fontSize(12)
+        .fillColor("#475569")
+        .text(clubName)
       doc.moveDown(0.2)
-      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8").text(`Version ${version} - ${updatedAt || "-"}`)
+      doc.font(fs.existsSync(helveticaPath) ? "Helv" : "Helvetica")
+        .fontSize(9)
+        .fillColor("#94a3b8")
+        .text(`Version ${version} - ${updatedAt || "-"}`)
       doc.moveDown(1)
 
       const paragraphs = String(body || "")
@@ -48,7 +70,9 @@ async function buildPdfResponse({
         .map((line) => line.trim())
         .filter(Boolean)
 
-      doc.font("Helvetica").fontSize(11).fillColor("#0f172a")
+      doc.font(fs.existsSync(helveticaPath) ? "Helv" : "Helvetica")
+        .fontSize(11)
+        .fillColor("#0f172a")
       if (paragraphs.length === 0) {
         doc.text("Kein Vertragstext hinterlegt.")
       } else {
@@ -59,7 +83,9 @@ async function buildPdfResponse({
       }
 
       doc.moveDown(1)
-      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8")
+      doc.font(fs.existsSync(helveticaPath) ? "Helv" : "Helvetica")
+        .fontSize(9)
+        .fillColor("#94a3b8")
       doc.text("Dieses Dokument wurde digital ueber Avaimo erstellt.", {
         align: "left",
       })
