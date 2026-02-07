@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { updateMembershipContract } from "@/app/actions"
-import { ContractPdfDocument } from "@/lib/contract-pdf"
+import { ContractPDF } from "@/components/contract/contract-pdf"
 
 const PDFViewer = dynamic(
   () => import("@react-pdf/renderer").then((m) => m.PDFViewer),
@@ -48,21 +48,27 @@ class PdfPreviewBoundary extends React.Component<
 export function ContractEditor({
   clubSlug,
   clubName,
+  clubLogoUrl,
   initialTitle,
   initialBody,
   initialFee,
   feeEnabled,
   allowSubscription,
+  memberPricingMode,
+  memberPricingValue,
   version,
   updatedAt,
 }: {
   clubSlug: string
   clubName: string
+  clubLogoUrl?: string | null
   initialTitle: string
   initialBody: string
   initialFee: number
   feeEnabled: boolean
   allowSubscription: boolean
+  memberPricingMode: string
+  memberPricingValue: number
   version: number
   updatedAt?: string | null
 }) {
@@ -71,6 +77,8 @@ export function ContractEditor({
   const [fee, setFee] = useState(String(initialFee || 0))
   const [feeIsEnabled, setFeeIsEnabled] = useState(!!feeEnabled)
   const [allowSub, setAllowSub] = useState(!!allowSubscription)
+  const [pricingMode, setPricingMode] = useState(memberPricingMode || "full_price")
+  const [pricingValue, setPricingValue] = useState(String(memberPricingValue || 0))
   const [saving, setSaving] = useState(false)
   const lastUpdated = updatedAt ? new Date(updatedAt).toLocaleDateString("de-DE") : "—"
   const [previewTitle, setPreviewTitle] = useState(initialTitle)
@@ -97,7 +105,9 @@ export function ContractEditor({
       body,
       Number(fee || 0),
       feeIsEnabled,
-      allowSub
+      allowSub,
+      pricingMode,
+      Number(pricingValue || 0)
     )
     setSaving(false)
   }
@@ -147,6 +157,30 @@ export function ContractEditor({
               <span className="text-sm">Abo per Stripe erlauben</span>
             </div>
           </div>
+          <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mitgliederpreis pro Platz</label>
+              <select
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                value={pricingMode}
+                onChange={(e) => setPricingMode(e.target.value)}
+              >
+                <option value="full_price">Kein Vorteil</option>
+                <option value="discount_percent">Rabatt in %</option>
+                <option value="member_price">Fixpreis (Mitgliederpreis)</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Wert</label>
+              <Input
+                value={pricingValue}
+                onChange={(e) => setPricingValue(e.target.value)}
+                type="number"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
           <Button className="rounded-full" onClick={handleSave} disabled={saving}>
             {saving ? "Speichere..." : "Vertrag speichern"}
           </Button>
@@ -163,12 +197,20 @@ export function ContractEditor({
             {isClient ? (
               <PdfPreviewBoundary fallbackHref={`/api/contract-pdf/${clubSlug}`}>
                 <PDFViewer style={{ width: "100%", height: "100%" }} showToolbar={false}>
-                  <ContractPdfDocument
-                    clubName={clubName}
-                    title={previewTitle}
-                    body={previewBody}
-                    version={version}
-                    updatedAt={lastUpdated}
+                  <ContractPDF
+                    data={{
+                      clubName,
+                      clubLogoUrl,
+                      clubAddress: "",
+                      contractTitle: previewTitle,
+                      memberName: "Max Mustermann",
+                      memberAddress: "Musterstraße 1, 39100 Bozen",
+                      memberEmail: "max@example.com",
+                      memberPhone: "+39 123 4567",
+                      contractText: previewBody,
+                      signedAt: lastUpdated,
+                      signedCity: "Bozen",
+                    }}
                   />
                 </PDFViewer>
               </PdfPreviewBoundary>

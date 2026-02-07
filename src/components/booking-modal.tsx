@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { Calendar } from "@/components/ui/calendar"
@@ -26,9 +26,22 @@ interface BookingModalProps {
   startHour?: number 
   endHour?: number   
   isMember?: boolean
+  memberPricingMode?: "full_price" | "discount_percent" | "member_price"
+  memberPricingValue?: number
 }
 
-export function BookingModal({ courtId, courtName, price, clubSlug, durationMinutes, startHour, endHour, isMember }: BookingModalProps) {
+export function BookingModal({
+  courtId,
+  courtName,
+  price,
+  clubSlug,
+  durationMinutes,
+  startHour,
+  endHour,
+  isMember,
+  memberPricingMode = "full_price",
+  memberPricingValue = 0,
+}: BookingModalProps) {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -81,9 +94,22 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
       }
   }
 
-  // --- NEU: PREIS BERECHNUNG ---
-  const finalPrice = Math.max(0, price - discount)
-  const isFullyCovered = discount >= price
+  const applyMemberPricing = () => {
+    if (!isMember) return price
+    if (memberPricingMode === "discount_percent") {
+      const pct = Math.min(Math.max(memberPricingValue, 0), 100)
+      return Math.max(0, price * (1 - pct / 100))
+    }
+    if (memberPricingMode === "member_price") {
+      return Math.max(0, memberPricingValue)
+    }
+    return price
+  }
+
+  // --- PREIS BERECHNUNG ---
+  const memberBasePrice = applyMemberPricing()
+  const finalPrice = Math.max(0, memberBasePrice - discount)
+  const isFullyCovered = discount >= memberBasePrice || finalPrice === 0
 
   const timeSlots = generateTimeSlots(startHour || 8, endHour || 22, durationMinutes)
 
@@ -307,79 +333,122 @@ export function BookingModal({ courtId, courtName, price, clubSlug, durationMinu
                   <div className="flex justify-between items-center border-t pt-2 mt-2">
                       <span>Zu zahlen:</span>
                       <div className="text-right">
-                          {isMember ? (
-                              <span className="club-primary-text font-bold">0€ (Mitglied)</span>
-                          ) : (
-                              <>
-                                {discount > 0 && <span className="text-slate-400 line-through mr-2">{price}€</span>}
-                                <span className="font-bold text-lg">{finalPrice}€</span>
-                              </>
+                          {memberBasePrice !== price && (
+                            <span className="text-slate-400 line-through mr-2">{price}€</span>
                           )}
+                          {discount > 0 && (
+                            <span className="text-slate-400 line-through mr-2">{memberBasePrice}€</span>
+                          )}
+                          <span className="font-bold text-lg">{finalPrice}€</span>
                       </div>
                   </div>
+                  {isMember && memberBasePrice !== price && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      Mitgliedervorteil aktiv: {memberPricingMode === "discount_percent"
+                        ? `${memberPricingValue}% Rabatt`
+                        : memberPricingMode === "member_price"
+                        ? `Mitgliederpreis ${memberPricingValue}€`
+                        : "Mitgliedsstatus"}
+                    </div>
+                  )}
                </div>
 
               {/* --- BUTTONS --- */}
               {isMember ? (
-                  // MITGLIEDER BUTTON
-                  <Button className="w-full club-primary-bg hover:opacity-90 btn-press gap-2" disabled={isBooking} onClick={handleBook}>
+                <>
+                  {finalPrice === 0 ? (
+                    <Button className="w-full club-primary-bg hover:opacity-90 btn-press gap-2" disabled={isBooking} onClick={handleBook}>
                       {isBooking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4"/> Jetzt kostenlos buchen</>}
-                  </Button>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        className="w-full club-primary-bg hover:opacity-90 btn-press"
+                        disabled={isBooking}
+                        onClick={async () => {
+                          setIsBooking(true)
+                          const result = await createCheckoutSession(
+                            courtId,
+                            clubSlug,
+                            date!,
+                            selectedTime,
+                            price,
+                            courtName,
+                            durationMinutes
+                          )
+                          if (result?.url) {
+                            window.location.href = result.url
+                          } else if (result?.success) {
+                            setMessage("Buchung erfolgreich gespeichert.")
+                            setTimeout(() => setIsOpen(false), 500)
+                          } else {
+                            setMessage(result?.error || "Fehler beim Checkout.")
+                            setIsBooking(false)
+                          }
+                        }}
+                      >
+                        {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
+                      </Button>
+                      <Button variant="outline" className="w-full btn-press" disabled={isBooking} onClick={handleBook}>
+                        Vor Ort bezahlen
+                      </Button>
+                    </>
+                  )}
+                </>
               ) : (
-                  // GAST BUTTONS
-                  <>
-                    {/* ENTWEDER: Komplett gedeckt -> Kostenlos buchen */}
-                    {isFullyCovered ? (
-                        <Button 
-                            className="w-full club-primary-bg hover:opacity-90 btn-press"
-                            disabled={isBooking}
-                            onClick={handleBook} // Ruft createBooking direkt auf
-                        >
-                             {isBooking ? <Loader2 className="animate-spin" /> : "Jetzt kostenlos buchen"}
-                        </Button>
-                    ) : (
-                        // ODER: Restbetrag via Stripe
-                        <Button 
-                            className="w-full club-primary-bg hover:opacity-90 btn-press" 
-                            disabled={isBooking}
-                            onClick={async () => {
-                                if (!guestName.trim() || !guestEmail.trim()) {
-                                  setMessage("Bitte Name und E-Mail eingeben.")
-                                  return
-                                }
-                                setIsBooking(true)
-                                // WICHTIG: voucherCode übergeben!
-                                const result = await createCheckoutSession(
-                                    courtId, 
-                                    clubSlug, 
-                                    date!, 
-                                    selectedTime, 
-                                    price, 
-                                    courtName, 
-                                    durationMinutes,
-                                    voucherCode, // <---
-                                    guestName,
-                                    guestEmail
-                                )
-                                if (result?.url) {
-                                  window.location.href = result.url
-                                } else {
-                                  setMessage(result?.error || "Fehler beim Checkout.")
-                                  setIsBooking(false)
-                                }
-                            }}
-                        >
-                            {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
-                        </Button>
-                    )}
+                <>
+                  {/* ENTWEDER: Komplett gedeckt -> Kostenlos buchen */}
+                  {isFullyCovered ? (
+                    <Button 
+                      className="w-full club-primary-bg hover:opacity-90 btn-press"
+                      disabled={isBooking}
+                      onClick={handleBook}
+                    >
+                      {isBooking ? <Loader2 className="animate-spin" /> : "Jetzt kostenlos buchen"}
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="w-full club-primary-bg hover:opacity-90 btn-press" 
+                      disabled={isBooking}
+                      onClick={async () => {
+                        if (!guestName.trim() || !guestEmail.trim()) {
+                          setMessage("Bitte Name und E-Mail eingeben.")
+                          return
+                        }
+                        setIsBooking(true)
+                        const result = await createCheckoutSession(
+                          courtId, 
+                          clubSlug, 
+                          date!, 
+                          selectedTime, 
+                          price, 
+                          courtName, 
+                          durationMinutes,
+                          voucherCode,
+                          guestName,
+                          guestEmail
+                        )
+                        if (result?.url) {
+                          window.location.href = result.url
+                        } else if (result?.success) {
+                          setMessage("Buchung erfolgreich gespeichert.")
+                          setTimeout(() => setIsOpen(false), 500)
+                        } else {
+                          setMessage(result?.error || "Fehler beim Checkout.")
+                          setIsBooking(false)
+                        }
+                      }}
+                    >
+                      {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
+                    </Button>
+                  )}
 
-                    {/* Vor Ort zahlen nur anzeigen, wenn kein Gutschein aktiv ist (oder man könnte es verbieten) */}
-                    {!voucherSuccess && (
-                        <Button variant="outline" className="w-full btn-press" disabled={isBooking} onClick={handleBook}>
-                            Vor Ort bezahlen
-                        </Button>
-                    )}
-                  </>
+                  {!voucherSuccess && (
+                    <Button variant="outline" className="w-full btn-press" disabled={isBooking} onClick={handleBook}>
+                      Vor Ort bezahlen
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           )}

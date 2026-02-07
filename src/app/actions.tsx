@@ -641,7 +641,14 @@ export async function deleteClub(clubId: string) {
 
 // --- MEMBERSHIP PLANS & ABO CHECKOUT ---
 
-export async function createMembershipPlan(clubSlug: string, name: string, price: number) {
+export async function createMembershipPlan(
+  clubSlug: string,
+  name: string,
+  price: number,
+  description?: string,
+  ctaLabel?: string,
+  features?: string
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
@@ -670,11 +677,14 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
     })
 
     const { error } = await supabaseAdmin.from('membership_plans').insert({
-      club_id: club.id,
-      name: name,
-      price: price,
-      stripe_price_id: stripePrice.id
-    })
+        club_id: club.id,
+        name: name,
+        price: price,
+        stripe_price_id: stripePrice.id,
+        description: description || null,
+        cta_label: ctaLabel || null,
+        features: features || null
+      })
 
     if (error) return { error: "DB Fehler: " + error.message }
 
@@ -691,6 +701,51 @@ export async function createMembershipPlan(clubSlug: string, name: string, price
 export async function deleteMembershipPlan(id: string) {
   const supabase = await createClient()
   await supabase.from('membership_plans').delete().eq('id', id)
+  return { success: true }
+}
+
+export async function updateMembershipPlanText(
+  planId: string,
+  updates: { name?: string; description?: string; ctaLabel?: string; features?: string }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: plan } = await supabaseAdmin
+    .from("membership_plans")
+    .select("id, club_id")
+    .eq("id", planId)
+    .single()
+
+  if (!plan) return { error: "Plan nicht gefunden" }
+
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("owner_id, slug")
+    .eq("id", plan.club_id)
+    .single()
+
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { error: "Keine Rechte" }
+  }
+
+  const { error } = await supabaseAdmin
+    .from("membership_plans")
+    .update({
+      name: updates.name ?? undefined,
+      description: updates.description ?? undefined,
+      cta_label: updates.ctaLabel ?? undefined,
+      features: updates.features ?? undefined,
+    })
+    .eq("id", planId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/club/${club.slug}`)
+  revalidatePath(`/club/${club.slug}/admin/plans`)
   return { success: true }
 }
 
@@ -728,6 +783,23 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
 // --- BOOKING ACTIONS (UPDATE: MULTI-USE VOUCHER) ---
 // ==========================================
 
+function applyMemberPricing(
+  price: number,
+  mode?: string | null,
+  value?: number | null
+) {
+  const safeValue = Number(value || 0)
+  if (!mode || mode === "full_price") return price
+  if (mode === "discount_percent") {
+    const pct = Math.min(Math.max(safeValue, 0), 100)
+    return Math.max(0, price * (1 - pct / 100))
+  }
+  if (mode === "member_price") {
+    return Math.max(0, safeValue)
+  }
+  return price
+}
+
 export async function createBooking(
   courtId: string,
   clubSlug: string,
@@ -743,7 +815,11 @@ export async function createBooking(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: club } = await supabase.from('clubs').select('id, admin_email').eq('slug', clubSlug).single()
+  const { data: club } = await supabase
+    .from('clubs')
+    .select('id, admin_email, member_booking_pricing_mode, member_booking_pricing_value')
+    .eq('slug', clubSlug)
+    .single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
 
   let finalPrice = price
@@ -761,12 +837,18 @@ export async function createBooking(
       .single()
 
     if (member) {
-      if (member.valid_until && new Date(member.valid_until) > new Date()) {
-        finalPrice = 0
-        finalPaymentStatus = 'paid_member'
+        if (member.valid_until && new Date(member.valid_until) > new Date()) {
+          finalPrice = applyMemberPricing(
+            price,
+            club.member_booking_pricing_mode,
+            club.member_booking_pricing_value
+          )
+          if (finalPrice <= 0) {
+            finalPaymentStatus = 'paid_member'
+          }
+        }
       }
     }
-  }
 
   // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlösen)
   const [hours, minutes] = time.split(':').map(Number)
@@ -1052,25 +1134,42 @@ export async function createCheckoutSession(
     price: price.toString(),
     durationMinutes: durationMinutes.toString()
   }
+  let memberAdjusted = false
+
+  // Club & Member prüfen, um Mitgliedspreis anzuwenden
+  const { data: club } = await supabaseAdmin
+    .from('clubs')
+    .select('id, member_booking_pricing_mode, member_booking_pricing_value')
+    .eq('slug', clubSlug)
+    .single()
+
+  if (!club) return { error: "Club nicht gefunden" }
+
+  if (user) {
+    const { data: member } = await supabase
+      .from("club_members")
+      .select("valid_until, status")
+      .eq("club_id", club.id)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .single()
+
+    if (member && member.valid_until && new Date(member.valid_until) > new Date()) {
+      finalPrice = applyMemberPricing(price, club.member_booking_pricing_mode, club.member_booking_pricing_value)
+      memberAdjusted = true
+    }
+  }
 
   // Wenn Code dabei ist, validieren und Preis senken
   if (creditCode) {
     const check = await validateCreditCode(clubSlug, creditCode)
     if (check.success && check.amount) {
-      finalPrice = price - check.amount
+      finalPrice = finalPrice - check.amount
       if (finalPrice < 0) finalPrice = 0
 
       metadata.creditCode = creditCode
     }
   }
-
-  const { data: club } = await supabaseAdmin
-    .from('clubs')
-    .select('id')
-    .eq('slug', clubSlug)
-    .single()
-
-  if (!club) return { error: "Club nicht gefunden" }
 
   const [hours, minutes] = time.split(':').map(Number)
   const startTime = new Date(date)
@@ -1085,7 +1184,7 @@ export async function createCheckoutSession(
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'awaiting_payment',
-      payment_status: 'pending',
+      payment_status: finalPrice <= 0 && memberAdjusted ? 'paid_member' : 'pending',
       price_paid: finalPrice,
       guest_name: user ? 'Mitglied' : (guestName || 'Gast'),
       guest_email: user?.email || guestEmail || null,
@@ -1099,6 +1198,15 @@ export async function createCheckoutSession(
       return { error: "Dieser Termin wurde gerade gebucht. Bitte wähle eine andere Zeit." }
     }
     return { error: "Fehler beim Reservieren des Slots." }
+  }
+
+  if (finalPrice <= 0 && memberAdjusted) {
+    await supabaseAdmin
+      .from("bookings")
+      .update({ status: "confirmed" })
+      .eq("id", booking.id)
+
+    return { success: true }
   }
 
   try {
@@ -2664,7 +2772,7 @@ export async function getMembershipContract(clubSlug: string) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, owner_id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
+    .select("id, name, owner_id, logo_url, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription, member_booking_pricing_mode, member_booking_pricing_value")
     .eq("slug", clubSlug)
     .single()
 
@@ -2675,6 +2783,7 @@ export async function getMembershipContract(clubSlug: string) {
 
   return {
     club_name: club.name,
+    club_logo_url: club.logo_url || null,
     title: club.membership_contract_title || "Mitgliedsvertrag",
     body: club.membership_contract_body || "",
     version: club.membership_contract_version || 1,
@@ -2682,7 +2791,9 @@ export async function getMembershipContract(clubSlug: string) {
     membership_fee: club.membership_fee || 0,
     membership_fee_currency: club.membership_fee_currency || "EUR",
     membership_fee_enabled: club.membership_fee_enabled ?? false,
-    membership_allow_subscription: club.membership_allow_subscription ?? true
+    membership_allow_subscription: club.membership_allow_subscription ?? true,
+    member_booking_pricing_mode: club.member_booking_pricing_mode || "full_price",
+    member_booking_pricing_value: club.member_booking_pricing_value ?? 0
   }
 }
 
@@ -2692,7 +2803,9 @@ export async function updateMembershipContract(
   body: string,
   fee: number,
   feeEnabled: boolean,
-  allowSubscription: boolean
+  allowSubscription: boolean,
+  memberPricingMode: string,
+  memberPricingValue: number
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -2722,7 +2835,9 @@ export async function updateMembershipContract(
       membership_contract_updated_at: new Date().toISOString(),
       membership_fee: fee,
       membership_fee_enabled: feeEnabled,
-      membership_allow_subscription: allowSubscription
+      membership_allow_subscription: allowSubscription,
+      member_booking_pricing_mode: memberPricingMode,
+      member_booking_pricing_value: memberPricingValue
     })
     .eq("id", club.id)
 

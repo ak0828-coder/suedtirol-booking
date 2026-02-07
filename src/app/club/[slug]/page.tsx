@@ -273,6 +273,8 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                         startHour={court.start_hour}
                         endHour={court.end_hour}
                         isMember={isMember}
+                        memberPricingMode={club.member_booking_pricing_mode || "full_price"}
+                        memberPricingValue={club.member_booking_pricing_value || 0}
                       />
                     </div>
                   </div>

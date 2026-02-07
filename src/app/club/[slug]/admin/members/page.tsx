@@ -79,11 +79,14 @@ export default async function AdminMembersPage({
         <ContractEditor
           clubSlug={slug}
           clubName={contract.club_name}
+          clubLogoUrl={contract.club_logo_url}
           initialTitle={contract.title}
           initialBody={contract.body}
           initialFee={contract.membership_fee}
           feeEnabled={contract.membership_fee_enabled}
           allowSubscription={contract.membership_allow_subscription}
+          memberPricingMode={contract.member_booking_pricing_mode}
+          memberPricingValue={contract.member_booking_pricing_value}
           version={contract.version}
           updatedAt={contract.updated_at}
         />

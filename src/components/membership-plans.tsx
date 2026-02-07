@@ -20,6 +20,7 @@ export function MembershipPlans({
   ctaLabel?: string
 }) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const defaultFeatures = ["Kostenlos spielen", "Bevorzugte Buchung"]
 
   const handleSubscribe = async (planId: string, priceId: string) => {
     setLoadingId(planId)
@@ -45,7 +46,14 @@ export function MembershipPlans({
       )}
 
       <div className="mt-8 grid md:grid-cols-3 gap-6">
-        {plans.map((plan) => (
+        {plans.map((plan) => {
+          const featuresRaw =
+            typeof plan.features === "string"
+              ? plan.features.split(/\r?\n/).map((f: string) => f.trim()).filter(Boolean)
+              : []
+          const features = featuresRaw.length > 0 ? featuresRaw : defaultFeatures
+          const ctaText = plan.cta_label || ctaLabel
+          return (
           <Card
             key={plan.id}
             className="border-2 transition-colors relative flex flex-col hover:shadow-md"
@@ -53,32 +61,33 @@ export function MembershipPlans({
           >
             <CardHeader>
               <CardTitle>{plan.name}</CardTitle>
-              <CardDescription>Jahresbeitrag</CardDescription>
+              <CardDescription>{plan.description || "Jahresbeitrag"}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               <div className="text-3xl font-bold mb-4">
                 {plan.price}€ <span className="text-sm font-normal text-slate-500">/ Jahr</span>
               </div>
 
-              <ul className="space-y-2 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 club-primary-text" /> Kostenlos spielen
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 club-primary-text" /> Bevorzugte Buchung
-                </li>
-              </ul>
+              {features.length > 0 && (
+                <ul className="space-y-2 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
+                  {features.map((item: string, idx: number) => (
+                    <li key={`${plan.id}-feature-${idx}`} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 club-primary-text" /> {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               <Button
                 className="w-full club-primary-bg btn-press touch-44"
                 onClick={() => handleSubscribe(plan.id, plan.stripe_price_id)}
                 disabled={!!loadingId}
               >
-                {loadingId === plan.id ? <Loader2 className="animate-spin" /> : ctaLabel}
+                {loadingId === plan.id ? <Loader2 className="animate-spin" /> : ctaText}
               </Button>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
     </div>
   )
