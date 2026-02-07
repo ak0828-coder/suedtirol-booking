@@ -4,6 +4,18 @@ import PDFDocument from "pdfkit/js/pdfkit.standalone"
 
 export const runtime = "nodejs"
 
+type ContractField = { label?: string }
+
+type PdfPayload = {
+  clubName: string
+  title: string
+  body: string
+  version: number
+  updatedAt: string | null
+  slug: string
+  fields?: ContractField[]
+}
+
 async function buildPdfResponse({
   clubName,
   title,
@@ -12,80 +24,117 @@ async function buildPdfResponse({
   updatedAt,
   slug,
   fields,
-}: {
-  clubName: string
-  title: string
-  body: string
-  version: number
-  updatedAt: string | null
-  slug: string
-  fields?: { label?: string }[]
-}) {
+}: PdfPayload) {
   try {
     const buffer = await new Promise<Buffer>((resolve, reject) => {
       const doc = new PDFDocument({
         size: "A4",
-        margins: { top: 40, bottom: 40, left: 40, right: 40 },
+        margins: { top: 44, bottom: 44, left: 46, right: 46 },
       })
+
       const chunks: Buffer[] = []
       doc.on("data", (chunk) => chunks.push(chunk))
       doc.on("end", () => resolve(Buffer.concat(chunks)))
       doc.on("error", (err) => reject(err))
 
-      const pageWidth = doc.page.width
-      const margin = doc.page.margins.left
-      const contentWidth = pageWidth - margin - doc.page.margins.right
+      const { width, height, margins } = doc.page
+      const contentWidth = width - margins.left - margins.right
+      const contentLeft = margins.left
+      const contentRight = contentLeft + contentWidth
 
-      const drawRule = () => {
+      const colors = {
+        ink: "#0f172a",
+        muted: "#64748b",
+        light: "#94a3b8",
+        border: "#e2e8f0",
+        panel: "#f8fafc",
+        accent: "#0f172a",
+      }
+
+      const sectionTitle = (text: string) => {
+        doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.ink).text(text)
+        doc.moveDown(0.35)
+      }
+
+      const rule = () => {
         const y = doc.y
-        doc.moveTo(margin, y).lineTo(margin + contentWidth, y).strokeColor("#e2e8f0").lineWidth(1).stroke()
-        doc.moveDown(0.6)
+        doc.moveTo(contentLeft, y).lineTo(contentRight, y).lineWidth(1).strokeColor(colors.border).stroke()
+        doc.moveDown(0.8)
       }
 
-      doc.font("Helvetica").fontSize(9).fillColor("#64748b").text("Avaimo - Mitgliedschaft")
-      doc.moveDown(0.3)
-      doc.font("Helvetica-Bold").fontSize(22).fillColor("#0f172a").text(title)
-      doc.font("Helvetica").fontSize(12).fillColor("#475569").text(clubName)
-      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8").text(`Version ${version} - ${updatedAt || "-"}`)
-      doc.moveDown(0.8)
-      drawRule()
+      const panel = (height: number) => {
+        const y = doc.y
+        doc.roundedRect(contentLeft, y, contentWidth, height, 6).fillColor(colors.panel).fill()
+        doc.fillColor(colors.ink)
+      }
 
-      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Vereinsangaben")
-      doc.font("Helvetica").fontSize(10).fillColor("#475569")
-      doc.text("Adresse: ______________________________________________")
-      doc.text("Kontakt (E-Mail/Telefon): _____________________________")
-      doc.text("Vertreten durch: _______________________________________")
-      doc.moveDown(0.6)
-      drawRule()
+      // Header band
+      const headerHeight = 86
+      doc.rect(contentLeft, margins.top, contentWidth, headerHeight).fillColor(colors.panel).fill()
+      doc.rect(contentLeft, margins.top, 6, headerHeight).fillColor(colors.accent).fill()
 
-      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Mitgliedsdaten")
-      doc.font("Helvetica").fontSize(10).fillColor("#475569")
-      doc.text("Name: _________________________________________________")
-      doc.text("Adresse: ______________________________________________")
-      doc.text("E-Mail: _______________________________________________")
-      doc.text("Telefon: ______________________________________________")
-      doc.moveDown(0.6)
-      drawRule()
+      doc.fillColor(colors.ink)
+      doc.font("Helvetica-Bold").fontSize(22).text(title, contentLeft + 16, margins.top + 16, {
+        width: contentWidth - 32,
+      })
+      doc.font("Helvetica").fontSize(11).fillColor(colors.muted).text(clubName, contentLeft + 16, margins.top + 46)
+      doc.font("Helvetica").fontSize(9).fillColor(colors.light).text(
+        `Version ${version} • ${updatedAt || "-"}`,
+        contentLeft + 16,
+        margins.top + 64
+      )
 
+      doc.moveDown(7)
+      doc.y = margins.top + headerHeight + 18
+
+      // Club info panel
+      sectionTitle("Vereinsangaben")
+      panel(70)
+      doc.font("Helvetica").fontSize(10).fillColor(colors.muted)
+      doc.text("Adresse:", contentLeft + 16, doc.y + 12)
+      doc.text("Kontakt (E-Mail/Telefon):", contentLeft + 16, doc.y + 32)
+      doc.text("Vertreten durch:", contentLeft + 16, doc.y + 52)
+      doc.moveDown(5)
+      doc.y += 70
+      rule()
+
+      // Member info panel
+      sectionTitle("Mitgliedsdaten")
+      panel(86)
+      doc.font("Helvetica").fontSize(10).fillColor(colors.muted)
+      doc.text("Name:", contentLeft + 16, doc.y + 12)
+      doc.text("Adresse:", contentLeft + 16, doc.y + 32)
+      doc.text("E-Mail:", contentLeft + 16, doc.y + 52)
+      doc.text("Telefon:", contentLeft + 16, doc.y + 72)
+      doc.moveDown(6)
+      doc.y += 86
+      rule()
+
+      // Custom fields
       if (fields && fields.length > 0) {
-        doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Zusatzfelder")
-        doc.font("Helvetica").fontSize(10).fillColor("#475569")
-        fields.forEach((field) => {
+        sectionTitle("Zusatzangaben")
+        const rows = fields.slice(0, 6)
+        const rowHeight = 18
+        const boxHeight = 18 + rows.length * rowHeight
+        panel(boxHeight)
+        doc.font("Helvetica").fontSize(10).fillColor(colors.muted)
+        rows.forEach((field, idx) => {
           const label = (field?.label || "Feld").trim()
-          doc.text(`${label}: ____________________________________________`)
+          doc.text(`${label}:`, contentLeft + 16, doc.y + 12 + idx * rowHeight)
         })
-        doc.moveDown(0.6)
-        drawRule()
+        doc.moveDown(6)
+        doc.y += boxHeight
+        rule()
       }
 
+      // Contract content
+      sectionTitle("Vertragsinhalt")
+      doc.font("Helvetica").fontSize(11).fillColor(colors.ink)
       const paragraphs = String(body || "")
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean)
 
-      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Vertragsinhalt")
-      doc.moveDown(0.4)
-      doc.font("Helvetica").fontSize(11).fillColor("#0f172a")
       if (paragraphs.length === 0) {
         doc.text("Kein Vertragstext hinterlegt.")
       } else {
@@ -95,28 +144,28 @@ async function buildPdfResponse({
         })
       }
 
-      doc.moveDown(0.8)
-      drawRule()
-
-      doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a").text("Unterschriften")
-      const yStart = doc.y + 18
-      const colGap = 20
-      const colWidth = (contentWidth - colGap) / 2
-
-      doc.moveTo(margin, yStart).lineTo(margin + colWidth, yStart).strokeColor("#0f172a").lineWidth(0.8).stroke()
-      doc.moveTo(margin + colWidth + colGap, yStart)
-        .lineTo(margin + colWidth + colGap + colWidth, yStart)
-        .stroke()
-
-      doc.font("Helvetica").fontSize(9).fillColor("#64748b")
-      doc.text("Verein (Name/Unterschrift)", margin, yStart + 6, { width: colWidth })
-      doc.text("Mitglied (Name/Unterschrift)", margin + colWidth + colGap, yStart + 6, { width: colWidth })
-
-      doc.moveDown(3)
-      doc.font("Helvetica").fontSize(9).fillColor("#94a3b8")
-      doc.text("Ort, Datum: ____________________________________________", { align: "left" })
       doc.moveDown(0.6)
-      doc.text("Dieses Dokument wurde digital ueber Avaimo erstellt.", { align: "left" })
+      rule()
+
+      // Signatures
+      sectionTitle("Unterschriften")
+      const colGap = 18
+      const colWidth = (contentWidth - colGap) / 2
+      const y = doc.y + 8
+
+      doc.roundedRect(contentLeft, y, colWidth, 70, 6).strokeColor(colors.border).lineWidth(1).stroke()
+      doc.roundedRect(contentLeft + colWidth + colGap, y, colWidth, 70, 6).strokeColor(colors.border).lineWidth(1).stroke()
+
+      doc.font("Helvetica").fontSize(9).fillColor(colors.muted)
+      doc.text("Verein (Name/Unterschrift)", contentLeft + 12, y + 48, { width: colWidth - 24 })
+      doc.text("Mitglied (Name/Unterschrift)", contentLeft + colWidth + colGap + 12, y + 48, { width: colWidth - 24 })
+
+      doc.moveDown(5)
+      doc.y = y + 82
+      doc.font("Helvetica").fontSize(9).fillColor(colors.light)
+      doc.text("Ort, Datum: ____________________________________________")
+      doc.moveDown(0.6)
+      doc.text("Dieses Dokument wurde digital ueber Avaimo erstellt.")
 
       doc.end()
     })
@@ -199,8 +248,7 @@ export async function POST(
     typeof payload?.title === "string" && payload.title.trim()
       ? payload.title.trim()
       : club.membership_contract_title || "Mitgliedsvertrag"
-  const body =
-    typeof payload?.body === "string" ? payload.body : club.membership_contract_body || ""
+  const body = typeof payload?.body === "string" ? payload.body : club.membership_contract_body || ""
   const version =
     typeof payload?.version === "number" && payload.version > 0
       ? payload.version
