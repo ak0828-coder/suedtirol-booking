@@ -29,21 +29,20 @@ async function buildPdfResponse({
     updatedAt,
   }) as React.ReactElement<DocumentProps>
 
-  const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(buffer)
-      controller.close()
-    },
-  })
-  return new Response(stream, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename=\"${slug}-mitgliedsvertrag.pdf\"`,
-      "Cache-Control": "no-store",
-    },
-  })
+  try {
+    const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename=\"${slug}-mitgliedsvertrag.pdf\"`,
+        "Cache-Control": "no-store",
+      },
+    })
+  } catch (err) {
+    console.error("contract-pdf render failed", err)
+    return new NextResponse("PDF render failed", { status: 500 })
+  }
 }
 
 async function getClubContext(slug: string) {
