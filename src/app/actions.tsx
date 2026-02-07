@@ -479,6 +479,131 @@ export async function updateMemberStatusManual(memberId: string, clubSlug: strin
   return { success: true }
 }
 
+export async function setMemberStatusQuick(clubSlug: string, memberId: string, status: "active" | "inactive") {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const { error } = await supabaseAdmin
+    .from("club_members")
+    .update({ status })
+    .eq("id", memberId)
+    .eq("club_id", club.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/club/${clubSlug}/admin/members/${memberId}`)
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true }
+}
+
+export async function markMemberPaymentPaid(clubSlug: string, memberId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const { error } = await supabaseAdmin
+    .from("club_members")
+    .update({ payment_status: "paid_cash" })
+    .eq("id", memberId)
+    .eq("club_id", club.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/club/${clubSlug}/admin/members/${memberId}`)
+  revalidatePath(`/club/${clubSlug}/admin/members`)
+  return { success: true }
+}
+
+export async function resendMembershipContract(clubSlug: string, memberId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id, name")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) {
+    return { success: false, error: "Keine Rechte" }
+  }
+
+  const { data: member } = await supabaseAdmin
+    .from("club_members")
+    .select("user_id")
+    .eq("id", memberId)
+    .eq("club_id", club.id)
+    .single()
+
+  if (!member?.user_id) return { success: false, error: "Mitglied nicht gefunden" }
+
+  const { data: docs } = await supabaseAdmin
+    .from("member_documents")
+    .select("file_path")
+    .eq("club_id", club.id)
+    .eq("user_id", member.user_id)
+    .eq("doc_type", "contract")
+    .order("created_at", { ascending: false })
+    .limit(1)
+
+  const filePath = docs?.[0]?.file_path
+  if (!filePath) return { success: false, error: "Kein Vertrag gefunden" }
+
+  const { data: signed } = await supabaseAdmin.storage
+    .from(MEMBER_DOC_BUCKET)
+    .createSignedUrl(filePath, 60 * 60 * 24 * 7)
+
+  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(member.user_id)
+  const email = authUser?.user?.email
+  if (!email) return { success: false, error: "E-Mail nicht gefunden" }
+
+  await resend.emails.send({
+    from: "Avaimo <onboarding@resend.dev>",
+    to: [email],
+    subject: `Dein Mitgliedsvertrag – ${club.name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #0f172a;">
+        <h2>Dein Mitgliedsvertrag</h2>
+        <p>Hier kannst du deinen Vertrag erneut herunterladen.</p>
+        ${signed?.signedUrl ? `<p><a href="${signed.signedUrl}">PDF öffnen</a></p>` : ""}
+      </div>
+    `,
+  })
+
+  return { success: true }
+}
+
 // --- SUPER ADMIN ACTIONS ---
 
 export async function createClub(formData: FormData) {

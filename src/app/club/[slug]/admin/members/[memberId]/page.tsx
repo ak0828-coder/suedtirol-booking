@@ -3,6 +3,8 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { notFound } from "next/navigation"
 import { getAdminContext } from "../../_lib/get-admin-context"
 import { getMemberDocumentAuditForAdmin, getMemberDocumentsForAdmin } from "@/app/actions"
+import { MemberBookingsPanel } from "@/components/admin/member-bookings-panel"
+import { AdminMemberQuickActions } from "@/components/admin/member-quick-actions"
 import { MemberDocumentsAdmin } from "@/components/admin/member-documents-admin"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -102,25 +104,14 @@ export default async function AdminMemberDetailPage({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-3">
-        <h3 className="text-sm font-semibold text-slate-800">Buchungsübersicht</h3>
-        {bookings && bookings.length > 0 ? (
-          <div className="max-h-72 overflow-auto space-y-2 pr-1">
-            {bookings.map((b: any) => (
-              <div key={b.id} className="rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm">
-                <div className="font-medium text-slate-800">{b.courts?.name || "Platz"}</div>
-                <div className="text-xs text-slate-500">
-                  {new Date(b.start_time).toLocaleDateString("de-DE")} · {new Date(b.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} –{" "}
-                  {new Date(b.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
-                </div>
-                <div className="text-xs text-slate-500">Status: {b.status} · Zahlung: {b.payment_status}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">Keine Buchungen vorhanden.</p>
-        )}
-      </div>
+      <AdminMemberQuickActions
+        clubSlug={slug}
+        memberId={member.id}
+        memberEmail={email}
+        contractAvailable={documents.some((d) => d.doc_type === "contract")}
+      />
+
+      <MemberBookingsPanel bookings={bookings || []} />
 
       <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-3">
         <h3 className="text-sm font-semibold text-slate-800">Zahlungsverlauf</h3>
