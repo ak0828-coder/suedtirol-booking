@@ -244,11 +244,14 @@ export async function getUserRole() {
   const adminRoles = ownedClubs?.map(c => ({ role: 'club_admin', slug: c.slug, name: c.name })) || []
 
   const memberRoles = (memberships ?? [])
-    .map((m: { clubs?: { slug?: string | null; name?: string | null } | null }) => ({
-      role: 'member',
-      slug: m.clubs?.slug || '',
-      name: m.clubs?.name || ''
-    }))
+    .flatMap((m) => {
+      const clubs = Array.isArray(m.clubs) ? m.clubs : m.clubs ? [m.clubs] : []
+      return clubs.map((club) => ({
+        role: 'member',
+        slug: club?.slug || '',
+        name: club?.name || ''
+      }))
+    })
     .filter((r) => r.slug)
 
   const allRoles = [...adminRoles, ...memberRoles]
