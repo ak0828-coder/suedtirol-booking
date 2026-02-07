@@ -13,6 +13,7 @@ async function buildPdfResponse({
   version,
   updatedAt,
   slug,
+  debug,
 }: {
   clubName: string
   title: string
@@ -20,6 +21,7 @@ async function buildPdfResponse({
   version: number
   updatedAt: string | null
   slug: string
+  debug?: boolean
 }) {
   const doc = React.createElement(ContractPdfDocument, {
     clubName,
@@ -42,6 +44,11 @@ async function buildPdfResponse({
     })
   } catch (err) {
     console.error("contract-pdf render failed", err)
+    if (debug) {
+      const message =
+        err instanceof Error ? `${err.name}: ${err.message}\n${err.stack || ""}` : String(err)
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
     return new NextResponse("PDF render failed", { status: 500 })
   }
 }
@@ -92,6 +99,7 @@ export async function GET(
     version: club.membership_contract_version || 1,
     updatedAt,
     slug,
+    debug: false,
   })
 }
 
@@ -122,6 +130,8 @@ export async function POST(
       ? new Date(club.membership_contract_updated_at).toLocaleDateString("de-DE")
       : null
 
+  const debug = req.headers.get("x-debug") === "1"
+
   return buildPdfResponse({
     clubName: club.name,
     title,
@@ -129,5 +139,6 @@ export async function POST(
     version,
     updatedAt,
     slug,
+    debug,
   })
 }

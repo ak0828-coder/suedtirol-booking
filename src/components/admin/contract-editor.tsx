@@ -77,7 +77,7 @@ export function ContractEditor({
       try {
         const res = await fetch(`/api/contract-pdf/${clubSlug}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-debug": "1" },
           body: JSON.stringify({
             title: previewTitle,
             body: previewBody,
@@ -87,7 +87,8 @@ export function ContractEditor({
           signal: controller.signal,
         })
         if (!res.ok) {
-          throw new Error("Preview request failed")
+          const detail = await res.text().catch(() => "")
+          throw new Error(detail || "Preview request failed")
         }
         const blob = await res.blob()
         const nextUrl = URL.createObjectURL(blob)
@@ -98,7 +99,8 @@ export function ContractEditor({
         setPreviewUrl(nextUrl)
       } catch (err) {
         if ((err as Error)?.name === "AbortError") return
-        setPreviewError("PDF Vorschau nicht verfuegbar.")
+        const message = err instanceof Error ? err.message : "PDF Vorschau nicht verfuegbar."
+        setPreviewError(message || "PDF Vorschau nicht verfuegbar.")
       } finally {
         setPreviewLoading(false)
       }
