@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { ContractPDF } from "@/components/contract/contract-pdf"
-import { pdf } from "@react-pdf/renderer"
+import { pdf, type DocumentProps } from "@react-pdf/renderer"
 import React from "react"
 
 export const runtime = "nodejs"
@@ -38,21 +38,23 @@ export async function GET(
     ? new Date(club.membership_contract_updated_at).toLocaleDateString("de-DE")
     : null
 
-  const doc = React.createElement(ContractPDF, {
-    data: {
-      clubName: club.name,
-      clubLogoUrl: club.logo_url,
-      clubAddress: "",
-      contractTitle: club.membership_contract_title || "Mitgliedsvertrag",
-      memberName: "Max Mustermann",
-      memberAddress: "Musterstraße 1, 39100 Bozen",
-      memberEmail: "max@example.com",
-      memberPhone: "+39 123 4567",
-      contractText: club.membership_contract_body || "",
-      signedAt: updatedAt || new Date().toLocaleDateString("de-DE"),
-      signedCity: "Bozen",
-    },
-  })
+  const doc = (
+    <ContractPDF
+      data={{
+        clubName: club.name,
+        clubLogoUrl: club.logo_url,
+        clubAddress: "",
+        contractTitle: club.membership_contract_title || "Mitgliedsvertrag",
+        memberName: "Max Mustermann",
+        memberAddress: "Musterstraße 1, 39100 Bozen",
+        memberEmail: "max@example.com",
+        memberPhone: "+39 123 4567",
+        contractText: club.membership_contract_body || "",
+        signedAt: updatedAt || new Date().toLocaleDateString("de-DE"),
+        signedCity: "Bozen",
+      }}
+    />
+  ) as React.ReactElement<DocumentProps>
 
   const buffer = (await pdf(doc).toBuffer()) as unknown as Buffer
   const stream = new ReadableStream<Uint8Array>({
