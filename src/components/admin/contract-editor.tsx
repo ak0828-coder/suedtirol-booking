@@ -274,7 +274,7 @@ export function ContractEditor({
                     </div>
                     <div className="flex items-center justify-between text-xs text-slate-500">
                       <div>
-                        Platzhalter: <code>{{`{{${field.key || "feld"}}}`}}</code>
+                        Platzhalter: <code>{`{{${field.key || "feld"}}}`}</code>
                       </div>
                       <Button type="button" variant="ghost" size="sm" onClick={() => removeField(idx)}>
                         Entfernen
