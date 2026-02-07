@@ -6,16 +6,16 @@ import { getAdminContext } from "./_lib/get-admin-context"
 
 export const dynamic = "force-dynamic"
 
-const buildNavItems = (features: any) => [
-  ...(features?.admin?.overview ? [{ href: "", label: "Ubersicht" }] : []),
-  ...(features?.admin?.bookings ? [{ href: "/bookings", label: "Buchungen" }] : []),
-  ...(features?.admin?.courts ? [{ href: "/courts", label: "Platze" }] : []),
-  ...(features?.admin?.blocks ? [{ href: "/blocks", label: "Sperrzeiten" }] : []),
-  ...(features?.admin?.plans ? [{ href: "/plans", label: "Abos" }] : []),
-  ...(features?.admin?.members ? [{ href: "/members", label: "Mitglieder" }] : []),
-  ...(features?.admin?.vouchers ? [{ href: "/vouchers", label: "Gutscheine" }] : []),
-  ...(features?.admin?.settings ? [{ href: "/settings", label: "Einstellungen" }] : []),
-  ...(features?.admin?.export ? [{ href: "/export", label: "Export" }] : []),
+const navItems = [
+  { href: "", label: "Ubersicht" },
+  { href: "/bookings", label: "Buchungen" },
+  { href: "/courts", label: "Platze" },
+  { href: "/blocks", label: "Sperrzeiten" },
+  { href: "/plans", label: "Abos" },
+  { href: "/members", label: "Mitglieder" },
+  { href: "/vouchers", label: "Gutscheine" },
+  { href: "/settings", label: "Einstellungen" },
+  { href: "/export", label: "Export" },
 ]
 
 export default async function AdminLayout({
@@ -40,6 +40,18 @@ export default async function AdminLayout({
       </div>
     )
   }
+
+  const filtered = [
+    ...(features.admin.overview ? [{ href: "", label: "Ubersicht" }] : []),
+    ...(features.admin.bookings ? [{ href: "/bookings", label: "Buchungen" }] : []),
+    ...(features.admin.courts ? [{ href: "/courts", label: "Platze" }] : []),
+    ...(features.admin.blocks ? [{ href: "/blocks", label: "Sperrzeiten" }] : []),
+    ...(features.admin.plans ? [{ href: "/plans", label: "Abos" }] : []),
+    ...(features.admin.members ? [{ href: "/members", label: "Mitglieder" }] : []),
+    ...(features.admin.vouchers ? [{ href: "/vouchers", label: "Gutscheine" }] : []),
+    ...(features.admin.settings ? [{ href: "/settings", label: "Einstellungen" }] : []),
+    ...(features.admin.export ? [{ href: "/export", label: "Export" }] : []),
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-6">
@@ -86,7 +98,7 @@ export default async function AdminLayout({
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
                 Navigation
               </div>
-              <SidebarNav slug={slug} items={buildNavItems(features)} accentColor={club.primary_color} />
+              <SidebarNav slug={slug} items={filtered} accentColor={club.primary_color} />
             </div>
           </aside>
 

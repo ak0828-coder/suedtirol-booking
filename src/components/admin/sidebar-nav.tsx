@@ -10,13 +10,15 @@ export function SidebarNav({
   slug,
   items,
   accentColor,
+  basePath,
 }: {
   slug: string
   items: NavItem[]
   accentColor?: string | null
+  basePath?: string
 }) {
   const pathname = usePathname()
-  const base = `/club/${slug}/admin`
+  const base = basePath || `/club/${slug}/admin`
 
   return (
     <nav className="space-y-1">
