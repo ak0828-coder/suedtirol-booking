@@ -4861,7 +4861,9 @@ export async function exportCourseRevenueCsv(clubSlug: string, year: number, mon
     const date = new Date(p.joined_at)
     const dateStr = date.toLocaleDateString("de-DE")
     const courseTitle = p.courses?.[0]?.title || "Kurs"
-    const participantName = p.profiles ? `${p.profiles.first_name || ""} ${p.profiles.last_name || ""}`.trim() : "Teilnehmer"
+    const participantName = p.profiles?.[0]
+      ? `${p.profiles[0].first_name || ""} ${p.profiles[0].last_name || ""}`.trim()
+      : "Teilnehmer"
     let payStatus = "Unbekannt"
     if (p.payment_status === "paid_stripe") payStatus = "Online (Stripe)"
     if (p.payment_status === "paid_cash") payStatus = "Bar / Vor Ort"
