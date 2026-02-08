@@ -1848,7 +1848,10 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
   return { url: session.url }
 }
 
-export async function confirmTrainerBooking(bookingId: string) {
+export async function confirmTrainerBooking(formData: FormData) {
+  const bookingId = String(formData.get("bookingId") || "")
+  if (!bookingId) return { error: "Booking-ID fehlt" }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
@@ -1886,7 +1889,10 @@ export async function confirmTrainerBooking(bookingId: string) {
   return { success: true }
 }
 
-export async function rejectTrainerBooking(bookingId: string) {
+export async function rejectTrainerBooking(formData: FormData) {
+  const bookingId = String(formData.get("bookingId") || "")
+  if (!bookingId) return { error: "Booking-ID fehlt" }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Nicht eingeloggt" }
