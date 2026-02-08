@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { TrainerBookingCard } from "@/components/training/trainer-booking-card"
-import { CourseEnrollCard } from "@/components/training/course-enroll-card"
+import { CourseGrid } from "@/components/training/course-grid"
 
 export const dynamic = "force-dynamic"
 
@@ -91,23 +91,19 @@ export default async function TrainingPage({
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-900">Kurse & Camps</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {(courses || []).map((course: any) => (
-              <CourseEnrollCard
-                key={course.id}
-                clubSlug={slug}
-                course={{
-                  ...course,
-                  confirmed_count: counts.get(course.id) || 0,
-                  trainer_name: course.trainers ? `${course.trainers.first_name} ${course.trainers.last_name}` : "",
-                  sessions: sessionsByCourse.get(course.id) || [],
-                }}
-              />
-            ))}
-            {(courses || []).length === 0 ? (
-              <div className="text-sm text-slate-500">Aktuell sind keine Kurse veroeffentlicht.</div>
-            ) : null}
-          </div>
+          {(courses || []).length === 0 ? (
+            <div className="text-sm text-slate-500">Aktuell sind keine Kurse veroeffentlicht.</div>
+          ) : (
+            <CourseGrid
+              clubSlug={slug}
+              courses={(courses || []).map((course: any) => ({
+                ...course,
+                confirmed_count: counts.get(course.id) || 0,
+                trainer_name: course.trainers ? `${course.trainers.first_name} ${course.trainers.last_name}` : "",
+                sessions: sessionsByCourse.get(course.id) || [],
+              }))}
+            />
+          )}
         </section>
       </div>
     </div>
