@@ -4,4 +4,4 @@ ALTER TABLE public.bookings
 
 ALTER TABLE public.bookings
   ADD CONSTRAINT bookings_payment_status_check
-  CHECK (payment_status IN ('unpaid','paid_stripe','paid_cash','paid_member','internal'));
+  CHECK (payment_status IN ('unpaid','paid_stripe','paid_cash','paid_member','internal','authorized'));

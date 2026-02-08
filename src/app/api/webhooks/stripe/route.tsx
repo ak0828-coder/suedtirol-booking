@@ -244,14 +244,34 @@ export async function POST(req: Request) {
         const clubSlug = session.metadata?.clubSlug
         const amountTotal = session.amount_total ? session.amount_total / 100 : 0
         const customerEmail = session.customer_details?.email
+        const paymentIntentId = session.payment_intent
 
         if (bookingId) {
             await supabaseAdmin.from('bookings').update({
-                status: 'confirmed',
-                payment_status: 'paid_stripe',
+                status: 'pending_trainer',
+                payment_status: 'authorized',
                 price_paid: amountTotal,
-                guest_email: customerEmail || null
+                guest_email: customerEmail || null,
+                payment_intent_id: paymentIntentId || null
             }).eq('id', bookingId)
+        }
+
+        if (customerEmail) {
+            try {
+                await resend.emails.send({
+                    from: 'Suedtirol Booking <onboarding@resend.dev>',
+                    to: [customerEmail],
+                    subject: `Traineranfrage erhalten`,
+                    html: `
+                      <h2>Deine Traineranfrage ist eingegangen</h2>
+                      <p>Wir haben deine Zahlung vorautorisiert, aber noch nicht abgebucht.</p>
+                      <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu bestaetigen.</p>
+                      <p>Sobald bestaetigt, wird die Zahlung automatisch abgeschlossen. Bei Ablehnung wird die Autorisierung aufgehoben.</p>
+                    `,
+                })
+            } catch (emailError) {
+                console.error("Trainer Pending Mail Fehler:", emailError)
+            }
         }
 
         if (trainerId) {
@@ -272,14 +292,14 @@ export async function POST(req: Request) {
               }
 
               if (trainerEarnings > 0) {
-                const payoutStatus = trainer.payout_method === 'stripe_connect' ? 'paid' : 'pending'
-                await supabaseAdmin.from('trainer_payouts').insert({
-                  trainer_id: trainer.id,
-                  booking_id: bookingId || null,
-                  amount: trainerEarnings,
-                  status: payoutStatus,
-                  payout_date: payoutStatus === 'paid' ? new Date().toISOString() : null
-                })
+                if (trainer.payout_method !== 'stripe_connect') {
+                  await supabaseAdmin.from('trainer_payouts').insert({
+                    trainer_id: trainer.id,
+                    booking_id: bookingId || null,
+                    amount: trainerEarnings,
+                    status: 'pending'
+                  })
+                }
               }
             }
         }

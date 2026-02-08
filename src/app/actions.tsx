@@ -21,7 +21,7 @@ if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nich
 
 const MEMBER_DOC_BUCKET = "member-documents"
 
-type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'unpaid' | 'internal'
+type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'unpaid' | 'internal' | 'authorized'
 
 function logAction(action: string, details: Record<string, any>) {
   try {
@@ -1688,7 +1688,7 @@ export async function createTrainerCheckoutSession(
     return { success: true }
   }
 
-  let paymentIntentData: any = undefined
+  let paymentIntentData: any = { capture_method: "manual" }
   if (trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
     let trainerShare = 0
     if (trainer.salary_type === "commission") {
@@ -1699,6 +1699,7 @@ export async function createTrainerCheckoutSession(
     if (trainerShare > finalPrice) trainerShare = finalPrice
     if (trainerShare > 0) {
       paymentIntentData = {
+        capture_method: "manual",
         transfer_data: {
           destination: trainer.stripe_account_id,
           amount: Math.round(trainerShare * 100),
@@ -1845,6 +1846,80 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
   })
 
   return { url: session.url }
+}
+
+export async function confirmTrainerBooking(bookingId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: booking } = await supabaseAdmin
+    .from("bookings")
+    .select("id, club_id, payment_intent_id, status, clubs(slug)")
+    .eq("id", bookingId)
+    .single()
+  if (!booking) return { error: "Buchung nicht gefunden" }
+
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("owner_id, slug")
+    .eq("id", booking.club_id)
+    .single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { error: "Keine Berechtigung" }
+  }
+
+  if (!booking.payment_intent_id) {
+    return { error: "Keine Zahlungsautorisierung vorhanden" }
+  }
+
+  await stripe.paymentIntents.capture(booking.payment_intent_id)
+
+  await supabaseAdmin
+    .from("bookings")
+    .update({ status: "confirmed", payment_status: "paid_stripe" })
+    .eq("id", bookingId)
+
+  revalidatePath(`/club/${club.slug}/admin/trainers`)
+  return { success: true }
+}
+
+export async function rejectTrainerBooking(bookingId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: booking } = await supabaseAdmin
+    .from("bookings")
+    .select("id, club_id, payment_intent_id, status, clubs(slug)")
+    .eq("id", bookingId)
+    .single()
+  if (!booking) return { error: "Buchung nicht gefunden" }
+
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("owner_id, slug")
+    .eq("id", booking.club_id)
+    .single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { error: "Keine Berechtigung" }
+  }
+
+  if (booking.payment_intent_id) {
+    await stripe.paymentIntents.cancel(booking.payment_intent_id)
+  }
+
+  await supabaseAdmin
+    .from("bookings")
+    .update({ status: "cancelled", payment_status: "unpaid" })
+    .eq("id", bookingId)
+
+  revalidatePath(`/club/${club.slug}/admin/trainers`)
+  return { success: true }
 }
 
 export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {

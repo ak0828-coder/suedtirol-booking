@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Sora, Fraunces } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Südtirol Booking", // Habe ich mal angepasst :)
-  description: "Platzbuchung leicht gemacht",
+  title: "Avaimo",
+  description: "Die Vereinsplattform, die Verwaltung, Buchung und Finanzen automatisiert.",
 };
 
 export default function RootLayout({
@@ -24,18 +24,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // FIX: suppressHydrationWarning verhindert den Fehler mit dem Dark Mode
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="de" suppressHydrationWarning>
+      <body className={`${sora.variable} ${fraunces.variable} antialiased`}>
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
         </ThemeProvider>
       </body>
     </html>
