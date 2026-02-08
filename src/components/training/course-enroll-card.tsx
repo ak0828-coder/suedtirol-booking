@@ -70,6 +70,9 @@ export function CourseEnrollCard({
   const totalPrice = pricingMode === "per_session"
     ? (Number(course.price || 0) * selected.length)
     : Number(course.price || 0)
+  const maxParticipants = Number(course.max_participants || 0)
+  const confirmedCount = Number(course.confirmed_count || 0)
+  const isCourseFull = maxParticipants > 0 && confirmedCount >= maxParticipants
 
   const handleEnroll = () => {
     setError(null)
@@ -93,7 +96,14 @@ export function CourseEnrollCard({
   return (
     <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm space-y-3">
       <div>
-        <div className="text-lg font-semibold text-slate-900">{course.title}</div>
+        <div className="flex items-start justify-between gap-2">
+          <div className="text-lg font-semibold text-slate-900">{course.title}</div>
+          {isCourseFull ? (
+            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+              Ausgebucht
+            </span>
+          ) : null}
+        </div>
         <div className="text-sm text-slate-500">{course.description || "Kursbeschreibung"}</div>
       </div>
       <div className="text-sm text-slate-600">
@@ -284,6 +294,11 @@ export function CourseEnrollCard({
                       ? "Waehle die Termine, an denen du teilnehmen moechtest."
                       : "Dieser Kurs wird als Gesamtpaket gebucht."}
                   </div>
+                  {pricingMode === "per_session" ? (
+                    <div className="text-xs font-semibold text-slate-700 mb-2">
+                      {selected.length} von {sortedSessions.length} Terminen ausgewaehlt
+                    </div>
+                  ) : null}
 
                   {pricingMode === "per_session" ? (
                     <div className="flex items-center gap-2 mb-3">
@@ -359,7 +374,7 @@ export function CourseEnrollCard({
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-4">
+                <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-4 lg:sticky lg:top-4">
                   <div className="flex items-center justify-between text-sm">
                     <div className="text-slate-600">Ausgewaehlt</div>
                     <div className="font-semibold text-slate-900">
