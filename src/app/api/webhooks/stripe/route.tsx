@@ -407,10 +407,10 @@ export async function POST(req: Request) {
                   await resend.emails.send({
                     from: 'Avaimo <onboarding@resend.dev>',
                     to: [customerEmail],
-                    subject: `Kurs bestaetigt - ${course.title || "Kurs"}`,
+                    subject: `Kurs bestaetigt - ${course?.title || "Kurs"}`,
                     html: `
                       <h2>Deine Kursanmeldung ist bestaetigt</h2>
-                      <p>Du bist fuer den Kurs <strong>${course.title || "Kurs"}</strong> angemeldet.</p>
+                      <p>Du bist fuer den Kurs <strong>${course?.title || "Kurs"}</strong> angemeldet.</p>
                       <p>Zahlung: ${amountTotal} EUR</p>
                     `,
                   })
