@@ -62,6 +62,16 @@ export function BookingModal({
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
+  const toText = (value: any) => {
+    if (typeof value === "string") return value
+    if (value?.text) return String(value.text)
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+
   // Reset beim Schließen
   useEffect(() => {
       if(!isOpen) {
@@ -178,7 +188,7 @@ export function BookingModal({
         setIsOpen(false)
       }, 500)
     } else {
-      setMessage(result.error || "Fehler bei der Buchung.")
+      setMessage(toText(result.error || "Fehler bei der Buchung."))
     }
   }
 
@@ -232,7 +242,7 @@ export function BookingModal({
                   <AlertTriangle className="w-5 h-5" />
                   <div>
                       <div className="font-bold">Keine Buchung möglich</div>
-                      <div className="text-sm">Grund: {activeBlock.reason}</div>
+                      <div className="text-sm">Grund: {toText(activeBlock.reason)}</div>
                   </div>
               </div>
           )}
@@ -379,12 +389,12 @@ export function BookingModal({
                           if (result?.url) {
                             window.location.href = result.url
                           } else if (result?.success) {
-                            setMessage("Buchung erfolgreich gespeichert.")
-                            setTimeout(() => setIsOpen(false), 500)
-                          } else {
-                            setMessage(result?.error || "Fehler beim Checkout.")
-                            setIsBooking(false)
-                          }
+        setMessage("Buchung erfolgreich gespeichert.")
+        setTimeout(() => setIsOpen(false), 500)
+      } else {
+        setMessage(toText(result?.error || "Fehler beim Checkout."))
+        setIsBooking(false)
+      }
                         }}
                       >
                         {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
@@ -412,9 +422,9 @@ export function BookingModal({
                       disabled={isBooking}
                       onClick={async () => {
                         if (!guestName.trim() || !guestEmail.trim()) {
-                          setMessage("Bitte Name und E-Mail eingeben.")
-                          return
-                        }
+        setMessage("Bitte Name und E-Mail eingeben.")
+        return
+      }
                         setIsBooking(true)
                         const result = await createCheckoutSession(
                           courtId, 
@@ -431,12 +441,12 @@ export function BookingModal({
                         if (result?.url) {
                           window.location.href = result.url
                         } else if (result?.success) {
-                          setMessage("Buchung erfolgreich gespeichert.")
-                          setTimeout(() => setIsOpen(false), 500)
-                        } else {
-                          setMessage(result?.error || "Fehler beim Checkout.")
-                          setIsBooking(false)
-                        }
+        setMessage("Buchung erfolgreich gespeichert.")
+        setTimeout(() => setIsOpen(false), 500)
+      } else {
+        setMessage(toText(result?.error || "Fehler beim Checkout."))
+        setIsBooking(false)
+      }
                       }}
                     >
                       {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
