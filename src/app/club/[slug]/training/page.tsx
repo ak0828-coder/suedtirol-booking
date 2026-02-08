@@ -30,7 +30,7 @@ export default async function TrainingPage({
 
   const { data: courses } = await supabase
     .from("courses")
-    .select("id, title, description, price, is_published, max_participants, start_date, end_date, trainers(first_name, last_name)")
+    .select("id, title, description, price, pricing_mode, is_published, max_participants, start_date, end_date, trainers(first_name, last_name)")
     .eq("club_id", club.id)
     .eq("is_published", true)
     .order("created_at", { ascending: false })
@@ -42,6 +42,14 @@ export default async function TrainingPage({
         .select("id, course_id, start_time, end_time, courts(name)")
         .in("course_id", courseIds)
         .order("start_time", { ascending: true })
+    : { data: [] as any[] }
+
+  const sessionIds = (sessions || []).map((s: any) => s.id)
+  const { data: sessionBookings } = sessionIds.length
+    ? await supabase
+        .from("bookings")
+        .select("course_session_id, status, payment_status")
+        .in("course_session_id", sessionIds)
     : { data: [] as any[] }
 
   const { data: participants } = courseIds.length
@@ -62,6 +70,15 @@ export default async function TrainingPage({
     const list = sessionsByCourse.get(s.course_id) || []
     list.push(s)
     sessionsByCourse.set(s.course_id, list)
+  }
+
+  const bookedBySession = new Map<string, number>()
+  for (const b of sessionBookings || []) {
+    if (b.payment_status === "internal") continue
+    if (b.status === "cancelled") continue
+    const key = b.course_session_id
+    if (!key) continue
+    bookedBySession.set(key, (bookedBySession.get(key) || 0) + 1)
   }
 
   return (
@@ -100,7 +117,10 @@ export default async function TrainingPage({
                 ...course,
                 confirmed_count: counts.get(course.id) || 0,
                 trainer_name: course.trainers ? `${course.trainers.first_name} ${course.trainers.last_name}` : "",
-                sessions: sessionsByCourse.get(course.id) || [],
+                sessions: (sessionsByCourse.get(course.id) || []).map((s: any) => ({
+                  ...s,
+                  booked_count: bookedBySession.get(s.id) || 0,
+                })),
               }))}
             />
           )}

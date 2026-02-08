@@ -1,4 +1,4 @@
-import { headers } from "next/headers"
+﻿import { headers } from "next/headers"
 import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { createClient } from "@supabase/supabase-js"
@@ -10,7 +10,7 @@ import { format } from "date-fns"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// Service Role Client für Admin-Rechte im Hintergrund
+// Service Role Client fÃ¼r Admin-Rechte im Hintergrund
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (error: any) {
-    console.error("❌ Webhook Signature Error:", error.message)
+    console.error("âŒ Webhook Signature Error:", error.message)
     return new NextResponse("Webhook Error: " + error.message, { status: 400 })
   }
 
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
         // FALL A: Gast-Bestellung (Kein Account) -> User erstellen
         if (!userId && customerEmail) {
-            console.log(`👤 Erstelle neuen User für ${customerEmail}...`)
+            console.log(`ðŸ‘¤ Erstelle neuen User fÃ¼r ${customerEmail}...`)
             
             tempPassword = Math.random().toString(36).slice(-8) + "Aa1!"
             isNewUser = true
@@ -71,16 +71,16 @@ export async function POST(req: Request) {
             })
 
             if (createError) {
-                // Prüfen ob User schon existiert
+                // PrÃ¼fen ob User schon existiert
                 const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers()
                 const found = listUsers.users.find(u => u.email === customerEmail)
                 
                 if (found) {
-                    console.log("ℹ️ User existiert bereits, verknüpfe Abo.")
+                    console.log("â„¹ï¸ User existiert bereits, verknÃ¼pfe Abo.")
                     userId = found.id
                     isNewUser = false // Doch kein neuer User
                 } else {
-                    console.error("❌ User Creation Error:", createError)
+                    console.error("âŒ User Creation Error:", createError)
                     return new NextResponse("User Creation Failed", { status: 500 })
                 }
             } else {
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // FALL B: Abo in DB eintragen (Für neue UND bestehende User)
+        // FALL B: Abo in DB eintragen (FÃ¼r neue UND bestehende User)
         if (userId) {
             const validUntil = new Date()
             validUntil.setFullYear(validUntil.getFullYear() + 1)
@@ -103,17 +103,17 @@ export async function POST(req: Request) {
             }, { onConflict: 'club_id, user_id' })
 
             if(error) {
-                console.error("❌ DB Error Member Upsert:", error)
+                console.error("âŒ DB Error Member Upsert:", error)
                 return new NextResponse("DB Error", { status: 500 })
             }
 
-            // FALL C: E-Mail senden (Endlich für ALLE)
+            // FALL C: E-Mail senden (Endlich fÃ¼r ALLE)
             const { data: club } = await supabaseAdmin.from('clubs').select('name').eq('id', clubId).single()
             const clubName = club?.name || 'Verein'
 
             try {
                 if (isNewUser) {
-                    // 1. Mail für NEUE User (mit Passwort)
+                    // 1. Mail fÃ¼r NEUE User (mit Passwort)
                     await resend.emails.send({
                         from: 'Suedtirol Booking <onboarding@resend.dev>',
                         to: [customerEmail],
@@ -125,25 +125,25 @@ export async function POST(req: Request) {
                             loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/login`}
                         />
                     })
-                    console.log("📧 Willkommens-Mail (neu) gesendet.")
+                    console.log("ðŸ“§ Willkommens-Mail (neu) gesendet.")
                 } else {
-                    // 2. Mail für BESTEHENDE User (Bestätigung)
+                    // 2. Mail fÃ¼r BESTEHENDE User (BestÃ¤tigung)
                     await resend.emails.send({
                         from: 'Suedtirol Booking <onboarding@resend.dev>',
                         to: [customerEmail],
                         subject: `Deine Mitgliedschaft im ${clubName} ist aktiv!`,
                         html: `
                           <h1>Hallo!</h1>
-                          <p>Vielen Dank. Deine Mitgliedschaft im <strong>${clubName}</strong> wurde erfolgreich aktiviert bzw. verlängert.</p>
-                          <p>Du kannst dich jetzt einloggen und Plätze buchen.</p>
+                          <p>Vielen Dank. Deine Mitgliedschaft im <strong>${clubName}</strong> wurde erfolgreich aktiviert bzw. verlÃ¤ngert.</p>
+                          <p>Du kannst dich jetzt einloggen und PlÃ¤tze buchen.</p>
                           <a href="${process.env.NEXT_PUBLIC_BASE_URL}/login">Zum Login</a>
                         `
                     })
-                    console.log("📧 Bestätigungs-Mail (bestand) gesendet.")
+                    console.log("ðŸ“§ BestÃ¤tigungs-Mail (bestand) gesendet.")
                 }
             } catch (emailError) {
-                console.error("❌ Fehler beim Senden der Mail:", emailError)
-                // Wir werfen hier keinen 500er, damit der Webhook für Stripe trotzdem als "erfolgreich" gilt (DB Eintrag war ja ok)
+                console.error("âŒ Fehler beim Senden der Mail:", emailError)
+                // Wir werfen hier keinen 500er, damit der Webhook fÃ¼r Stripe trotzdem als "erfolgreich" gilt (DB Eintrag war ja ok)
             }
         }
     }
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
                 user_id: userId || null
             }).eq('id', bookingId)
             
-            console.log(`✅ Stripe Buchung aktualisiert: ${amountTotal}€ für ${time} Uhr`)
+            console.log(`âœ… Stripe Buchung aktualisiert: ${amountTotal}â‚¬ fÃ¼r ${time} Uhr`)
 
             // BUCHUNGSMAIL AN KUNDEN
             if (customerEmail) {
@@ -212,9 +212,9 @@ export async function POST(req: Request) {
                             orderId={orderId}
                         />,
                     })
-                    console.log("📧 Buchungs-Mail (Stripe) gesendet.")
+                    console.log("ðŸ“§ Buchungs-Mail (Stripe) gesendet.")
                 } catch (emailError) {
-                    console.error("❌ Buchungs-Mail Fehler:", emailError)
+                    console.error("âŒ Buchungs-Mail Fehler:", emailError)
                 }
             }
         } else if (club && courtId) {
@@ -358,10 +358,27 @@ export async function POST(req: Request) {
       if (session.metadata?.type === "course_enrollment") {
           const participantId = session.metadata?.participantId
           const courseId = session.metadata?.courseId
+          const userId = session.metadata?.userId
+          const pricingMode = session.metadata?.pricingMode || "full_course"
+          const bookingIdsRaw = session.metadata?.bookingIds || ""
+          const sessionIdsRaw = session.metadata?.sessionIds || ""
           const amountTotal = session.amount_total ? session.amount_total / 100 : 0
           const customerEmail = session.customer_details?.email
 
-          if (participantId) {
+          if (pricingMode === "per_session") {
+              const bookingIds = bookingIdsRaw.split(",").filter(Boolean)
+              if (bookingIds.length > 0) {
+                  await supabaseAdmin.from('bookings')
+                    .update({ status: 'confirmed', payment_status: 'paid_stripe', payment_intent_id: session.payment_intent || null })
+                    .in('id', bookingIds)
+              }
+              if (courseId && userId) {
+                  await supabaseAdmin.from('course_participants')
+                    .update({ payment_status: 'paid_stripe' })
+                    .eq('course_id', courseId)
+                    .eq('user_id', userId)
+              }
+          } else if (participantId) {
               await supabaseAdmin.from('course_participants')
                 .update({ payment_status: 'paid_stripe' })
                 .eq('id', participantId)
@@ -403,6 +420,19 @@ export async function POST(req: Request) {
               }
 
               if (customerEmail) {
+                let sessionsHtml = ""
+                if (pricingMode === "per_session" && sessionIdsRaw) {
+                  const ids = sessionIdsRaw.split(",").filter(Boolean)
+                  const { data: sessionRows } = await supabaseAdmin
+                    .from("course_sessions")
+                    .select("start_time, end_time")
+                    .in("id", ids)
+                  if (sessionRows && sessionRows.length > 0) {
+                    sessionsHtml = sessionRows
+                      .map((s: any) => new Date(s.start_time).toLocaleString("de-DE"))
+                      .join("<br/>")
+                  }
+                }
                 try {
                   await resend.emails.send({
                     from: 'Avaimo <onboarding@resend.dev>',
@@ -411,6 +441,7 @@ export async function POST(req: Request) {
                     html: `
                       <h2>Deine Kursanmeldung ist bestaetigt</h2>
                       <p>Du bist fuer den Kurs <strong>${course?.title || "Kurs"}</strong> angemeldet.</p>
+                      ${sessionsHtml ? `<p><strong>Termine:</strong><br/>${sessionsHtml}</p>` : ""}
                       <p>Zahlung: ${amountTotal} EUR</p>
                     `,
                   })
@@ -441,7 +472,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // 2. ABO ERFOLGREICH VERLÄNGERT
+  // 2. ABO ERFOLGREICH VERLÃ„NGERT
   if (event.type === "invoice.payment_succeeded") {
       const subscriptionId = session.subscription
       
@@ -461,7 +492,7 @@ export async function POST(req: Request) {
               status: 'active',
               valid_until: baseDate.toISOString()
           }).eq('id', member.id)
-          console.log("🔄 Abo Datenbank verlängert.")
+          console.log("ðŸ”„ Abo Datenbank verlÃ¤ngert.")
       }
   }
 
@@ -469,16 +500,23 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.expired") {
       const expired = event.data.object as any
       const bookingId = expired.metadata?.bookingId
+      const bookingIds = String(expired.metadata?.bookingIds || "")
+        .split(",")
+        .filter(Boolean)
       if (bookingId) {
           await supabaseAdmin.from('bookings').delete().eq('id', bookingId)
-          console.log(`🧹 Awaiting-Payment Buchung gelöscht: ${bookingId}`)
+          console.log(`ðŸ§¹ Awaiting-Payment Buchung gelÃ¶scht: ${bookingId}`)
+      }
+      if (bookingIds.length > 0) {
+          await supabaseAdmin.from('bookings').delete().in('id', bookingIds)
+          console.log(`ðŸ§¹ Awaiting-Payment Buchungen geloescht: ${bookingIds.join(",")}`)
       }
   }
 
   // 3. ZAHLUNG FEHLGESCHLAGEN
   if (event.type === "invoice.payment_failed") {
       const subscriptionId = session.subscription
-      console.log(`❌ Abo Zahlung fehlgeschlagen: ${subscriptionId}`)
+      console.log(`âŒ Abo Zahlung fehlgeschlagen: ${subscriptionId}`)
       await supabaseAdmin.from('club_members').update({
           status: 'expired' 
       }).eq('stripe_subscription_id', subscriptionId)
@@ -486,6 +524,7 @@ export async function POST(req: Request) {
 
   return new NextResponse(null, { status: 200 })
 }
+
 
 
 

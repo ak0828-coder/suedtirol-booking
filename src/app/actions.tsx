@@ -1358,19 +1358,20 @@ export async function createCourseWithSessions(formData: FormData): Promise<{ su
   }
 
   const supabaseAdmin = getAdminClient()
-  const { data: course, error: courseError } = await supabaseAdmin
-    .from("courses")
-    .insert({
-      club_id: club!.id,
-      trainer_id: String(formData.get("trainerId") || "") || null,
-      title,
-      description: String(formData.get("description") || ""),
-      price: Number(formData.get("price") || 0),
-      max_participants: Number(formData.get("maxParticipants") || 8),
-      start_date: formData.get("startDate") ? String(formData.get("startDate")) : null,
-      end_date: formData.get("endDate") ? String(formData.get("endDate")) : null,
-      is_published: formData.get("isPublished") === "on",
-    })
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from("courses")
+      .insert({
+        club_id: club!.id,
+        trainer_id: String(formData.get("trainerId") || "") || null,
+        title,
+        description: String(formData.get("description") || ""),
+        price: Number(formData.get("price") || 0),
+        pricing_mode: String(formData.get("pricingMode") || "full_course"),
+        max_participants: Number(formData.get("maxParticipants") || 8),
+        start_date: formData.get("startDate") ? String(formData.get("startDate")) : null,
+        end_date: formData.get("endDate") ? String(formData.get("endDate")) : null,
+        is_published: formData.get("isPublished") === "on",
+      })
     .select()
     .single()
   if (courseError || !course) return { error: courseError?.message || "Kurs konnte nicht erstellt werden" }
@@ -1454,18 +1455,19 @@ export async function updateCourseWithSessions(formData: FormData): Promise<{ su
 
   const supabaseAdmin = getAdminClient()
 
-  const { error: updateError } = await supabaseAdmin
-    .from("courses")
-    .update({
-      trainer_id: String(formData.get("trainerId") || "") || null,
-      title,
-      description: String(formData.get("description") || ""),
-      price: Number(formData.get("price") || 0),
-      max_participants: Number(formData.get("maxParticipants") || 8),
-      start_date: formData.get("startDate") ? String(formData.get("startDate")) : null,
-      end_date: formData.get("endDate") ? String(formData.get("endDate")) : null,
-      is_published: formData.get("isPublished") === "on",
-    })
+    const { error: updateError } = await supabaseAdmin
+      .from("courses")
+      .update({
+        trainer_id: String(formData.get("trainerId") || "") || null,
+        title,
+        description: String(formData.get("description") || ""),
+        price: Number(formData.get("price") || 0),
+        pricing_mode: String(formData.get("pricingMode") || "full_course"),
+        max_participants: Number(formData.get("maxParticipants") || 8),
+        start_date: formData.get("startDate") ? String(formData.get("startDate")) : null,
+        end_date: formData.get("endDate") ? String(formData.get("endDate")) : null,
+        is_published: formData.get("isPublished") === "on",
+      })
     .eq("id", courseId)
     .eq("club_id", club!.id)
 
@@ -1953,7 +1955,11 @@ export async function exportCourseParticipantsCsv(courseId: string) {
   return { url: session.url }
 }
 
-export async function createCourseCheckoutSession(clubSlug: string, courseId: string) {
+export async function createCourseCheckoutSession(
+  clubSlug: string,
+  courseId: string,
+  sessionIds?: string[]
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Bitte einloggen" }
@@ -1973,6 +1979,183 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
     .single()
   if (!course) return { error: "Kurs nicht gefunden" }
 
+  const pricingMode = course.pricing_mode || "full_course"
+  const supabaseAdmin = getAdminClient()
+
+  if (pricingMode === "per_session") {
+    const selected = Array.isArray(sessionIds) ? sessionIds.filter(Boolean) : []
+    if (selected.length === 0) return { error: "Bitte mindestens einen Termin waehlen." }
+
+    const { data: sessionRows } = await supabase
+      .from("course_sessions")
+      .select("id, course_id, start_time, end_time, court_id")
+      .in("id", selected)
+      .eq("course_id", courseId)
+
+    if (!sessionRows || sessionRows.length !== selected.length) {
+      return { error: "Ausgewaehlte Termine sind ungueltig." }
+    }
+
+    const { data: existingBookings } = await supabase
+      .from("bookings")
+      .select("id, course_session_id")
+      .eq("user_id", user.id)
+      .in("course_session_id", selected)
+      .neq("status", "cancelled")
+    if (existingBookings && existingBookings.length > 0) {
+      return { error: "Du bist bereits fuer einen der Termine angemeldet." }
+    }
+
+    const { data: sessionBookings } = await supabase
+      .from("bookings")
+      .select("course_session_id, status, payment_status")
+      .in("course_session_id", selected)
+
+    const counts = new Map<string, number>()
+    for (const b of sessionBookings || []) {
+      if (b.payment_status === "internal") continue
+      if (b.status === "cancelled") continue
+      const key = b.course_session_id
+      if (!key) continue
+      counts.set(key, (counts.get(key) || 0) + 1)
+    }
+
+    const max = Number(course.max_participants || 0)
+    if (max > 0) {
+      for (const s of sessionRows) {
+        const booked = counts.get(s.id) || 0
+        if (booked >= max) {
+          const dateStr = new Date(s.start_time).toLocaleDateString("de-DE")
+          return { error: `Termin ${dateStr} ist leider ausgebucht.` }
+        }
+      }
+    }
+
+    const pricePerSession = Number(course.price || 0)
+    const totalPrice = pricePerSession * selected.length
+
+    const bookingIds: string[] = []
+    for (const s of sessionRows) {
+      const { data: booking, error: bookingError } = await supabaseAdmin
+        .from("bookings")
+        .insert({
+          club_id: club.id,
+          court_id: s.court_id || null,
+          course_session_id: s.id,
+          trainer_id: course.trainer_id,
+          booking_type: "course",
+          start_time: s.start_time,
+          end_time: s.end_time,
+          status: totalPrice > 0 ? "awaiting_payment" : "confirmed",
+          payment_status: totalPrice > 0 ? "unpaid" : "paid_cash",
+          price_paid: pricePerSession,
+          guest_name: user.email || "Mitglied",
+          guest_email: user.email || null,
+          user_id: user.id,
+        })
+        .select("id")
+        .single()
+      if (bookingError || !booking) return { error: "Fehler beim Reservieren der Termine." }
+      bookingIds.push(booking.id)
+    }
+
+    const { data: existingParticipant } = await supabase
+      .from("course_participants")
+      .select("id")
+      .eq("course_id", courseId)
+      .eq("user_id", user.id)
+      .maybeSingle()
+    if (!existingParticipant) {
+      await supabaseAdmin.from("course_participants").insert({
+        course_id: courseId,
+        user_id: user.id,
+        status: "confirmed",
+        payment_status: totalPrice > 0 ? "unpaid" : "paid_cash",
+      })
+    }
+
+    if (totalPrice <= 0) {
+      if (user?.email) {
+        const list = sessionRows
+          .map((s) => new Date(s.start_time).toLocaleString("de-DE"))
+          .join("<br/>")
+        try {
+          await resend.emails.send({
+            from: "Avaimo <onboarding@resend.dev>",
+            to: [user.email],
+            subject: `Kurs bestaetigt - ${course.title}`,
+            html: `
+              <h2>Deine Kursanmeldung ist bestaetigt</h2>
+              <p>Du bist fuer den Kurs <strong>${course.title}</strong> angemeldet.</p>
+              <p><strong>Termine:</strong><br/>${list}</p>
+              <p>Verein: ${club.name}</p>
+            `,
+          })
+        } catch (emailError) {
+          console.error("Course free mail error:", emailError)
+        }
+      }
+      return { success: true }
+    }
+
+    let coursePaymentIntentData: any = undefined
+    if (course.trainer_id) {
+      const { data: trainer } = await supabase
+        .from("trainers")
+        .select("*")
+        .eq("id", course.trainer_id)
+        .single()
+      if (trainer && trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
+        let trainerShare = 0
+        if (trainer.salary_type === "commission") {
+          trainerShare = totalPrice * (Number(trainer.default_rate || 0) / 100)
+        } else if (trainer.salary_type === "hourly") {
+          trainerShare = Number(trainer.default_rate || 0)
+        }
+        if (trainerShare > totalPrice) trainerShare = totalPrice
+        if (trainerShare > 0) {
+          coursePaymentIntentData = {
+            transfer_data: {
+              destination: trainer.stripe_account_id,
+              amount: Math.round(trainerShare * 100),
+            },
+          }
+        }
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: { name: `Kurs: ${course.title}` },
+            unit_amount: Math.round(pricePerSession * 100),
+          },
+          quantity: selected.length,
+        },
+      ],
+      mode: "payment",
+      payment_intent_data: coursePaymentIntentData,
+      metadata: {
+        type: "course_enrollment",
+        courseId: course.id,
+        clubSlug,
+        userId: user.id,
+        pricingMode: "per_session",
+        bookingIds: bookingIds.join(","),
+        sessionIds: selected.join(","),
+      },
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+      customer_email: user.email || undefined,
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    })
+
+    return { url: session.url }
+  }
+
   const { count: participantCount } = await supabase
     .from("course_participants")
     .select("*", { count: "exact", head: true })
@@ -1989,7 +2172,7 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
     .maybeSingle()
   if (existing) return { error: "Du bist bereits angemeldet." }
 
-  const { data: participant, error: insertError } = await getAdminClient()
+  const { data: participant, error: insertError } = await supabaseAdmin
     .from("course_participants")
     .insert({
       course_id: courseId,
@@ -1999,27 +2182,27 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
     })
     .select("id")
     .single()
-    if (insertError) return { error: insertError.message }
+  if (insertError) return { error: insertError.message }
 
-    if (course.price <= 0) {
-      if (user?.email) {
-        try {
-          await resend.emails.send({
-            from: "Avaimo <onboarding@resend.dev>",
-            to: [user.email],
-            subject: `Kurs bestaetigt - ${course.title}`,
-            html: `
-              <h2>Deine Kursanmeldung ist bestaetigt</h2>
-              <p>Du bist fuer den Kurs <strong>${course.title}</strong> angemeldet.</p>
-              <p>Verein: ${club.name}</p>
-            `,
-          })
-        } catch (emailError) {
-          console.error("Course free mail error:", emailError)
-        }
+  if (course.price <= 0) {
+    if (user?.email) {
+      try {
+        await resend.emails.send({
+          from: "Avaimo <onboarding@resend.dev>",
+          to: [user.email],
+          subject: `Kurs bestaetigt - ${course.title}`,
+          html: `
+            <h2>Deine Kursanmeldung ist bestaetigt</h2>
+            <p>Du bist fuer den Kurs <strong>${course.title}</strong> angemeldet.</p>
+            <p>Verein: ${club.name}</p>
+          `,
+        })
+      } catch (emailError) {
+        console.error("Course free mail error:", emailError)
       }
-      return { success: true }
     }
+    return { success: true }
+  }
 
   let coursePaymentIntentData: any = undefined
   if (course.trainer_id) {
@@ -2067,6 +2250,7 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
       clubSlug,
       participantId: participant.id,
       userId: user.id,
+      pricingMode: "full_course",
     },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
@@ -4660,21 +4844,20 @@ export async function exportCourseRevenueCsv(clubSlug: string, year: number, mon
   const startDate = new Date(year, month - 1, 1)
   const endDate = new Date(year, month, 0, 23, 59, 59)
 
+  const header = ["Datum", "Kurs", "Teilnehmer", "Zahlart", "Betrag", "Status"]
+  const rows: string[] = []
+
   const { data: participants } = await supabaseAdmin
     .from("course_participants")
-    .select("joined_at, payment_status, status, courses:course_id(title, price, club_id), profiles:user_id(first_name, last_name)")
+    .select("joined_at, payment_status, status, courses:course_id(title, price, club_id, pricing_mode), profiles:user_id(first_name, last_name)")
     .eq("courses.club_id", club.id)
     .gte("joined_at", startDate.toISOString())
     .lte("joined_at", endDate.toISOString())
     .in("payment_status", ["paid_stripe", "paid_cash", "paid_member"])
     .order("joined_at", { ascending: true })
 
-  if (!participants || participants.length === 0) {
-    return { success: false, error: "Keine Kurseinnahmen in diesem Zeitraum." }
-  }
-
-  const header = ["Datum", "Kurs", "Teilnehmer", "Zahlart", "Betrag", "Status"]
-  const rows = participants.map((p: any) => {
+  for (const p of participants || []) {
+    if (p.courses?.pricing_mode === "per_session") continue
     const date = new Date(p.joined_at)
     const dateStr = date.toLocaleDateString("de-DE")
     const courseTitle = p.courses?.title || "Kurs"
@@ -4685,15 +4868,59 @@ export async function exportCourseRevenueCsv(clubSlug: string, year: number, mon
     if (p.payment_status === "paid_member") payStatus = "Mitglied (Kostenlos)"
     const amount = Number(p.courses?.price || 0)
 
-    return [
+    rows.push([
       dateStr,
       `"${courseTitle}"`,
       `"${participantName || "-"}"`,
       payStatus,
       amount.toString().replace(".", ","),
       p.status || "",
-    ].join(";")
-  })
+    ].join(";"))
+  }
+
+  const { data: courseBookings } = await supabaseAdmin
+    .from("bookings")
+    .select("course_session_id, start_time, price_paid, payment_status, status")
+    .eq("booking_type", "course")
+    .in("payment_status", ["paid_stripe", "paid_cash", "paid_member"])
+    .gte("start_time", startDate.toISOString())
+    .lte("start_time", endDate.toISOString())
+
+  const sessionIds = (courseBookings || []).map((b: any) => b.course_session_id).filter(Boolean)
+  const { data: sessionRows } = sessionIds.length
+    ? await supabaseAdmin
+        .from("course_sessions")
+        .select("id, courses:course_id(title, pricing_mode, club_id)")
+        .in("id", sessionIds)
+    : { data: [] as any[] }
+
+  const sessionCourse = new Map<string, any>()
+  for (const s of sessionRows || []) {
+    sessionCourse.set(s.id, s.courses)
+  }
+
+  for (const b of courseBookings || []) {
+    if (b.status === "cancelled") continue
+    const courseInfo = sessionCourse.get(b.course_session_id)
+    if (!courseInfo || courseInfo.club_id !== club.id) continue
+    if (courseInfo.pricing_mode !== "per_session") continue
+    let payStatus = "Unbekannt"
+    if (b.payment_status === "paid_stripe") payStatus = "Online (Stripe)"
+    if (b.payment_status === "paid_cash") payStatus = "Bar / Vor Ort"
+    if (b.payment_status === "paid_member") payStatus = "Mitglied (Kostenlos)"
+    rows.push([
+      new Date(b.start_time).toLocaleDateString("de-DE"),
+      `"${courseInfo.title || "Kurs"}"`,
+      `"Terminbuchung"`,
+      payStatus,
+      Number(b.price_paid || 0).toString().replace(".", ","),
+      b.status || "",
+    ].join(";"))
+  }
+
+  if (rows.length === 0) {
+    return { success: false, error: "Keine Kurseinnahmen in diesem Zeitraum." }
+  }
 
   const csvContent = [header.join(";"), ...rows].join("\n")
   return { success: true, csv: csvContent, filename: `kurseinnahmen_${year}_${month}.csv` }

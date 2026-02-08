@@ -18,6 +18,13 @@ export function CourseGrid({
     return (courses || []).filter((c: any) => {
       const max = Number(c.max_participants || 0)
       const confirmed = Number(c.confirmed_count || 0)
+      const pricingMode = c.pricing_mode || "full_course"
+      if (pricingMode === "per_session") {
+        const sessions = Array.isArray(c.sessions) ? c.sessions : []
+        if (sessions.length === 0) return false
+        if (!max) return true
+        return sessions.some((s: any) => Number(s.booked_count || 0) < max)
+      }
       if (!max) return true
       return confirmed < max
     })

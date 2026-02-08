@@ -33,6 +33,7 @@ export function CourseManager({
     title: "",
     trainerId: "",
     price: "",
+    pricingMode: "full_course",
     maxParticipants: "8",
     description: "",
     startDate: "",
@@ -192,6 +193,23 @@ export function CourseManager({
                   value={formValues.price}
                   onChange={(e) => setFormValues((v) => ({ ...v, price: e.target.value }))}
                 />
+                <div className="text-xs text-slate-500">
+                  {formValues.pricingMode === "per_session"
+                    ? "Preis pro Termin (Mehrfach-Auswahl multipliziert den Preis)"
+                    : "Preis fuer den gesamten Kurs"}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Abrechnung</Label>
+                <select
+                  name="pricingMode"
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  value={formValues.pricingMode}
+                  onChange={(e) => setFormValues((v) => ({ ...v, pricingMode: e.target.value }))}
+                >
+                  <option value="full_course">Gesamter Kurs (alle Termine)</option>
+                  <option value="per_session">Einzeltermine (Auswahl & pro Termin)</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label>Max. Teilnehmer</Label>
@@ -401,6 +419,7 @@ export function CourseManager({
                       title: c.title || "",
                       trainerId: c.trainer_id || "",
                       price: String(c.price ?? ""),
+                      pricingMode: c.pricing_mode || "full_course",
                       maxParticipants: String(c.max_participants ?? 8),
                       description: c.description || "",
                       startDate: c.start_date || "",
