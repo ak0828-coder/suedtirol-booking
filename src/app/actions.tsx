@@ -1273,24 +1273,24 @@ export async function getCourseSessions(courseId: string) {
   return data || []
 }
 
-export async function createCourseWithSessions(formData: FormData): Promise<void> {
+export async function createCourseWithSessions(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+  if (!user) return { error: "Nicht eingeloggt" }
 
   const clubSlug = String(formData.get("clubSlug") || "")
   const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
-  if (error) return
+  if (error) return { error }
 
   const title = String(formData.get("title") || "")
-  if (!title) return
+  if (!title) return { error: "Titel fehlt" }
 
   const sessionsRaw = String(formData.get("sessions") || "[]")
   let sessions: any[] = []
   try {
     sessions = JSON.parse(sessionsRaw)
   } catch {
-    return
+    return { error: "Sessions JSON ungultig" }
   }
 
   const supabaseAdmin = getAdminClient()
@@ -1309,7 +1309,7 @@ export async function createCourseWithSessions(formData: FormData): Promise<void
     })
     .select()
     .single()
-  if (courseError || !course) return
+  if (courseError || !course) return { error: courseError?.message || "Kurs konnte nicht erstellt werden" }
 
   for (const s of sessions) {
     const startIso = new Date(`${s.date}T${s.start}:00`).toISOString()
@@ -1325,7 +1325,9 @@ export async function createCourseWithSessions(formData: FormData): Promise<void
       })
       .select()
       .single()
-    if (sessionError || !sessionRow) return
+    if (sessionError || !sessionRow) {
+      return { error: sessionError?.message || "Session konnte nicht erstellt werden" }
+    }
 
     await supabaseAdmin.from("bookings").insert({
       club_id: club!.id,
@@ -1343,7 +1345,7 @@ export async function createCourseWithSessions(formData: FormData): Promise<void
   }
 
   revalidatePath(`/club/${clubSlug}/admin/courses`)
-  return
+  return { success: true }
 }
 
 export async function deleteCourse(clubSlug: string, courseId: string) {

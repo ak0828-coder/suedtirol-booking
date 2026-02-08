@@ -23,6 +23,7 @@ export function CourseManager({
   const [showForm, setShowForm] = useState(false)
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
   const addSession = () => {
     setSessions((prev) => [...prev, { date: "", start: "", end: "", courtId: courts[0]?.id || "" }])
@@ -47,7 +48,24 @@ export function CourseManager({
 
       {showForm ? (
         <Card className="p-6 space-y-4">
-          <form action={createCourseWithSessions} className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setError(null)
+              const formData = new FormData(e.currentTarget)
+              startTransition(async () => {
+                const res = await createCourseWithSessions(formData)
+                if (res?.error) {
+                  setError(res.error)
+                } else {
+                  setShowForm(false)
+                  setSessions([])
+                  e.currentTarget.reset()
+                }
+              })
+            }}
+          >
             <input type="hidden" name="clubSlug" value={clubSlug} />
             <input type="hidden" name="sessions" value={JSON.stringify(sessions)} readOnly />
 
@@ -129,6 +147,7 @@ export function CourseManager({
               Kurs veroeffentlichen
             </label>
 
+            {error ? <div className="text-sm text-red-600">{error}</div> : null}
             <Button type="submit" className="rounded-full">Speichern</Button>
           </form>
         </Card>
