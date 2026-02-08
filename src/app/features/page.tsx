@@ -1,0 +1,136 @@
+import { SiteHeader } from "@/components/marketing/site-header"
+import { SiteFooter } from "@/components/marketing/site-footer"
+import {
+  Calendar,
+  Users,
+  CreditCard,
+  FileSignature,
+  Sparkles,
+  BarChart3,
+  ShieldCheck,
+  Bell,
+  Target,
+} from "lucide-react"
+
+const featureBlocks = [
+  {
+    title: "Buchung & Platzverwaltung",
+    icon: Calendar,
+    bullets: [
+      "Live Kalender mit Kollisionserkennung",
+      "Sperrzeiten, Oeffnungszeiten und Sondertage",
+      "Gaeste und Mitglieder in einem Flow",
+    ],
+  },
+  {
+    title: "Mitglieder & Abos",
+    icon: Users,
+    bullets: [
+      "Individuelle Mitgliedschaftsplaene",
+      "Rabatte und kostenlose Zeiten pro Plan",
+      "Einladungen, Status und Historie",
+    ],
+  },
+  {
+    title: "Zahlungen & Mahnwesen",
+    icon: CreditCard,
+    bullets: [
+      "Stripe, Barzahlung, Gutscheine",
+      "Automatische Zahlungsstatus",
+      "Uebersicht fuer Kassierer und Vorstand",
+    ],
+  },
+  {
+    title: "Vertraege & Dokumente",
+    icon: FileSignature,
+    bullets: [
+      "Digitale Signatur und Pflichtfelder",
+      "PDF-Export und revisionssichere Ablage",
+      "Onboarding fuer neue Mitglieder",
+    ],
+  },
+  {
+    title: "Trainer & Kurse",
+    icon: Sparkles,
+    bullets: [
+      "Trainerstunden mit Platz- und Trainerabgleich",
+      "Kurse, Camps, Serien-Termine",
+      "Trainer-Abrechnung mit Payouts",
+    ],
+  },
+  {
+    title: "Reporting & Exporte",
+    icon: BarChart3,
+    bullets: [
+      "Auslastung, Einnahmen, Trends",
+      "CSV/DATEV Export fuer Steuerberater",
+      "Monatsreports fuer Vorstand",
+    ],
+  },
+]
+
+const extraBlocks = [
+  {
+    title: "Sicherheit & Rollen",
+    icon: ShieldCheck,
+    description: "Rollenbasierter Zugriff, DSGVO-konforme Datenhaltung, revisionssichere Logs.",
+  },
+  {
+    title: "Benachrichtigungen",
+    icon: Bell,
+    description: "E-Mails, Erinnerungen, automatische Updates bei Ausfaellen und Aenderungen.",
+  },
+  {
+    title: "Engagement",
+    icon: Target,
+    description: "Ranglisten, Match-Recaps und Community-Features fuer aktive Mitglieder.",
+  },
+]
+
+export default function FeaturesPage() {
+  return (
+    <div className="min-h-screen bg-[#f7f4ef] text-slate-900">
+      <SiteHeader />
+      <main className="mx-auto max-w-6xl px-6 py-12 space-y-16">
+        <section className="space-y-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Funktionen</div>
+          <h1 className="text-4xl font-semibold">Alles, was ein moderner Verein braucht.</h1>
+          <p className="text-slate-600 max-w-3xl">
+            Avaimo verbindet Buchung, Mitglieder, Zahlungen, Vertraege und Trainer in einer Plattform.
+            Modulare Features sorgen dafuer, dass jeder Verein nur das sieht, was er braucht.
+          </p>
+        </section>
+
+        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {featureBlocks.map((block) => (
+            <div key={block.title} className="rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <block.icon className="h-4 w-4" /> {block.title}
+              </div>
+              <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                {block.bullets.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-3">
+          {extraBlocks.map((block) => (
+            <div key={block.title} className="rounded-3xl border border-slate-200/60 bg-white p-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <block.icon className="h-4 w-4" /> {block.title}
+              </div>
+              <p className="mt-3 text-sm text-slate-600">{block.description}</p>
+            </div>
+          ))}
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
+  )
+}
