@@ -1501,6 +1501,54 @@ export async function markTrainerPayoutsPaid(clubSlug: string, trainerId: string
   return { success: true }
 }
 
+export async function getCourseParticipants(courseId: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("course_participants")
+    .select("id, course_id, user_id, status, payment_status, joined_at, profiles:user_id(first_name, last_name, phone)")
+    .eq("course_id", courseId)
+    .order("joined_at", { ascending: false })
+  return data || []
+}
+
+export async function updateCourseParticipantStatus(
+  courseId: string,
+  participantId: string,
+  status: "confirmed" | "cancelled" | "waitlist"
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: course } = await supabaseAdmin
+    .from("courses")
+    .select("id, club_id")
+    .eq("id", courseId)
+    .single()
+  if (!course) return { error: "Kurs nicht gefunden" }
+
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("owner_id, slug")
+    .eq("id", course.club_id)
+    .single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { error: "Keine Berechtigung" }
+  }
+
+  const { error } = await supabaseAdmin
+    .from("course_participants")
+    .update({ status })
+    .eq("id", participantId)
+    .eq("course_id", courseId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/club/${club.slug}/admin/courses`)
+  return { success: true }
+}
+
 export async function createTrainerCheckoutSession(
   clubSlug: string,
   trainerId: string,

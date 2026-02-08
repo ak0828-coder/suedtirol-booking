@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { createCourseWithSessions, deleteCourse, updateCourseWithSessions } from "@/app/actions"
+import { createCourseWithSessions, deleteCourse, updateCourseWithSessions, updateCourseParticipantStatus } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,12 +15,14 @@ export function CourseManager({
   courts,
   trainers,
   sessions: sessionRows,
+  participants,
 }: {
   clubSlug: string
   courses: any[]
   courts: any[]
   trainers: any[]
   sessions: any[]
+  participants: any[]
 }) {
   const [showForm, setShowForm] = useState(false)
   const [sessions, setSessions] = useState<SessionRow[]>([])
@@ -36,6 +38,15 @@ export function CourseManager({
     startDate: "",
     endDate: "",
     isPublished: true,
+  })
+  const [recurrence, setRecurrence] = useState({
+    enabled: false,
+    startDate: "",
+    weeks: "10",
+    weekday: "1",
+    start: "18:00",
+    end: "19:00",
+    courtId: courts[0]?.id || "",
   })
 
   const courseSessions = (courseId: string) =>
@@ -63,6 +74,30 @@ export function CourseManager({
 
   const removeSession = (idx: number) => {
     setSessions((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  const generateWeeklySessions = () => {
+    if (!recurrence.startDate) return
+    const startDate = new Date(recurrence.startDate)
+    const weeks = Math.max(1, Number(recurrence.weeks || 1))
+    const weekday = Number(recurrence.weekday)
+    const base = new Date(startDate)
+    const dayDiff = (weekday + 7 - base.getDay()) % 7
+    base.setDate(base.getDate() + dayDiff)
+
+    const generated: SessionRow[] = []
+    for (let i = 0; i < weeks; i++) {
+      const d = new Date(base)
+      d.setDate(base.getDate() + i * 7)
+      const dateStr = d.toISOString().slice(0, 10)
+      generated.push({
+        date: dateStr,
+        start: recurrence.start,
+        end: recurrence.end,
+        courtId: recurrence.courtId || courts[0]?.id || "",
+      })
+    }
+    setSessions(generated)
   }
 
   return (
@@ -181,6 +216,59 @@ export function CourseManager({
                   Termin hinzufuegen
                 </Button>
               </div>
+              <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
+                <div className="text-xs font-semibold text-slate-600 mb-2">Serien-Termine</div>
+                <div className="grid md:grid-cols-6 gap-2">
+                  <Input
+                    type="date"
+                    value={recurrence.startDate}
+                    onChange={(e) => setRecurrence((r) => ({ ...r, startDate: e.target.value }))}
+                  />
+                  <Input
+                    type="number"
+                    value={recurrence.weeks}
+                    onChange={(e) => setRecurrence((r) => ({ ...r, weeks: e.target.value }))}
+                    placeholder="Wochen"
+                  />
+                  <select
+                    className="border rounded-md px-3 py-2 text-sm"
+                    value={recurrence.weekday}
+                    onChange={(e) => setRecurrence((r) => ({ ...r, weekday: e.target.value }))}
+                  >
+                    <option value="1">Montag</option>
+                    <option value="2">Dienstag</option>
+                    <option value="3">Mittwoch</option>
+                    <option value="4">Donnerstag</option>
+                    <option value="5">Freitag</option>
+                    <option value="6">Samstag</option>
+                    <option value="0">Sonntag</option>
+                  </select>
+                  <Input
+                    type="time"
+                    value={recurrence.start}
+                    onChange={(e) => setRecurrence((r) => ({ ...r, start: e.target.value }))}
+                  />
+                  <Input
+                    type="time"
+                    value={recurrence.end}
+                    onChange={(e) => setRecurrence((r) => ({ ...r, end: e.target.value }))}
+                  />
+                  <select
+                    className="border rounded-md px-3 py-2 text-sm"
+                    value={recurrence.courtId}
+                    onChange={(e) => setRecurrence((r) => ({ ...r, courtId: e.target.value }))}
+                  >
+                    {courts.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button type="button" variant="outline" className="rounded-full mt-3" onClick={generateWeeklySessions}>
+                  Serien-Termine erzeugen
+                </Button>
+              </div>
               <div className="space-y-3">
                 {sessions.map((s, idx) => (
                   <div key={idx} className="grid md:grid-cols-5 gap-2">
@@ -208,6 +296,25 @@ export function CourseManager({
                 ) : null}
               </div>
             </div>
+
+            {sessions.length > 0 ? (
+              <div className="rounded-xl border border-slate-200/60 bg-white p-3">
+                <div className="text-xs font-semibold text-slate-600 mb-2">Kalender-Vorschau</div>
+                <div className="max-h-48 overflow-auto space-y-1 text-sm">
+                  {sessions
+                    .slice()
+                    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+                    .map((s, idx) => (
+                      <div key={idx} className="flex items-center justify-between border-b border-slate-100 py-1">
+                        <div>{s.date}</div>
+                        <div className="text-slate-500">
+                          {s.start} - {s.end}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : null}
 
             <label className="text-sm text-slate-600 flex items-center gap-2">
               <input
@@ -274,6 +381,49 @@ export function CourseManager({
             </div>
             <div className="text-xs text-slate-500">
               Trainer: {c.trainers ? `${c.trainers.first_name} ${c.trainers.last_name}` : "—"}
+            </div>
+
+            <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 space-y-2">
+              <div className="text-xs font-semibold text-slate-600">Termine</div>
+              <div className="text-xs text-slate-500">
+                {courseSessions(c.id).length} Termine
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 space-y-2">
+              <div className="text-xs font-semibold text-slate-600">Teilnehmer</div>
+              <div className="space-y-2">
+                {(participants || [])
+                  .filter((p: any) => p.course_id === c.id)
+                  .map((p: any) => {
+                    const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
+                    return (
+                      <div key={p.id} className="flex items-center justify-between text-xs">
+                        <div>
+                          {profile?.first_name || "Mitglied"} {profile?.last_name || ""}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500">{p.status}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full"
+                            onClick={() =>
+                              startTransition(async () => {
+                                await updateCourseParticipantStatus(c.id, p.id, "cancelled")
+                              })
+                            }
+                          >
+                            Entfernen
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                {(participants || []).filter((p: any) => p.course_id === c.id).length === 0 ? (
+                  <div className="text-xs text-slate-500">Noch keine Teilnehmer.</div>
+                ) : null}
+              </div>
             </div>
           </Card>
         ))}

@@ -28,6 +28,13 @@ export default async function SuperAdminCoursesPage({
         .in("course_id", courseIds)
     : { data: [] as any[] }
 
+  const { data: participants } = courseIds.length
+    ? await supabase
+        .from("course_participants")
+        .select("id, course_id, user_id, status, payment_status, joined_at, profiles:user_id(first_name, last_name, phone)")
+        .in("course_id", courseIds)
+    : { data: [] as any[] }
+
   const { data: courts } = await supabase
     .from("courts")
     .select("id, name")
@@ -66,6 +73,7 @@ export default async function SuperAdminCoursesPage({
         courts={courts || []}
         trainers={trainers || []}
         sessions={sessions || []}
+        participants={participants || []}
       />
     </>
   )
