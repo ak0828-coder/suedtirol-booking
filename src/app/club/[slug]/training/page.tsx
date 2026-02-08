@@ -30,10 +30,24 @@ export default async function TrainingPage({
 
   const { data: courses } = await supabase
     .from("courses")
-    .select("id, title, description, price, is_published")
+    .select("id, title, description, price, is_published, max_participants, start_date, end_date, trainers(first_name, last_name)")
     .eq("club_id", club.id)
     .eq("is_published", true)
     .order("created_at", { ascending: false })
+
+  const courseIds = (courses || []).map((c: any) => c.id)
+  const { data: participants } = courseIds.length
+    ? await supabase
+        .from("course_participants")
+        .select("course_id, status")
+        .in("course_id", courseIds)
+    : { data: [] as any[] }
+
+  const counts = new Map<string, number>()
+  for (const p of participants || []) {
+    if (p.status !== "confirmed") continue
+    counts.set(p.course_id, (counts.get(p.course_id) || 0) + 1)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-6">
@@ -63,8 +77,16 @@ export default async function TrainingPage({
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-900">Kurse & Camps</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {(courses || []).map((course) => (
-              <CourseEnrollCard key={course.id} clubSlug={slug} course={course} />
+            {(courses || []).map((course: any) => (
+              <CourseEnrollCard
+                key={course.id}
+                clubSlug={slug}
+                course={{
+                  ...course,
+                  confirmed_count: counts.get(course.id) || 0,
+                  trainer_name: course.trainers ? `${course.trainers.first_name} ${course.trainers.last_name}` : "",
+                }}
+              />
             ))}
             {(courses || []).length === 0 ? (
               <div className="text-sm text-slate-500">Aktuell sind keine Kurse veroeffentlicht.</div>
