@@ -1850,19 +1850,19 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
 
 export async function confirmTrainerBooking(formData: FormData) {
   const bookingId = String(formData.get("bookingId") || "")
-  if (!bookingId) return { error: "Booking-ID fehlt" }
-
+  if (!bookingId) return
+  
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "Nicht eingeloggt" }
-
+  if (!user) return
+  
   const supabaseAdmin = getAdminClient()
   const { data: booking } = await supabaseAdmin
     .from("bookings")
     .select("id, club_id, payment_intent_id, status, clubs(slug)")
     .eq("id", bookingId)
     .single()
-  if (!booking) return { error: "Buchung nicht gefunden" }
+  if (!booking) return
 
   const { data: club } = await supabaseAdmin
     .from("clubs")
@@ -1871,40 +1871,40 @@ export async function confirmTrainerBooking(formData: FormData) {
     .single()
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
   if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
-    return { error: "Keine Berechtigung" }
+    return
   }
-
+  
   if (!booking.payment_intent_id) {
-    return { error: "Keine Zahlungsautorisierung vorhanden" }
+    return
   }
-
+  
   await stripe.paymentIntents.capture(booking.payment_intent_id)
-
+  
   await supabaseAdmin
     .from("bookings")
     .update({ status: "confirmed", payment_status: "paid_stripe" })
     .eq("id", bookingId)
-
+  
   revalidatePath(`/club/${club.slug}/admin/trainers`)
-  return { success: true }
+  return
 }
 
 export async function rejectTrainerBooking(formData: FormData) {
   const bookingId = String(formData.get("bookingId") || "")
-  if (!bookingId) return { error: "Booking-ID fehlt" }
-
+  if (!bookingId) return
+  
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "Nicht eingeloggt" }
-
+  if (!user) return
+  
   const supabaseAdmin = getAdminClient()
   const { data: booking } = await supabaseAdmin
     .from("bookings")
     .select("id, club_id, payment_intent_id, status, clubs(slug)")
     .eq("id", bookingId)
     .single()
-  if (!booking) return { error: "Buchung nicht gefunden" }
-
+  if (!booking) return
+  
   const { data: club } = await supabaseAdmin
     .from("clubs")
     .select("owner_id, slug")
@@ -1912,7 +1912,7 @@ export async function rejectTrainerBooking(formData: FormData) {
     .single()
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
   if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
-    return { error: "Keine Berechtigung" }
+    return
   }
 
   if (booking.payment_intent_id) {
@@ -1923,9 +1923,9 @@ export async function rejectTrainerBooking(formData: FormData) {
     .from("bookings")
     .update({ status: "cancelled", payment_status: "unpaid" })
     .eq("id", bookingId)
-
+  
   revalidatePath(`/club/${club.slug}/admin/trainers`)
-  return { success: true }
+  return
 }
 
 export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {
