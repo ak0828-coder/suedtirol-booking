@@ -1160,7 +1160,8 @@ export async function createTrainer(formData: FormData): Promise<{ success?: boo
   const clubSlug = String(formData.get("clubSlug") || "")
   const firstName = String(formData.get("firstName") || "")
   const lastName = String(formData.get("lastName") || "")
-  if (!clubSlug || !firstName || !lastName) return { error: "Pflichtfelder fehlen" }
+  const email = String(formData.get("email") || "")
+  if (!clubSlug || !firstName || !lastName || !email) return { error: "Pflichtfelder fehlen" }
 
   const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
   if (error) return { error }
@@ -1170,14 +1171,41 @@ export async function createTrainer(formData: FormData): Promise<{ success?: boo
   const defaultRate = Number(formData.get("defaultRate") || 0)
   const payoutMethod = String(formData.get("payoutMethod") || "manual")
 
+  const availabilityRaw = String(formData.get("availability") || "[]")
+  let availability: any[] = []
+  try {
+    availability = JSON.parse(availabilityRaw)
+  } catch {
+    availability = []
+  }
+
+  const imageFile = formData.get("image") as File | null
+  let imageUrl = String(formData.get("imageUrl") || "")
+  if (imageFile && imageFile.size > 0) {
+    const fileExt = imageFile.name.split(".").pop()
+    const safeName = imageFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")
+    const fileName = `${club!.id}/trainer-${Date.now()}-${safeName}.${fileExt}`
+    const arrayBuffer = await imageFile.arrayBuffer()
+    const buffer = new Uint8Array(arrayBuffer)
+
+    const supabaseAdmin = getAdminClient()
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("trainer-photos")
+      .upload(fileName, buffer, { contentType: imageFile.type, upsert: true })
+    if (!uploadError) {
+      const { data: { publicUrl } } = supabaseAdmin.storage.from("trainer-photos").getPublicUrl(fileName)
+      imageUrl = publicUrl
+    }
+  }
+
   const { error: insertError } = await getAdminClient().from("trainers").insert({
     club_id: club!.id,
     first_name: firstName,
     last_name: lastName,
-    email: String(formData.get("email") || ""),
+    email,
     phone: String(formData.get("phone") || ""),
     bio: String(formData.get("bio") || ""),
-    image_url: String(formData.get("imageUrl") || ""),
+    image_url: imageUrl,
     hourly_rate: hourlyRate,
     salary_type: salaryType,
     default_rate: defaultRate,
@@ -1186,6 +1214,7 @@ export async function createTrainer(formData: FormData): Promise<{ success?: boo
     stripe_account_id: String(formData.get("stripeAccountId") || ""),
     include_court_fee: formData.get("includeCourtFee") === "on",
     is_active: formData.get("isActive") !== "off",
+    availability,
   })
 
   if (insertError) return { error: insertError.message }
@@ -1205,13 +1234,40 @@ export async function updateTrainer(formData: FormData) {
   const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
   if (error) return { error }
 
+  const availabilityRaw = String(formData.get("availability") || "[]")
+  let availability: any[] = []
+  try {
+    availability = JSON.parse(availabilityRaw)
+  } catch {
+    availability = []
+  }
+
+  const imageFile = formData.get("image") as File | null
+  let imageUrl = String(formData.get("imageUrl") || "")
+  if (imageFile && imageFile.size > 0) {
+    const fileExt = imageFile.name.split(".").pop()
+    const safeName = imageFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")
+    const fileName = `${club!.id}/trainer-${Date.now()}-${safeName}.${fileExt}`
+    const arrayBuffer = await imageFile.arrayBuffer()
+    const buffer = new Uint8Array(arrayBuffer)
+
+    const supabaseAdmin = getAdminClient()
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("trainer-photos")
+      .upload(fileName, buffer, { contentType: imageFile.type, upsert: true })
+    if (!uploadError) {
+      const { data: { publicUrl } } = supabaseAdmin.storage.from("trainer-photos").getPublicUrl(fileName)
+      imageUrl = publicUrl
+    }
+  }
+
   const payload: any = {
     first_name: String(formData.get("firstName") || ""),
     last_name: String(formData.get("lastName") || ""),
     email: String(formData.get("email") || ""),
     phone: String(formData.get("phone") || ""),
     bio: String(formData.get("bio") || ""),
-    image_url: String(formData.get("imageUrl") || ""),
+    image_url: imageUrl,
     hourly_rate: Number(formData.get("hourlyRate") || 0),
     salary_type: String(formData.get("salaryType") || "hourly"),
     default_rate: Number(formData.get("defaultRate") || 0),
@@ -1220,6 +1276,7 @@ export async function updateTrainer(formData: FormData) {
     stripe_account_id: String(formData.get("stripeAccountId") || ""),
     include_court_fee: formData.get("includeCourtFee") === "on",
     is_active: formData.get("isActive") !== "off",
+    availability,
   }
 
   const { error: updateError } = await getAdminClient()
@@ -1501,6 +1558,53 @@ export async function markTrainerPayoutsPaid(clubSlug: string, trainerId: string
   return { success: true }
 }
 
+export async function getClubRevenueSummary(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const supabaseAdmin = getAdminClient()
+
+  const { data: bookings } = await supabaseAdmin
+    .from("bookings")
+    .select("id, start_time, price_paid, payment_status, booking_type")
+    .eq("club_id", club!.id)
+    .eq("status", "confirmed")
+    .in("payment_status", ["paid_stripe", "paid_cash", "paid_member"])
+    .order("start_time", { ascending: false })
+
+  const bookingRows = (bookings || []).map((b: any) => ({
+    type: "Buchung",
+    title: b.booking_type === "trainer" ? "Trainerstunde" : "Platzbuchung",
+    amount: Number(b.price_paid || 0),
+    date: b.start_time,
+    status: b.payment_status,
+  }))
+
+  const { data: courseParticipants } = await supabaseAdmin
+    .from("course_participants")
+    .select("id, payment_status, joined_at, courses:course_id(title, price, club_id)")
+    .eq("courses.club_id", club!.id)
+    .order("joined_at", { ascending: false })
+
+  const courseRows = (courseParticipants || []).map((p: any) => ({
+    type: "Kurs",
+    title: p.courses?.title || "Kurs",
+    amount: Number(p.courses?.price || 0),
+    date: p.joined_at,
+    status: p.payment_status,
+  }))
+
+  const rows = [...bookingRows, ...courseRows].sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime()
+  })
+
+  const total = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0)
+  return { success: true, total, rows }
+}
+
 export async function getCourseParticipants(courseId: string) {
   const supabase = await createClient()
   const { data } = await supabase
@@ -1598,15 +1702,15 @@ export async function exportCourseParticipantsCsv(courseId: string) {
   return { success: true, csv, filename: `kurs-teilnehmer-${course.title || courseId}.csv` }
 }
 
-export async function createTrainerCheckoutSession(
-  clubSlug: string,
-  trainerId: string,
-  dateIso: string,
-  time: string,
-  durationMinutes: number,
-  guestName?: string,
-  guestEmail?: string
-) {
+  export async function createTrainerCheckoutSession(
+    clubSlug: string,
+    trainerId: string,
+    dateIso: string,
+    time: string,
+    durationMinutes: number,
+    guestName?: string,
+    guestEmail?: string
+  ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Bitte einloggen, um Trainerstunden zu buchen." }
@@ -1627,13 +1731,34 @@ export async function createTrainerCheckoutSession(
     .single()
   if (!trainer) return { error: "Trainer nicht gefunden" }
 
-  const date = new Date(dateIso)
-  const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
+    const date = new Date(dateIso)
+    const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
 
-  const { data: trainerConflicts } = await supabase
-    .from("bookings")
-    .select("id")
-    .eq("club_id", club.id)
+    const availability = Array.isArray(trainer.availability) ? trainer.availability : []
+    if (availability.length > 0) {
+      const day = startTime.getDay()
+      const toMinutes = (value: string) => {
+        const [h, m] = value.split(":").map((v) => parseInt(v, 10))
+        return h * 60 + m
+      }
+      const slotStart = startTime.getHours() * 60 + startTime.getMinutes()
+      const slotEnd = endTime.getHours() * 60 + endTime.getMinutes()
+      const daySlots = availability.filter((a: any) => Number(a.day) === day)
+      const ok = daySlots.some((a: any) => {
+        if (!a.start || !a.end) return false
+        const rangeStart = toMinutes(a.start)
+        const rangeEnd = toMinutes(a.end)
+        return slotStart >= rangeStart && slotEnd <= rangeEnd
+      })
+      if (!ok) {
+        return { error: "Trainer ist zu dieser Zeit nicht verfuegbar." }
+      }
+    }
+
+    const { data: trainerConflicts } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("club_id", club.id)
     .eq("trainer_id", trainerId)
     .lt("start_time", endTime.toISOString())
     .gt("end_time", startTime.toISOString())
@@ -1659,8 +1784,29 @@ export async function createTrainerCheckoutSession(
   const freeCourt = courts.find((c: any) => !bookedCourtIds.has(c.id))
   if (!freeCourt) return { error: "Kein freier Platz verfuegbar." }
 
-  const courtFee = trainer.include_court_fee ? Number(freeCourt.price_per_hour || 0) : 0
-  const finalPrice = Math.max(0, Number(trainer.hourly_rate || 0) + courtFee)
+    const baseCourtFee = trainer.include_court_fee ? Number(freeCourt.price_per_hour || 0) : 0
+    let courtFee = baseCourtFee
+
+    const { data: memberRow } = await supabase
+      .from("club_members")
+      .select("status")
+      .eq("club_id", club.id)
+      .eq("user_id", user.id)
+      .maybeSingle()
+    if (memberRow?.status === "active") {
+      const { data: clubPricing } = await supabase
+        .from("clubs")
+        .select("member_booking_pricing_mode, member_booking_pricing_value")
+        .eq("id", club.id)
+        .single()
+      courtFee = applyMemberPricing(
+        baseCourtFee,
+        clubPricing?.member_booking_pricing_mode,
+        clubPricing?.member_booking_pricing_value
+      )
+    }
+
+    const finalPrice = Math.max(0, Number(trainer.hourly_rate || 0) + courtFee)
 
   const { data: booking, error: bookingError } = await supabaseAdmin
     .from("bookings")
@@ -1788,9 +1934,27 @@ export async function createCourseCheckoutSession(clubSlug: string, courseId: st
     })
     .select("id")
     .single()
-  if (insertError) return { error: insertError.message }
+    if (insertError) return { error: insertError.message }
 
-  if (course.price <= 0) return { success: true }
+    if (course.price <= 0) {
+      if (user?.email) {
+        try {
+          await resend.emails.send({
+            from: "Avaimo <onboarding@resend.dev>",
+            to: [user.email],
+            subject: `Kurs bestaetigt - ${course.title}`,
+            html: `
+              <h2>Deine Kursanmeldung ist bestaetigt</h2>
+              <p>Du bist fuer den Kurs <strong>${course.title}</strong> angemeldet.</p>
+              <p>Verein: ${club.name}</p>
+            `,
+          })
+        } catch (emailError) {
+          console.error("Course free mail error:", emailError)
+        }
+      }
+      return { success: true }
+    }
 
   let coursePaymentIntentData: any = undefined
   if (course.trainer_id) {

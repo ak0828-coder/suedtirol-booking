@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 
+const dayLabels = [
+  { day: 1, label: "Mo" },
+  { day: 2, label: "Di" },
+  { day: 3, label: "Mi" },
+  { day: 4, label: "Do" },
+  { day: 5, label: "Fr" },
+  { day: 6, label: "Sa" },
+  { day: 0, label: "So" },
+]
+
 export function TrainerManager({
   clubSlug,
   trainers,
@@ -17,6 +27,9 @@ export function TrainerManager({
   const [pending, startTransition] = useTransition()
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [availability, setAvailability] = useState(
+    dayLabels.map((d) => ({ day: d.day, start: "", end: "" }))
+  )
 
   return (
     <div className="space-y-6">
@@ -47,6 +60,7 @@ export function TrainerManager({
             }}
           >
             <input type="hidden" name="clubSlug" value={clubSlug} />
+            <input type="hidden" name="availability" value={JSON.stringify(availability.filter((a) => a.start && a.end))} readOnly />
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Vorname</Label>
@@ -58,11 +72,44 @@ export function TrainerManager({
               </div>
               <div className="space-y-2">
                 <Label>E-Mail</Label>
-                <Input name="email" type="email" />
+                <Input name="email" type="email" required />
               </div>
               <div className="space-y-2">
                 <Label>Telefon</Label>
                 <Input name="phone" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Trainer Foto</Label>
+                <Input name="image" type="file" accept="image/*" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Verfuegbarkeit (Woche)</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {dayLabels.map((d, idx) => (
+                    <div key={d.day} className="flex items-center gap-2 text-sm">
+                      <div className="w-8 font-semibold text-slate-600">{d.label}</div>
+                      <Input
+                        type="time"
+                        value={availability[idx].start}
+                        onChange={(e) => {
+                          const next = [...availability]
+                          next[idx] = { ...next[idx], start: e.target.value }
+                          setAvailability(next)
+                        }}
+                      />
+                      <span className="text-xs text-slate-500">bis</span>
+                      <Input
+                        type="time"
+                        value={availability[idx].end}
+                        onChange={(e) => {
+                          const next = [...availability]
+                          next[idx] = { ...next[idx], end: e.target.value }
+                          setAvailability(next)
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Stundensatz (EUR)</Label>
@@ -133,6 +180,9 @@ export function TrainerManager({
                 Loeschen
               </Button>
             </div>
+            {t.image_url ? (
+              <img src={t.image_url} alt={t.first_name} className="w-full h-36 object-cover rounded-xl" />
+            ) : null}
             <div className="text-sm text-slate-600">
               {t.hourly_rate ? `${t.hourly_rate} EUR/h` : "Preis nach Vereinbarung"}
             </div>

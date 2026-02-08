@@ -23,7 +23,7 @@ export default async function TrainingPage({
 
   const { data: trainers } = await supabase
     .from("trainers")
-    .select("id, first_name, last_name, bio, hourly_rate")
+    .select("id, first_name, last_name, bio, hourly_rate, image_url, availability")
     .eq("club_id", club.id)
     .eq("is_active", true)
     .order("last_name")

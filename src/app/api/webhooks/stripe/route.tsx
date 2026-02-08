@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { createClient } from "@supabase/supabase-js"
 import { Resend } from 'resend'
+import crypto from "crypto"
 import { WelcomeMemberEmailTemplate } from '@/components/emails/welcome-member-template'
 import { BookingEmailTemplate } from '@/components/emails/booking-template'
 import { format } from "date-fns"
@@ -238,31 +239,79 @@ export async function POST(req: Request) {
     }
 
     // --- C) TRAINER SESSION ---
-    if (session.metadata?.type === "trainer_session") {
-        const bookingId = session.metadata?.bookingId
-        const trainerId = session.metadata?.trainerId
-        const clubSlug = session.metadata?.clubSlug
-        const amountTotal = session.amount_total ? session.amount_total / 100 : 0
-        const customerEmail = session.customer_details?.email
-        const paymentIntentId = session.payment_intent
+      if (session.metadata?.type === "trainer_session") {
+          const bookingId = session.metadata?.bookingId
+          const trainerId = session.metadata?.trainerId
+          const clubSlug = session.metadata?.clubSlug
+          const amountTotal = session.amount_total ? session.amount_total / 100 : 0
+          const customerEmail = session.customer_details?.email
+          const paymentIntentId = session.payment_intent
 
-        if (bookingId) {
-            await supabaseAdmin.from('bookings').update({
-                status: 'pending_trainer',
-                payment_status: 'authorized',
-                price_paid: amountTotal,
-                guest_email: customerEmail || null,
-                payment_intent_id: paymentIntentId || null
-            }).eq('id', bookingId)
-        }
+          if (bookingId) {
+              const token = crypto.randomBytes(24).toString("hex")
+              const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
 
-        if (customerEmail) {
-            try {
-                await resend.emails.send({
-                    from: 'Suedtirol Booking <onboarding@resend.dev>',
-                    to: [customerEmail],
-                    subject: `Traineranfrage erhalten`,
-                    html: `
+              await supabaseAdmin.from('bookings').update({
+                  status: 'pending_trainer',
+                  payment_status: 'authorized',
+                  price_paid: amountTotal,
+                  guest_email: customerEmail || null,
+                  payment_intent_id: paymentIntentId || null,
+                  trainer_action_token: token,
+                  trainer_action_expires_at: expiresAt
+              }).eq('id', bookingId)
+
+              if (trainerId) {
+                const { data: trainer } = await supabaseAdmin
+                  .from('trainers')
+                  .select('first_name, last_name, email')
+                  .eq('id', trainerId)
+                  .single()
+
+                if (trainer?.email) {
+                  const { data: bookingRow } = await supabaseAdmin
+                    .from("bookings")
+                    .select("start_time, end_time, courts(name)")
+                    .eq("id", bookingId)
+                    .single()
+                  const startText = bookingRow?.start_time
+                    ? new Date(bookingRow.start_time).toLocaleString("de-DE")
+                    : ""
+                  const courtName = bookingRow?.courts?.name || "Platz"
+                  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+                  const acceptUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=accept`
+                  const rejectUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=reject`
+                  try {
+                    await resend.emails.send({
+                      from: 'Avaimo <onboarding@resend.dev>',
+                      to: [trainer.email],
+                      subject: `Traineranfrage - ${clubSlug || ""}`,
+                      html: `
+                        <h2>Neue Traineranfrage</h2>
+                        <p>Ein Mitglied moechte eine Trainerstunde buchen.</p>
+                        <p><strong>Termin:</strong> ${startText} (${courtName})</p>
+                        <p>Bitte bestaetigen oder ablehnen:</p>
+                        <p>
+                          <a href="${acceptUrl}" style="display:inline-block;margin-right:8px;padding:10px 16px;background:#0f172a;color:#fff;border-radius:20px;text-decoration:none;">Annehmen</a>
+                          <a href="${rejectUrl}" style="display:inline-block;padding:10px 16px;background:#e2e8f0;color:#0f172a;border-radius:20px;text-decoration:none;">Ablehnen</a>
+                        </p>
+                        <p>Der Link ist 48 Stunden gueltig.</p>
+                      `,
+                    })
+                  } catch (emailError) {
+                    console.error("Trainer decision mail error:", emailError)
+                  }
+                }
+              }
+          }
+
+          if (customerEmail) {
+              try {
+                  await resend.emails.send({
+                      from: 'Suedtirol Booking <onboarding@resend.dev>',
+                      to: [customerEmail],
+                      subject: `Traineranfrage erhalten`,
+                      html: `
                       <h2>Deine Traineranfrage ist eingegangen</h2>
                       <p>Wir haben deine Zahlung vorautorisiert, aber noch nicht abgebucht.</p>
                       <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu bestaetigen.</p>
@@ -306,25 +355,26 @@ export async function POST(req: Request) {
     }
 
     // --- D) COURSE ENROLLMENT ---
-    if (session.metadata?.type === "course_enrollment") {
-        const participantId = session.metadata?.participantId
-        const courseId = session.metadata?.courseId
-        const amountTotal = session.amount_total ? session.amount_total / 100 : 0
+      if (session.metadata?.type === "course_enrollment") {
+          const participantId = session.metadata?.participantId
+          const courseId = session.metadata?.courseId
+          const amountTotal = session.amount_total ? session.amount_total / 100 : 0
+          const customerEmail = session.customer_details?.email
 
-        if (participantId) {
-            await supabaseAdmin.from('course_participants')
-              .update({ payment_status: 'paid_stripe' })
-              .eq('id', participantId)
-        }
+          if (participantId) {
+              await supabaseAdmin.from('course_participants')
+                .update({ payment_status: 'paid_stripe' })
+                .eq('id', participantId)
+          }
 
-        if (courseId) {
-            const { data: course } = await supabaseAdmin
-              .from('courses')
-              .select('id, trainer_id, price')
-              .eq('id', courseId)
-              .single()
+          if (courseId) {
+              const { data: course } = await supabaseAdmin
+                .from('courses')
+                .select('id, trainer_id, price, title')
+                .eq('id', courseId)
+                .single()
 
-            if (course?.trainer_id) {
+              if (course?.trainer_id) {
               const { data: trainer } = await supabaseAdmin
                 .from('trainers')
                 .select('*')
@@ -339,20 +389,37 @@ export async function POST(req: Request) {
                   trainerEarnings = Number(trainer.default_rate || 0)
                 }
 
-                if (trainerEarnings > 0) {
-                  const payoutStatus = trainer.payout_method === 'stripe_connect' ? 'paid' : 'pending'
-                  await supabaseAdmin.from('trainer_payouts').insert({
-                    trainer_id: trainer.id,
-                    course_id: course.id,
-                    amount: trainerEarnings,
-                    status: payoutStatus,
-                    payout_date: payoutStatus === 'paid' ? new Date().toISOString() : null
-                  })
+                  if (trainerEarnings > 0) {
+                    const payoutStatus = trainer.payout_method === 'stripe_connect' ? 'paid' : 'pending'
+                    await supabaseAdmin.from('trainer_payouts').insert({
+                      trainer_id: trainer.id,
+                      course_id: course.id,
+                      amount: trainerEarnings,
+                      status: payoutStatus,
+                      payout_date: payoutStatus === 'paid' ? new Date().toISOString() : null
+                    })
+                  }
                 }
               }
-            }
-        }
-    }
+
+              if (customerEmail) {
+                try {
+                  await resend.emails.send({
+                    from: 'Avaimo <onboarding@resend.dev>',
+                    to: [customerEmail],
+                    subject: `Kurs bestaetigt - ${course.title || "Kurs"}`,
+                    html: `
+                      <h2>Deine Kursanmeldung ist bestaetigt</h2>
+                      <p>Du bist fuer den Kurs <strong>${course.title || "Kurs"}</strong> angemeldet.</p>
+                      <p>Zahlung: ${amountTotal} EUR</p>
+                    `,
+                  })
+                } catch (emailError) {
+                  console.error("Course mail error:", emailError)
+                }
+              }
+          }
+      }
 
     // --- A2) MITGLIEDSCHAFT (EINMALZAHLUNG) ---
     if (session.metadata?.type === 'membership_one_time') {
