@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { exportBookingsCsv } from "@/app/actions"
+import { exportBookingsCsv, exportCourseRevenueCsv, exportTrainerRevenueCsv } from "@/app/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -25,6 +25,44 @@ export function ExportManager({ clubSlug }: { clubSlug: string }) {
       const link = document.createElement('a')
       link.href = url
       link.setAttribute('download', res.filename || 'export.csv')
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      alert(res.error || "Fehler beim Export")
+    }
+  }
+
+  async function handleCourseExport() {
+    setLoading(true)
+    const res = await exportCourseRevenueCsv(clubSlug, parseInt(year), parseInt(month))
+    setLoading(false)
+
+    if (res.success && res.csv) {
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', res.filename || 'kurseinnahmen.csv')
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      alert(res.error || "Fehler beim Export")
+    }
+  }
+
+  async function handleTrainerExport() {
+    setLoading(true)
+    const res = await exportTrainerRevenueCsv(clubSlug, parseInt(year), parseInt(month))
+    setLoading(false)
+
+    if (res.success && res.csv) {
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', res.filename || 'trainerabrechnungen.csv')
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -71,10 +109,20 @@ export function ExportManager({ clubSlug }: { clubSlug: string }) {
             </Select>
           </div>
 
-                    <Button onClick={handleExport} disabled={loading} className="w-full md:w-auto rounded-full">
+                    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                      <Button onClick={handleExport} disabled={loading} className="rounded-full w-full md:w-auto">
                         {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 h-4 w-4" />}
-                        CSV Herunterladen
-                    </Button>
+                        Buchungen CSV
+                      </Button>
+                      <Button onClick={handleCourseExport} disabled={loading} className="rounded-full w-full md:w-auto" variant="outline">
+                        {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 h-4 w-4" />}
+                        Kurseinnahmen CSV
+                      </Button>
+                      <Button onClick={handleTrainerExport} disabled={loading} className="rounded-full w-full md:w-auto" variant="outline">
+                        {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 h-4 w-4" />}
+                        Trainerabrechnung CSV
+                      </Button>
+                    </div>
                 </div>
             </CardContent>
         </Card>

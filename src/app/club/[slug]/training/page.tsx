@@ -36,6 +36,14 @@ export default async function TrainingPage({
     .order("created_at", { ascending: false })
 
   const courseIds = (courses || []).map((c: any) => c.id)
+  const { data: sessions } = courseIds.length
+    ? await supabase
+        .from("course_sessions")
+        .select("id, course_id, start_time, end_time, courts(name)")
+        .in("course_id", courseIds)
+        .order("start_time", { ascending: true })
+    : { data: [] as any[] }
+
   const { data: participants } = courseIds.length
     ? await supabase
         .from("course_participants")
@@ -47,6 +55,13 @@ export default async function TrainingPage({
   for (const p of participants || []) {
     if (p.status !== "confirmed") continue
     counts.set(p.course_id, (counts.get(p.course_id) || 0) + 1)
+  }
+
+  const sessionsByCourse = new Map<string, any[]>()
+  for (const s of sessions || []) {
+    const list = sessionsByCourse.get(s.course_id) || []
+    list.push(s)
+    sessionsByCourse.set(s.course_id, list)
   }
 
   return (
@@ -85,6 +100,7 @@ export default async function TrainingPage({
                   ...course,
                   confirmed_count: counts.get(course.id) || 0,
                   trainer_name: course.trainers ? `${course.trainers.first_name} ${course.trainers.last_name}` : "",
+                  sessions: sessionsByCourse.get(course.id) || [],
                 }}
               />
             ))}

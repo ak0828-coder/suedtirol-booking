@@ -4646,3 +4646,108 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
   return { success: true, csv: csvContent, filename: `buchungen_${year}_${month}.csv` }
 }
 
+export async function exportCourseRevenueCsv(clubSlug: string, year: number, month: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin.from("clubs").select("id, owner_id").eq("slug", clubSlug).single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user?.id && user?.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  const startDate = new Date(year, month - 1, 1)
+  const endDate = new Date(year, month, 0, 23, 59, 59)
+
+  const { data: participants } = await supabaseAdmin
+    .from("course_participants")
+    .select("joined_at, payment_status, status, courses:course_id(title, price, club_id), profiles:user_id(first_name, last_name)")
+    .eq("courses.club_id", club.id)
+    .gte("joined_at", startDate.toISOString())
+    .lte("joined_at", endDate.toISOString())
+    .in("payment_status", ["paid_stripe", "paid_cash", "paid_member"])
+    .order("joined_at", { ascending: true })
+
+  if (!participants || participants.length === 0) {
+    return { success: false, error: "Keine Kurseinnahmen in diesem Zeitraum." }
+  }
+
+  const header = ["Datum", "Kurs", "Teilnehmer", "Zahlart", "Betrag", "Status"]
+  const rows = participants.map((p: any) => {
+    const date = new Date(p.joined_at)
+    const dateStr = date.toLocaleDateString("de-DE")
+    const courseTitle = p.courses?.title || "Kurs"
+    const participantName = p.profiles ? `${p.profiles.first_name || ""} ${p.profiles.last_name || ""}`.trim() : "Teilnehmer"
+    let payStatus = "Unbekannt"
+    if (p.payment_status === "paid_stripe") payStatus = "Online (Stripe)"
+    if (p.payment_status === "paid_cash") payStatus = "Bar / Vor Ort"
+    if (p.payment_status === "paid_member") payStatus = "Mitglied (Kostenlos)"
+    const amount = Number(p.courses?.price || 0)
+
+    return [
+      dateStr,
+      `"${courseTitle}"`,
+      `"${participantName || "-"}"`,
+      payStatus,
+      amount.toString().replace(".", ","),
+      p.status || "",
+    ].join(";")
+  })
+
+  const csvContent = [header.join(";"), ...rows].join("\n")
+  return { success: true, csv: csvContent, filename: `kurseinnahmen_${year}_${month}.csv` }
+}
+
+export async function exportTrainerRevenueCsv(clubSlug: string, year: number, month: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin.from("clubs").select("id, owner_id").eq("slug", clubSlug).single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user?.id && user?.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  const startDate = new Date(year, month - 1, 1)
+  const endDate = new Date(year, month, 0, 23, 59, 59)
+
+  const { data: payouts } = await supabaseAdmin
+    .from("trainer_payouts")
+    .select("created_at, payout_date, amount, status, trainers(first_name, last_name), bookings(start_time), courses(title)")
+    .gte("created_at", startDate.toISOString())
+    .lte("created_at", endDate.toISOString())
+    .order("created_at", { ascending: true })
+
+  if (!payouts || payouts.length === 0) {
+    return { success: false, error: "Keine Trainerabrechnungen in diesem Zeitraum." }
+  }
+
+  const header = ["Datum", "Trainer", "Quelle", "Bezug", "Betrag", "Status", "Auszahlung"]
+  const rows = payouts.map((p: any) => {
+    const date = new Date(p.created_at)
+    const dateStr = date.toLocaleDateString("de-DE")
+    const trainerName = p.trainers ? `${p.trainers.first_name || ""} ${p.trainers.last_name || ""}`.trim() : "Trainer"
+    const isCourse = !!p.courses
+    const source = isCourse ? "Kurs" : "Trainerstunde"
+    const ref = isCourse
+      ? (p.courses?.title || "Kurs")
+      : (p.bookings?.start_time ? new Date(p.bookings.start_time).toLocaleString("de-DE") : "Trainerstunde")
+    const payoutDate = p.payout_date ? new Date(p.payout_date).toLocaleDateString("de-DE") : ""
+
+    return [
+      dateStr,
+      `"${trainerName || "-"}"`,
+      source,
+      `"${ref}"`,
+      Number(p.amount || 0).toString().replace(".", ","),
+      p.status || "",
+      payoutDate,
+    ].join(";")
+  })
+
+  const csvContent = [header.join(";"), ...rows].join("\n")
+  return { success: true, csv: csvContent, filename: `trainerabrechnungen_${year}_${month}.csv` }
+}
+
