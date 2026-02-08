@@ -20,7 +20,7 @@ export async function GET(req: Request) {
   const supabaseAdmin = getAdminClient()
   const { data: booking } = await supabaseAdmin
     .from("bookings")
-    .select("id, club_id, payment_intent_id, guest_email, status, trainer_action_expires_at, clubs(slug, name)")
+    .select("id, club_id, payment_intent_id, payment_status, guest_email, status, trainer_action_expires_at, clubs(slug, name)")
     .eq("trainer_action_token", token)
     .single()
 
@@ -46,7 +46,7 @@ export async function GET(req: Request) {
       .from("bookings")
       .update({
         status: "confirmed",
-        payment_status: "paid_stripe",
+        payment_status: booking.payment_intent_id ? "paid_stripe" : (booking.payment_status || "paid_member"),
         trainer_action_token: null,
         trainer_action_expires_at: null,
       })

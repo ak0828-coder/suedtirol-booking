@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+﻿import { createClient } from "@/lib/supabase/server"
 import { getAdminContext } from "../_lib/get-admin-context"
 import { notFound } from "next/navigation"
 import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
@@ -49,7 +49,7 @@ export default async function AdminTrainersPage({
                   {b.trainers ? `${b.trainers.first_name} ${b.trainers.last_name}` : "Trainer"}
                 </div>
                 <div className="text-xs text-slate-500">
-                  {new Date(b.start_time).toLocaleDateString("de-DE")} · {new Date(b.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} - {new Date(b.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(b.start_time).toLocaleDateString("de-DE")} - {new Date(b.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} - {new Date(b.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
                 </div>
                 <div className="text-xs text-slate-500">Kunde: {b.guest_name || "Mitglied"}</div>
               </div>
@@ -75,3 +75,4 @@ export default async function AdminTrainersPage({
     </FeatureLockWrapper>
   )
 }
+

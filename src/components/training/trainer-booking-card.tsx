@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useTransition } from "react"
 import { createTrainerCheckoutSession } from "@/app/actions"
@@ -16,6 +16,7 @@ export function TrainerBookingCard({
   const [duration, setDuration] = useState(60)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const availabilityText = Array.isArray(trainer.availability) && trainer.availability.length > 0
     ? trainer.availability
@@ -34,19 +35,25 @@ export function TrainerBookingCard({
           return `${label} ${slot.start}-${slot.end}`
         })
         .filter(Boolean)
-        .join(" · ")
+        .join(" | ")
     : ""
 
   const handleBooking = () => {
     if (!date || !time) {
       setError("Bitte Datum und Zeit waehlen.")
+      setSuccess(null)
       return
     }
     setError(null)
+    setSuccess(null)
     startTransition(async () => {
       const res = await createTrainerCheckoutSession(clubSlug, trainer.id, date, time, duration)
       if (res?.url) {
         window.location.href = res.url
+      } else if (res?.success) {
+        setSuccess("Traineranfrage gesendet. Du bekommst eine Bestaetigung per E-Mail.")
+        setDate("")
+        setTime("")
       } else if (res?.error) {
         setError(res.error)
       }
@@ -106,6 +113,7 @@ export function TrainerBookingCard({
       </div>
 
       {error ? <div className="text-xs text-red-500">{error}</div> : null}
+      {success ? <div className="text-xs text-emerald-600">{success}</div> : null}
 
       <Button className="rounded-full w-full" onClick={handleBooking} disabled={pending}>
         {pending ? "Weiter..." : "Trainer buchen"}
@@ -113,3 +121,4 @@ export function TrainerBookingCard({
     </div>
   )
 }
+

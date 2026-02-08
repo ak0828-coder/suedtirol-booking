@@ -12,6 +12,7 @@ import { format } from "date-fns"
 import { stripe } from "@/lib/stripe"
 import { pdf } from "@react-pdf/renderer"
 import { ContractPDF } from "@/components/contract/contract-pdf"
+import crypto from "crypto"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -50,6 +51,12 @@ function buildBookingTimes(date: Date, time: string, durationMinutes: number) {
   startTime.setHours(hours, minutes, 0, 0)
   const endTime = new Date(startTime.getTime() + durationMinutes * 60000)
   return { startTime, endTime }
+}
+
+function parseDateIsoLocal(dateIso: string) {
+  const [year, month, day] = dateIso.split("-").map((v) => parseInt(v, 10))
+  if (!year || !month || !day) return new Date(dateIso)
+  return new Date(year, month - 1, day)
 }
 
 // --- HELPER: ADMIN CLIENT ---
@@ -1731,8 +1738,8 @@ export async function exportCourseParticipantsCsv(courseId: string) {
     .single()
   if (!trainer) return { error: "Trainer nicht gefunden" }
 
-    const date = new Date(dateIso)
-    const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
+      const date = parseDateIsoLocal(dateIso)
+      const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
 
     const availability = Array.isArray(trainer.availability) ? trainer.availability : []
     if (availability.length > 0) {
@@ -1829,10 +1836,68 @@ export async function exportCourseParticipantsCsv(courseId: string) {
 
   if (bookingError) return { error: "Fehler beim Reservieren: " + bookingError.message }
 
-  if (finalPrice <= 0) {
-    await supabaseAdmin.from("bookings").update({ status: "confirmed" }).eq("id", booking.id)
-    return { success: true }
-  }
+    if (finalPrice <= 0) {
+      const token = crypto.randomBytes(24).toString("hex")
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      await supabaseAdmin
+        .from("bookings")
+        .update({
+          status: "pending_trainer",
+          payment_status: "paid_member",
+          trainer_action_token: token,
+          trainer_action_expires_at: expiresAt,
+        })
+        .eq("id", booking.id)
+
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+      const acceptUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=accept`
+      const rejectUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=reject`
+      const startText = startTime.toLocaleString("de-DE")
+      const courtName = freeCourt.name || "Platz"
+
+      if (trainer.email) {
+        try {
+          await resend.emails.send({
+            from: "Avaimo <onboarding@resend.dev>",
+            to: [trainer.email],
+            subject: `Traineranfrage - ${clubSlug || ""}`,
+            html: `
+              <h2>Neue Traineranfrage</h2>
+              <p>Ein Mitglied moechte eine Trainerstunde buchen.</p>
+              <p><strong>Termin:</strong> ${startText} (${courtName})</p>
+              <p>Bitte bestaetigen oder ablehnen:</p>
+              <p>
+                <a href="${acceptUrl}" style="display:inline-block;margin-right:8px;padding:10px 16px;background:#0f172a;color:#fff;border-radius:20px;text-decoration:none;">Annehmen</a>
+                <a href="${rejectUrl}" style="display:inline-block;padding:10px 16px;background:#e2e8f0;color:#0f172a;border-radius:20px;text-decoration:none;">Ablehnen</a>
+              </p>
+              <p>Der Link ist 48 Stunden gueltig.</p>
+            `,
+          })
+        } catch (emailError) {
+          console.error("Trainer decision mail error (free booking):", emailError)
+        }
+      }
+
+      if (user?.email) {
+        try {
+          await resend.emails.send({
+            from: "Suedtirol Booking <onboarding@resend.dev>",
+            to: [user.email],
+            subject: "Traineranfrage erhalten",
+            html: `
+              <h2>Deine Traineranfrage ist eingegangen</h2>
+              <p>Die Stunde wird erst nach Bestaetigung durch den Trainer final.</p>
+              <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu bestaetigen.</p>
+              <p>Bei Ablehnung wird nichts belastet.</p>
+            `,
+          })
+        } catch (emailError) {
+          console.error("Trainer Pending Mail Fehler (free booking):", emailError)
+        }
+      }
+
+      return { success: true }
+    }
 
   let paymentIntentData: any = { capture_method: "manual" }
   if (trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
