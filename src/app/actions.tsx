@@ -1549,6 +1549,55 @@ export async function updateCourseParticipantStatus(
   return { success: true }
 }
 
+export async function exportCourseParticipantsCsv(courseId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: course } = await supabaseAdmin
+    .from("courses")
+    .select("id, club_id, title")
+    .eq("id", courseId)
+    .single()
+  if (!course) return { error: "Kurs nicht gefunden" }
+
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("owner_id")
+    .eq("id", course.club_id)
+    .single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { error: "Keine Berechtigung" }
+  }
+
+  const { data: participants } = await supabaseAdmin
+    .from("course_participants")
+    .select("status, payment_status, joined_at, profiles:user_id(first_name, last_name, phone)")
+    .eq("course_id", courseId)
+    .order("joined_at", { ascending: false })
+
+  const rows = (participants || []).map((p: any) => {
+    const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
+    return [
+      profile?.first_name || "",
+      profile?.last_name || "",
+      profile?.phone || "",
+      p.status || "",
+      p.payment_status || "",
+      p.joined_at || "",
+    ]
+  })
+
+  const header = ["Vorname", "Nachname", "Telefon", "Status", "Zahlung", "Beitritt"]
+  const csv = [header, ...rows]
+    .map((line) => line.map((v) => `"${String(v ?? "").replace(/\"/g, '""')}"`).join(";"))
+    .join("\n")
+
+  return { success: true, csv, filename: `kurs-teilnehmer-${course.title || courseId}.csv` }
+}
+
 export async function createTrainerCheckoutSession(
   clubSlug: string,
   trainerId: string,

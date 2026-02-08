@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { createCourseWithSessions, deleteCourse, updateCourseWithSessions, updateCourseParticipantStatus } from "@/app/actions"
+import { createCourseWithSessions, deleteCourse, updateCourseWithSessions, updateCourseParticipantStatus, exportCourseParticipantsCsv } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -456,6 +456,29 @@ export function CourseManager({
                     </div>
                     <div className="h-2 rounded-full bg-white border border-slate-200/60 overflow-hidden">
                       <div className="h-full bg-slate-900/80" style={{ width: `${percent}%` }} />
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full text-[11px]"
+                        onClick={() =>
+                          startTransition(async () => {
+                            const res = await exportCourseParticipantsCsv(c.id)
+                            if (res?.success && res.csv) {
+                              const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8;" })
+                              const url = URL.createObjectURL(blob)
+                              const link = document.createElement("a")
+                              link.href = url
+                              link.download = res.filename || "kurs-teilnehmer.csv"
+                              link.click()
+                              URL.revokeObjectURL(url)
+                            }
+                          })
+                        }
+                      >
+                        CSV Export
+                      </Button>
                     </div>
                   </div>
                 )
