@@ -277,7 +277,7 @@ export async function POST(req: Request) {
                   const startText = bookingRow?.start_time
                     ? new Date(bookingRow.start_time).toLocaleString("de-DE")
                     : ""
-                  const courtName = bookingRow?.courts?.name || "Platz"
+                  const courtName = bookingRow?.courts?.[0]?.name || "Platz"
                   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
                   const acceptUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=accept`
                   const rejectUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=reject`
