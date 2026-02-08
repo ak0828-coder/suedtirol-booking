@@ -100,6 +100,27 @@ export function CourseManager({
     setSessions(generated)
   }
 
+  const statusLabels: Record<string, string> = {
+    confirmed: "Bestaetigt",
+    cancelled: "Storniert",
+    waitlist: "Warteliste",
+  }
+
+  const toDate = (dateStr: string) => {
+    const d = new Date(dateStr + "T00:00:00")
+    return d
+  }
+
+  const getWeekStart = (dateStr: string) => {
+    const d = toDate(dateStr)
+    const day = d.getDay()
+    const diff = (day + 6) % 7
+    d.setDate(d.getDate() - diff)
+    return d
+  }
+
+  const dayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -300,7 +321,37 @@ export function CourseManager({
             {sessions.length > 0 ? (
               <div className="rounded-xl border border-slate-200/60 bg-white p-3">
                 <div className="text-xs font-semibold text-slate-600 mb-2">Kalender-Vorschau</div>
-                <div className="max-h-48 overflow-auto space-y-1 text-sm">
+                <div className="grid grid-cols-7 gap-2 text-[11px]">
+                  {dayNames.map((d) => (
+                    <div key={d} className="text-center font-semibold text-slate-500">{d}</div>
+                  ))}
+                  {(() => {
+                    const sorted = sessions.slice().sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+                    const weekStart = getWeekStart(sorted[0].date)
+                    return Array.from({ length: 7 }).map((_, idx) => {
+                      const d = new Date(weekStart)
+                      d.setDate(weekStart.getDate() + idx)
+                      const dateStr = d.toISOString().slice(0, 10)
+                      const daySessions = sorted.filter((s) => s.date === dateStr)
+                      return (
+                        <div key={dateStr} className="rounded-lg border border-slate-200/60 bg-slate-50 p-2 min-h-[72px]">
+                          <div className="text-[10px] text-slate-500 mb-1">{dateStr.slice(5)}</div>
+                          <div className="space-y-1">
+                            {daySessions.slice(0, 3).map((s, idx2) => (
+                              <div key={idx2} className="rounded bg-white px-1 py-0.5 text-[10px] text-slate-600">
+                                {s.start}-{s.end}
+                              </div>
+                            ))}
+                            {daySessions.length > 3 ? (
+                              <div className="text-[10px] text-slate-400">+{daySessions.length - 3} mehr</div>
+                            ) : null}
+                          </div>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+                <div className="max-h-48 overflow-auto space-y-1 text-sm mt-3">
                   {sessions
                     .slice()
                     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
@@ -392,6 +443,23 @@ export function CourseManager({
 
             <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 space-y-2">
               <div className="text-xs font-semibold text-slate-600">Teilnehmer</div>
+              {(() => {
+                const list = (participants || []).filter((p: any) => p.course_id === c.id)
+                const capacity = Number(c.max_participants || 0)
+                const confirmed = list.filter((p: any) => p.status === "confirmed").length
+                const percent = capacity > 0 ? Math.min(100, Math.round((confirmed / capacity) * 100)) : 0
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>{confirmed}/{capacity} belegt</span>
+                      <span>{percent}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white border border-slate-200/60 overflow-hidden">
+                      <div className="h-full bg-slate-900/80" style={{ width: `${percent}%` }} />
+                    </div>
+                  </div>
+                )
+              })()}
               <div className="space-y-2">
                 {(participants || [])
                   .filter((p: any) => p.course_id === c.id)
@@ -403,7 +471,21 @@ export function CourseManager({
                           {profile?.first_name || "Mitglied"} {profile?.last_name || ""}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-500">{p.status}</span>
+                          <select
+                            className="border rounded-md px-2 py-1 text-xs"
+                            value={p.status}
+                            onChange={(e) =>
+                              startTransition(async () => {
+                                await updateCourseParticipantStatus(c.id, p.id, e.target.value as any)
+                              })
+                            }
+                          >
+                            {Object.keys(statusLabels).map((k) => (
+                              <option key={k} value={k}>
+                                {statusLabels[k]}
+                              </option>
+                            ))}
+                          </select>
                           <Button
                             variant="outline"
                             size="sm"
