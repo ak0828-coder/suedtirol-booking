@@ -63,6 +63,9 @@ export function CourseEnrollCard({
                 <div className="font-semibold text-slate-900">
                   {course.confirmed_count ?? 0}/{course.max_participants ?? "-"}
                 </div>
+                <div className="text-[11px] text-slate-500">
+                  Noch {Math.max(0, (course.max_participants ?? 0) - (course.confirmed_count ?? 0))} frei
+                </div>
               </div>
               <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
                 <div className="text-xs text-slate-500">Preis</div>
