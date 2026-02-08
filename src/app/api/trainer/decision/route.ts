@@ -60,7 +60,7 @@ export async function GET(req: Request) {
         html: `
           <h2>Deine Trainerstunde ist bestaetigt</h2>
           <p>Der Trainer hat die Stunde bestaetigt. Die Zahlung wurde abgeschlossen.</p>
-          <p>Verein: ${booking.clubs?.name || ""}</p>
+          <p>Verein: ${booking.clubs?.[0]?.name || ""}</p>
         `,
       })
     }
