@@ -95,7 +95,7 @@ export async function GET(req: Request) {
       html: `
         <h2>Trainerstunde abgelehnt</h2>
         <p>Der Trainer konnte die Stunde leider nicht annehmen. Es wurde nichts belastet.</p>
-        <p>Verein: ${booking.clubs?.name || ""}</p>
+        <p>Verein: ${booking.clubs?.[0]?.name || ""}</p>
       `,
     })
   }
