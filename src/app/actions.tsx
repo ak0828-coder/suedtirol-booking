@@ -1152,18 +1152,18 @@ export async function getClubTrainers(clubSlug: string) {
   return trainers || []
 }
 
-export async function createTrainer(formData: FormData): Promise<void> {
+export async function createTrainer(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+  if (!user) return { error: "Nicht eingeloggt" }
 
   const clubSlug = String(formData.get("clubSlug") || "")
   const firstName = String(formData.get("firstName") || "")
   const lastName = String(formData.get("lastName") || "")
-  if (!clubSlug || !firstName || !lastName) return
+  if (!clubSlug || !firstName || !lastName) return { error: "Pflichtfelder fehlen" }
 
   const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
-  if (error) return
+  if (error) return { error }
 
   const hourlyRate = Number(formData.get("hourlyRate") || 0)
   const salaryType = String(formData.get("salaryType") || "hourly")
@@ -1188,9 +1188,9 @@ export async function createTrainer(formData: FormData): Promise<void> {
     is_active: formData.get("isActive") !== "off",
   })
 
-  if (insertError) return
+  if (insertError) return { error: insertError.message }
   revalidatePath(`/club/${clubSlug}/admin/trainers`)
-  return
+  return { success: true }
 }
 
 export async function updateTrainer(formData: FormData) {

@@ -16,6 +16,7 @@ export function TrainerManager({
 }) {
   const [pending, startTransition] = useTransition()
   const [showForm, setShowForm] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   return (
     <div className="space-y-6">
@@ -28,7 +29,23 @@ export function TrainerManager({
 
       {showForm ? (
         <Card className="p-6 space-y-4">
-          <form action={createTrainer} className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setError(null)
+              const formData = new FormData(e.currentTarget)
+              startTransition(async () => {
+                const res = await createTrainer(formData)
+                if (res?.error) {
+                  setError(res.error)
+                } else {
+                  setShowForm(false)
+                  e.currentTarget.reset()
+                }
+              })
+            }}
+          >
             <input type="hidden" name="clubSlug" value={clubSlug} />
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -91,6 +108,7 @@ export function TrainerManager({
                 Aktiv
               </label>
             </div>
+            {error ? <div className="text-sm text-red-600">{error}</div> : null}
             <Button type="submit" className="rounded-full">Speichern</Button>
           </form>
         </Card>
