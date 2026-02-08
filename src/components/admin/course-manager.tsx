@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { createCourseWithSessions, deleteCourse } from "@/app/actions"
+import { createCourseWithSessions, deleteCourse, updateCourseWithSessions } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,16 +14,44 @@ export function CourseManager({
   courses,
   courts,
   trainers,
+  sessions: sessionRows,
 }: {
   clubSlug: string
   courses: any[]
   courts: any[]
   trainers: any[]
+  sessions: any[]
 }) {
   const [showForm, setShowForm] = useState(false)
   const [sessions, setSessions] = useState<SessionRow[]>([])
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formValues, setFormValues] = useState({
+    title: "",
+    trainerId: "",
+    price: "",
+    maxParticipants: "8",
+    description: "",
+    startDate: "",
+    endDate: "",
+    isPublished: true,
+  })
+
+  const courseSessions = (courseId: string) =>
+    (sessionRows || [])
+      .filter((s: any) => s.course_id === courseId)
+      .map((s: any) => {
+        const start = new Date(s.start_time)
+        const end = new Date(s.end_time)
+        const pad = (n: number) => String(n).padStart(2, "0")
+        return {
+          date: start.toISOString().slice(0, 10),
+          start: `${pad(start.getHours())}:${pad(start.getMinutes())}`,
+          end: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
+          courtId: s.court_id || courts[0]?.id || "",
+        } as SessionRow
+      })
 
   const addSession = () => {
     setSessions((prev) => [...prev, { date: "", start: "", end: "", courtId: courts[0]?.id || "" }])
@@ -54,13 +82,17 @@ export function CourseManager({
               e.preventDefault()
               setError(null)
               const formData = new FormData(e.currentTarget)
+              if (editingId) formData.set("courseId", editingId)
               startTransition(async () => {
-                const res = await createCourseWithSessions(formData)
+                const res = editingId
+                  ? await updateCourseWithSessions(formData)
+                  : await createCourseWithSessions(formData)
                 if (res?.error) {
                   setError(res.error)
                 } else {
                   setShowForm(false)
                   setSessions([])
+                  setEditingId(null)
                   e.currentTarget.reset()
                 }
               })
@@ -72,11 +104,21 @@ export function CourseManager({
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Titel</Label>
-                <Input name="title" required />
+                <Input
+                  name="title"
+                  required
+                  value={formValues.title}
+                  onChange={(e) => setFormValues((v) => ({ ...v, title: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Trainer</Label>
-                <select name="trainerId" className="w-full border rounded-md px-3 py-2 text-sm">
+                <select
+                  name="trainerId"
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  value={formValues.trainerId}
+                  onChange={(e) => setFormValues((v) => ({ ...v, trainerId: e.target.value }))}
+                >
                   <option value="">Ohne Trainer</option>
                   {trainers.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -87,23 +129,48 @@ export function CourseManager({
               </div>
               <div className="space-y-2">
                 <Label>Preis (EUR)</Label>
-                <Input name="price" type="number" step="0.01" />
+                <Input
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  value={formValues.price}
+                  onChange={(e) => setFormValues((v) => ({ ...v, price: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Max. Teilnehmer</Label>
-                <Input name="maxParticipants" type="number" defaultValue={8} />
+                <Input
+                  name="maxParticipants"
+                  type="number"
+                  value={formValues.maxParticipants}
+                  onChange={(e) => setFormValues((v) => ({ ...v, maxParticipants: e.target.value }))}
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>Beschreibung</Label>
-                <Input name="description" />
+                <Input
+                  name="description"
+                  value={formValues.description}
+                  onChange={(e) => setFormValues((v) => ({ ...v, description: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Startdatum</Label>
-                <Input name="startDate" type="date" />
+                <Input
+                  name="startDate"
+                  type="date"
+                  value={formValues.startDate}
+                  onChange={(e) => setFormValues((v) => ({ ...v, startDate: e.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Enddatum</Label>
-                <Input name="endDate" type="date" />
+                <Input
+                  name="endDate"
+                  type="date"
+                  value={formValues.endDate}
+                  onChange={(e) => setFormValues((v) => ({ ...v, endDate: e.target.value }))}
+                />
               </div>
             </div>
 
@@ -143,7 +210,12 @@ export function CourseManager({
             </div>
 
             <label className="text-sm text-slate-600 flex items-center gap-2">
-              <input type="checkbox" name="isPublished" defaultChecked />
+              <input
+                type="checkbox"
+                name="isPublished"
+                checked={formValues.isPublished}
+                onChange={(e) => setFormValues((v) => ({ ...v, isPublished: e.target.checked }))}
+              />
               Kurs veroeffentlichen
             </label>
 
@@ -158,19 +230,44 @@ export function CourseManager({
           <Card key={c.id} className="p-5 space-y-2">
             <div className="flex items-center justify-between">
               <div className="font-semibold text-slate-900">{c.title}</div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full"
-                disabled={pending}
-                onClick={() =>
-                  startTransition(async () => {
-                    await deleteCourse(clubSlug, c.id)
-                  })
-                }
-              >
-                Loeschen
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    setEditingId(c.id)
+                    setShowForm(true)
+                    setError(null)
+                    setFormValues({
+                      title: c.title || "",
+                      trainerId: c.trainer_id || "",
+                      price: String(c.price ?? ""),
+                      maxParticipants: String(c.max_participants ?? 8),
+                      description: c.description || "",
+                      startDate: c.start_date || "",
+                      endDate: c.end_date || "",
+                      isPublished: !!c.is_published,
+                    })
+                    setSessions(courseSessions(c.id))
+                  }}
+                >
+                  Bearbeiten
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  disabled={pending}
+                  onClick={() =>
+                    startTransition(async () => {
+                      await deleteCourse(clubSlug, c.id)
+                    })
+                  }
+                >
+                  Loeschen
+                </Button>
+              </div>
             </div>
             <div className="text-sm text-slate-600">
               {c.price ? `${c.price} EUR` : "Kostenlos"} · {c.max_participants} Teilnehmende

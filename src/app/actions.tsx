@@ -1365,6 +1365,95 @@ export async function deleteCourse(clubSlug: string, courseId: string) {
   return { success: true }
 }
 
+export async function updateCourseWithSessions(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const clubSlug = String(formData.get("clubSlug") || "")
+  const courseId = String(formData.get("courseId") || "")
+  if (!clubSlug || !courseId) return { error: "Fehlende Daten" }
+
+  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+  if (error) return { error }
+
+  const title = String(formData.get("title") || "")
+  if (!title) return { error: "Titel fehlt" }
+
+  const sessionsRaw = String(formData.get("sessions") || "[]")
+  let sessions: any[] = []
+  try {
+    sessions = JSON.parse(sessionsRaw)
+  } catch {
+    return { error: "Sessions JSON ungultig" }
+  }
+
+  const supabaseAdmin = getAdminClient()
+
+  const { error: updateError } = await supabaseAdmin
+    .from("courses")
+    .update({
+      trainer_id: String(formData.get("trainerId") || "") || null,
+      title,
+      description: String(formData.get("description") || ""),
+      price: Number(formData.get("price") || 0),
+      max_participants: Number(formData.get("maxParticipants") || 8),
+      start_date: formData.get("startDate") ? String(formData.get("startDate")) : null,
+      end_date: formData.get("endDate") ? String(formData.get("endDate")) : null,
+      is_published: formData.get("isPublished") === "on",
+    })
+    .eq("id", courseId)
+    .eq("club_id", club!.id)
+
+  if (updateError) return { error: updateError.message }
+
+  const { data: existingSessions } = await supabaseAdmin
+    .from("course_sessions")
+    .select("id")
+    .eq("course_id", courseId)
+
+  const existingIds = (existingSessions || []).map((s: any) => s.id)
+  if (existingIds.length > 0) {
+    await supabaseAdmin.from("bookings").delete().in("course_session_id", existingIds)
+    await supabaseAdmin.from("course_sessions").delete().in("id", existingIds)
+  }
+
+  for (const s of sessions) {
+    const startIso = new Date(`${s.date}T${s.start}:00`).toISOString()
+    const endIso = new Date(`${s.date}T${s.end}:00`).toISOString()
+
+    const { data: sessionRow, error: sessionError } = await supabaseAdmin
+      .from("course_sessions")
+      .insert({
+        course_id: courseId,
+        court_id: s.courtId || null,
+        start_time: startIso,
+        end_time: endIso,
+      })
+      .select()
+      .single()
+    if (sessionError || !sessionRow) {
+      return { error: sessionError?.message || "Session konnte nicht erstellt werden" }
+    }
+
+    await supabaseAdmin.from("bookings").insert({
+      club_id: club!.id,
+      court_id: s.courtId || null,
+      start_time: startIso,
+      end_time: endIso,
+      status: "confirmed",
+      payment_status: "internal",
+      price_paid: 0,
+      guest_name: `Kurs: ${title}`,
+      booking_type: "course",
+      trainer_id: String(formData.get("trainerId") || "") || null,
+      course_session_id: sessionRow.id,
+    })
+  }
+
+  revalidatePath(`/club/${clubSlug}/admin/courses`)
+  return { success: true }
+}
 export async function getTrainerPayoutSummary(clubSlug: string) {
   const supabase = await createClient()
   const { data: club } = await supabase.from("clubs").select("id").eq("slug", clubSlug).single()

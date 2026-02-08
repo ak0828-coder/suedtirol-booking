@@ -23,6 +23,14 @@ export default async function AdminCoursesPage({
     .eq("club_id", club.id)
     .order("created_at", { ascending: false })
 
+  const courseIds = (courses || []).map((c: any) => c.id)
+  const { data: sessions } = courseIds.length
+    ? await supabase
+        .from("course_sessions")
+        .select("id, course_id, court_id, start_time, end_time")
+        .in("course_id", courseIds)
+    : { data: [] as any[] }
+
   const { data: courts } = await supabase
     .from("courts")
     .select("id, name")
@@ -41,7 +49,13 @@ export default async function AdminCoursesPage({
         <h2 className="text-2xl md:text-3xl font-semibold">Kurse & Camps</h2>
         <p className="text-slate-500 text-sm">Kurse planen, Termine blockieren und Teilnehmer verwalten.</p>
       </div>
-      <CourseManager clubSlug={slug} courses={courses || []} courts={courts || []} trainers={trainers || []} />
+      <CourseManager
+        clubSlug={slug}
+        courses={courses || []}
+        courts={courts || []}
+        trainers={trainers || []}
+        sessions={sessions || []}
+      />
     </FeatureLockWrapper>
   )
 }
