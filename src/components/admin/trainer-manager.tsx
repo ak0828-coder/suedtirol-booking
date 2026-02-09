@@ -55,7 +55,7 @@ export function TrainerManager({
                   setError(res.error)
                 } else {
                   setShowForm(false)
-                  form.reset()
+                  form?.reset?.()
                 }
               })
             }}
