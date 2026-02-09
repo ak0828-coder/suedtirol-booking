@@ -2,9 +2,9 @@
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
 import { TrainerPayouts } from "@/components/admin/trainer-payouts"
-import dynamic from "next/dynamic"
+import dynamicImport from "next/dynamic"
 
-const StripeConnectButton = dynamic(
+const StripeConnectButton = dynamicImport(
   () => import("@/components/admin/stripe-connect-button").then((m) => m.StripeConnectButton),
   {
     ssr: false,
