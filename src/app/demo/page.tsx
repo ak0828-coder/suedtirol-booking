@@ -12,7 +12,7 @@ import { Sparkles, Calendar, Clock, User, ArrowRight } from "lucide-react"
 
 const demoClub = {
   name: "TC Bergblick",
-  primary_color: "#0f172a",
+  primary_color: "#1F3D2B",
 }
 
 const demoCourts = [
@@ -77,13 +77,13 @@ export default function DemoPage() {
   }, [initialView])
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7]">
+    <div className="min-h-screen bg-[#F9F8F4]">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 rounded-2xl border border-[#1F3D2B]/15 bg-white/90 p-5 shadow-sm">
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500">Demo</div>
-            <h1 className="text-2xl md:text-3xl font-semibold">Avaimo Live Demo</h1>
-            <p className="text-sm text-slate-500">
+            <div className="text-xs uppercase tracking-[0.2em] text-[#1F3D2B]/70">Demo</div>
+            <h1 className="text-2xl md:text-3xl font-semibold text-[#0E1A14]">Avaimo Live Demo</h1>
+            <p className="text-sm text-[#0E1A14]/60">
               Wechsel zwischen Admin-Ansicht und Mitglieder-Ansicht. Keine Anmeldung nötig.
             </p>
           </div>
@@ -96,8 +96,8 @@ export default function DemoPage() {
               }}
               className={`rounded-full px-4 py-2 text-sm font-medium ${
                 view === "admin"
-                  ? "bg-slate-900 text-white"
-                  : "border border-slate-300 text-slate-700"
+                  ? "bg-[#1F3D2B] text-[#F9F8F4]"
+                  : "border border-[#1F3D2B]/30 text-[#1F3D2B]"
               }`}
             >
               Admin Ansicht
@@ -110,13 +110,13 @@ export default function DemoPage() {
               }}
               className={`rounded-full px-4 py-2 text-sm font-medium ${
                 view === "member"
-                  ? "bg-slate-900 text-white"
-                  : "border border-slate-300 text-slate-700"
+                  ? "bg-[#1F3D2B] text-[#F9F8F4]"
+                  : "border border-[#1F3D2B]/30 text-[#1F3D2B]"
               }`}
             >
               Mitglieder Ansicht
             </button>
-            <Link href="/" className="rounded-full border border-slate-300 px-4 py-2 text-sm">
+            <Link href="/" className="rounded-full border border-[#1F3D2B]/30 px-4 py-2 text-sm text-[#1F3D2B]">
               Zurück zur Website
             </Link>
           </div>
@@ -125,8 +125,8 @@ export default function DemoPage() {
         {view === "admin" ? (
           <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
             <aside className="space-y-4">
-              <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
+              <div className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 p-4 shadow-sm">
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1F3D2B]/60 mb-3">
                   Navigation
                 </div>
                 <SidebarNav slug="demo" items={navItems} accentColor={demoClub.primary_color} basePath="/demo" />
@@ -134,7 +134,7 @@ export default function DemoPage() {
             </aside>
 
             <main className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-[#1F3D2B]/15 bg-white/90 p-6 shadow-sm">
                 <div className="flex items-center gap-4">
                   <div
                     className="w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-slate-200"
@@ -143,10 +143,10 @@ export default function DemoPage() {
                     <span className="text-xl">{demoClub.name.substring(0, 2).toUpperCase()}</span>
                   </div>
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 tracking-tight">
+                    <h2 className="text-2xl md:text-3xl font-semibold text-[#0E1A14] tracking-tight">
                       Admin Dashboard
                     </h2>
-                    <p className="text-slate-500">Verwaltung für {demoClub.name}</p>
+                    <p className="text-[#0E1A14]/60">Verwaltung für {demoClub.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -163,27 +163,27 @@ export default function DemoPage() {
 
               <div className="grid xl:grid-cols-3 gap-6">
                 <div className="xl:col-span-2 space-y-6">
-                  <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+                  <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between">
                       <CardTitle>Letzte Aktivitäten</CardTitle>
-                      <span className="text-xs text-slate-500">{demoBookings.length} Einträge</span>
+                      <span className="text-xs text-[#0E1A14]/60">{demoBookings.length} Einträge</span>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4 max-h-[520px] overflow-auto pr-2">
                         {demoBookings.map((booking) => (
                           <div
                             key={booking.id}
-                            className="flex items-center justify-between p-4 border border-slate-200/60 rounded-xl bg-white hover:shadow-sm transition-shadow"
+                            className="flex items-center justify-between p-4 border border-[#1F3D2B]/15 rounded-xl bg-white hover:shadow-sm transition-shadow"
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-xs">
+                              <div className="w-12 h-12 rounded-2xl bg-[#F9F8F4] flex items-center justify-center font-bold text-[#1F3D2B] text-xs border border-[#1F3D2B]/15">
                                 {format(new Date(booking.start_time), "dd.MM")}
                               </div>
                               <div>
-                                <div className="font-semibold text-slate-900">
+                                <div className="font-semibold text-[#0E1A14]">
                                   {booking.courts?.name || "Unbekannter Platz"}
                                 </div>
-                                <div className="text-sm text-slate-500">
+                                <div className="text-sm text-[#0E1A14]/60">
                                   {format(new Date(booking.start_time), "HH:mm")} Uhr - {booking.guest_name}
                                 </div>
                               </div>
@@ -191,7 +191,7 @@ export default function DemoPage() {
 
                             <div className="flex items-center gap-4">
                               <div className="text-right hidden sm:block">
-                                <div className="font-medium text-slate-900">
+                                <div className="font-medium text-[#0E1A14]">
                                   {booking.status === "awaiting_payment" || booking.payment_status === "unpaid"
                                     ? "Ausstehend"
                                     : booking.payment_status === "paid_cash"
@@ -200,9 +200,9 @@ export default function DemoPage() {
                                         ? "Abo"
                                         : "Online"}
                                 </div>
-                                <div className="text-xs text-slate-500 capitalize">{booking.status}</div>
+                                <div className="text-xs text-[#0E1A14]/60 capitalize">{booking.status}</div>
                               </div>
-                              <button className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600">
+                              <button className="rounded-full border border-[#1F3D2B]/20 px-3 py-1 text-xs text-[#1F3D2B]">
                                 Details
                               </button>
                             </div>
@@ -214,7 +214,7 @@ export default function DemoPage() {
                 </div>
 
                 <div className="space-y-6 xl:sticky xl:top-6 h-fit">
-                  <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+                  <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                     <CardHeader>
                       <CardTitle>Schnellzugriff</CardTitle>
                     </CardHeader>
@@ -234,7 +234,7 @@ export default function DemoPage() {
                         ].map((label) => (
                           <div
                             key={label}
-                            className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700"
+                            className="rounded-xl border border-[#1F3D2B]/15 bg-white px-3 py-2 text-[#1F3D2B]"
                           >
                             {label}
                           </div>
@@ -249,23 +249,23 @@ export default function DemoPage() {
         ) : (
           <div className="min-h-[70vh]">
             <div className="max-w-4xl mx-auto space-y-6">
-              <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+              <header className="relative overflow-hidden rounded-2xl border border-[#1F3D2B]/15 bg-white/90 p-6 shadow-sm">
                 <div
                   className="absolute -top-10 -right-10 h-40 w-40 rounded-full blur-2xl"
                   style={{ backgroundColor: demoClub.primary_color, opacity: 0.12 }}
                 />
                 <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
                   <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/60 bg-white/90 px-3 py-1 text-xs text-slate-700">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[#1F3D2B]/20 bg-white/90 px-3 py-1 text-xs text-[#1F3D2B]">
                       <Sparkles className="w-3.5 h-3.5" /> Mitglied aktiv
                     </div>
                     <h2 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight">
                       Hallo Erna!
                     </h2>
-                    <p className="text-slate-500">Willkommen bei {demoClub.name}!</p>
+                    <p className="text-[#0E1A14]/60">Willkommen bei {demoClub.name}!</p>
                   </div>
                   <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white/90 text-slate-900 px-4 py-2 text-sm font-semibold border border-slate-200/60">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/90 text-[#0E1A14] px-4 py-2 text-sm font-semibold border border-[#1F3D2B]/20">
                       Premium Aktiv
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -284,60 +284,60 @@ export default function DemoPage() {
               </header>
 
               <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-                <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+                <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex gap-2 items-center">
-                      <Sparkles className="text-slate-700" /> Dein Status
+                      <Sparkles className="text-[#1F3D2B]" /> Dein Status
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-semibold">Aktiv</div>
-                    <p className="text-sm text-slate-500 mt-2">gültig bis: 31.12.2026</p>
+                    <p className="text-sm text-[#0E1A14]/60 mt-2">gültig bis: 31.12.2026</p>
                     <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                       {[12, 4, 3].map((val, idx) => (
-                        <div key={idx} className="rounded-xl border border-slate-200/60 bg-white/90 px-2 py-2">
+                        <div key={idx} className="rounded-xl border border-[#1F3D2B]/15 bg-white/90 px-2 py-2">
                           <div className="text-lg font-semibold">{val}</div>
-                          <div className="text-xs text-slate-500">{idx === 0 ? "Siege" : idx === 1 ? "Niederl." : "Streak"}</div>
+                          <div className="text-xs text-[#0E1A14]/60">{idx === 0 ? "Siege" : idx === 1 ? "Niederl." : "Streak"}</div>
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+                <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                   <CardHeader>
                       <CardTitle className="flex gap-2 items-center">
-                      <Calendar className="text-slate-700" /> Nächster Termin
+                      <Calendar className="text-[#1F3D2B]" /> Nächster Termin
                       </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
                       <div className="text-2xl font-semibold">12.02.2026</div>
-                      <div className="text-sm text-slate-500 flex items-center gap-1">
+                      <div className="text-sm text-[#0E1A14]/60 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         18:30 Uhr
                       </div>
-                      <div className="text-sm text-slate-600">Platz 2</div>
+                      <div className="text-sm text-[#0E1A14]/70">Platz 2</div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+                <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex gap-2 items-center">
-                      <User className="text-slate-600" /> Profil
+                      <User className="text-[#1F3D2B]" /> Profil
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-sm text-slate-500">Kontaktdaten und Angaben.</div>
+                    <div className="text-sm text-[#0E1A14]/60">Kontaktdaten und Angaben.</div>
                   </CardContent>
                 </Card>
               </div>
 
-              <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+              <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex gap-2 items-center">
-                    <Calendar className="text-slate-700" /> Deine nächsten Spiele
+                    <Calendar className="text-[#1F3D2B]" /> Deine nächsten Spiele
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -345,20 +345,20 @@ export default function DemoPage() {
                     {demoBookings.map((b) => (
                       <div
                         key={b.id}
-                        className="flex items-center justify-between p-3 border border-slate-200/60 rounded-xl bg-white"
+                        className="flex items-center justify-between p-3 border border-[#1F3D2B]/15 rounded-xl bg-white"
                       >
                         <div>
                           <div className="font-semibold text-base">
                             {format(new Date(b.start_time), "dd.MM.yyyy")}
                           </div>
-                          <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                          <div className="text-sm text-[#0E1A14]/60 flex items-center gap-1 mt-1">
                             <Clock className="w-3 h-3" />
                             {format(new Date(b.start_time), "HH:mm")} Uhr
                             <span className="mx-1">-</span>
                             {b.courts?.name}
                           </div>
                         </div>
-                        <button className="rounded-full border border-slate-200 px-3 py-1 text-xs">
+                        <button className="rounded-full border border-[#1F3D2B]/20 px-3 py-1 text-xs text-[#1F3D2B]">
                           Stornieren
                         </button>
                       </div>

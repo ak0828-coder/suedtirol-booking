@@ -27,13 +27,13 @@ const items = [
 
 export default function SecurityPage() {
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-slate-900">
+    <div className="min-h-screen bg-[#F9F8F4] text-[#0E1A14]">
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
         <section className="space-y-4">
-          <div className="text-xs uppercase tracking-wide text-slate-500">Sicherheit</div>
+          <div className="text-xs uppercase tracking-[0.2em] text-[#1F3D2B]/70">Sicherheit</div>
           <h1 className="text-4xl font-semibold">Sicher, nachvollziehbar, DSGVO-konform.</h1>
-          <p className="text-slate-600 max-w-3xl">
+          <p className="text-[#0E1A14]/70 max-w-3xl">
             Avaimo ist für Vereine gebaut, die mit sensiblen Mitgliedsdaten arbeiten.
             Sicherheit ist nicht optional, sondern Standard.
           </p>
@@ -41,11 +41,11 @@ export default function SecurityPage() {
 
         <section className="grid gap-6 md:grid-cols-2">
           {items.map((item) => (
-            <div key={item.title} className="rounded-3xl border border-slate-200/60 bg-white p-6">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <div key={item.title} className="rounded-3xl border border-[#1F3D2B]/15 bg-white/90 p-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1F3D2B]">
                 <item.icon className="h-4 w-4" /> {item.title}
               </div>
-              <p className="mt-3 text-sm text-slate-600">{item.text}</p>
+              <p className="mt-3 text-sm text-[#0E1A14]/70">{item.text}</p>
             </div>
           ))}
         </section>

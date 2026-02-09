@@ -89,13 +89,13 @@ const extraBlocks = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-slate-900">
+    <div className="min-h-screen bg-[#F9F8F4] text-[#0E1A14]">
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-16">
         <section className="space-y-4">
-          <div className="text-xs uppercase tracking-wide text-slate-500">Funktionen</div>
+          <div className="text-xs uppercase tracking-[0.2em] text-[#1F3D2B]/70">Funktionen</div>
           <h1 className="text-4xl font-semibold">Alles, was ein moderner Verein braucht.</h1>
-          <p className="text-slate-600 max-w-3xl">
+          <p className="text-[#0E1A14]/70 max-w-3xl">
             Avaimo verbindet Buchung, Mitglieder, Zahlungen, Verträge und Trainer in einer Plattform.
             Modulare Features sorgen dafür, dass jeder Verein nur das sieht, was er braucht.
           </p>
@@ -103,14 +103,14 @@ export default function FeaturesPage() {
 
         <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {featureBlocks.map((block) => (
-            <div key={block.title} className="rounded-3xl border border-slate-200/60 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <div key={block.title} className="rounded-3xl border border-[#1F3D2B]/15 bg-white/90 p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1F3D2B]">
                 <block.icon className="h-4 w-4" /> {block.title}
               </div>
-              <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              <ul className="mt-4 space-y-2 text-sm text-[#0E1A14]/70">
                 {block.bullets.map((item) => (
                   <li key={item} className="flex items-start gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400" />
+                    <span className="mt-1 h-2 w-2 rounded-full bg-[#CBBF9A]" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -121,11 +121,11 @@ export default function FeaturesPage() {
 
         <section className="grid gap-6 lg:grid-cols-3">
           {extraBlocks.map((block) => (
-            <div key={block.title} className="rounded-3xl border border-slate-200/60 bg-white p-6">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <div key={block.title} className="rounded-3xl border border-[#1F3D2B]/15 bg-white/90 p-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1F3D2B]">
                 <block.icon className="h-4 w-4" /> {block.title}
               </div>
-              <p className="mt-3 text-sm text-slate-600">{block.description}</p>
+              <p className="mt-3 text-sm text-[#0E1A14]/70">{block.description}</p>
             </div>
           ))}
         </section>
