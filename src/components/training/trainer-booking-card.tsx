@@ -15,9 +15,11 @@ import {
 export function TrainerBookingCard({
   clubSlug,
   trainer,
+  cardId,
 }: {
   clubSlug: string
   trainer: any
+  cardId?: string
 }) {
   const [date, setDate] = useState("")
   const [time, setTime] = useState("")
@@ -71,7 +73,7 @@ export function TrainerBookingCard({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
+    <div id={cardId} className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
       <div className="flex items-center gap-4">
         {imageUrl ? (
           <img

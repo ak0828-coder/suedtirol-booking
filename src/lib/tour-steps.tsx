@@ -171,3 +171,83 @@ export const memberBookingTour: Tour[] = [
     ],
   },
 ]
+
+export const trainingTour: Tour[] = [
+  {
+    tour: "training",
+    steps: [
+      {
+        title: "Training im Überblick",
+        content: "Hier findest du alle Trainerstunden und Kurse.",
+        selector: "#tour-training-header",
+        side: "bottom",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Trainer entdecken",
+        content: "Wähle einen Trainer und buche direkt deine Stunde.",
+        selector: "#tour-training-trainers",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Trainerkarte",
+        content: "Hier öffnest du das Buchungs-Popup für eine Trainerstunde.",
+        selector: "#tour-training-trainer-card",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Kurse & Camps",
+        content: "Finde Kurse, prüfe Termine und melde dich an.",
+        selector: "#tour-training-courses",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Kursdetails",
+        content: "Öffne hier das Kurs-Popup, um Termine auszuwählen.",
+        selector: "#tour-training-course-card",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+    ],
+  },
+]
+
+export const memberDocumentsTour: Tour[] = [
+  {
+    tour: "member-documents",
+    steps: [
+      {
+        title: "Dokumente",
+        content: "Hier lädst du wichtige Nachweise hoch und behältst den Überblick.",
+        selector: "#tour-documents-header",
+        side: "bottom",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Upload",
+        content: "Wähle Dokumenttyp und Datei, um sie hochzuladen.",
+        selector: "#tour-documents-upload",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Deine Übersicht",
+        content: "Hier siehst du Status, Gültigkeit und kannst Dateien öffnen.",
+        selector: "#tour-documents-list",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+    ],
+  },
+]

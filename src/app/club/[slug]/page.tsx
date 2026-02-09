@@ -12,8 +12,6 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { getReadableTextColor } from "@/lib/color"
 import { TourLauncher } from "@/components/tours/tour-launcher"
 import { Suspense } from "react"
-import { TourLauncher } from "@/components/tours/tour-launcher"
-import { Suspense } from "react"
 
 // Helper, um Daten zu holen
 async function getClubData(slug: string) {
@@ -277,7 +275,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
                       </div>
                     </div>
                     <div className="px-6 pb-6">
-      <BookingModal
+                      <BookingModal
                         courtId={court.id}
                         courtName={court.name}
                         price={court.price_per_hour}

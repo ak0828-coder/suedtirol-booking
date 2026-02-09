@@ -2,6 +2,8 @@
 import { notFound } from "next/navigation"
 import { TrainerBookingCard } from "@/components/training/trainer-booking-card"
 import { CourseGrid } from "@/components/training/course-grid"
+import { TourLauncher } from "@/components/tours/tour-launcher"
+import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
 
@@ -83,12 +85,20 @@ export default async function TrainingPage({
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
       <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
-        <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm">
-          <h1 className="text-3xl font-semibold text-slate-900">Training</h1>
-          <p className="text-slate-500">Trainerstunden buchen und Kurse auswählen.</p>
+        <div
+          id="tour-training-header"
+          className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm flex flex-wrap items-center justify-between gap-3"
+        >
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-900">Training</h1>
+            <p className="text-slate-500">Trainerstunden buchen und Kurse auswählen.</p>
+          </div>
+          <Suspense fallback={null}>
+            <TourLauncher tour="training" storageKey="tour_training_seen" label="Guide" autoStart />
+          </Suspense>
         </div>
 
-        <section className="space-y-4">
+        <section id="tour-training-trainers" className="space-y-4">
           <div className="flex items-end justify-between gap-3">
             <h2 className="text-xl font-semibold text-slate-900">Trainer</h2>
             {!user ? (
@@ -96,8 +106,13 @@ export default async function TrainingPage({
             ) : null}
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {(trainers || []).map((trainer) => (
-              <TrainerBookingCard key={trainer.id} clubSlug={slug} trainer={trainer} />
+            {(trainers || []).map((trainer, idx) => (
+              <TrainerBookingCard
+                key={trainer.id}
+                clubSlug={slug}
+                trainer={trainer}
+                cardId={idx === 0 ? "tour-training-trainer-card" : undefined}
+              />
             ))}
             {(trainers || []).length === 0 ? (
               <div className="text-sm text-slate-500">Aktuell sind keine Trainer verfügbar.</div>
@@ -105,7 +120,7 @@ export default async function TrainingPage({
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section id="tour-training-courses" className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-900">Kurse & Camps</h2>
           {(courses || []).length === 0 ? (
             <div className="text-sm text-slate-500">Aktuell sind keine Kurse veröffentlicht.</div>

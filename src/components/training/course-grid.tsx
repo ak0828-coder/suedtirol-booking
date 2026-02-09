@@ -46,8 +46,13 @@ export function CourseGrid({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((course: any) => (
-          <CourseEnrollCard key={course.id} clubSlug={clubSlug} course={course} />
+        {filtered.map((course: any, idx: number) => (
+          <CourseEnrollCard
+            key={course.id}
+            clubSlug={clubSlug}
+            course={course}
+            cardId={idx === 0 ? "tour-training-course-card" : undefined}
+          />
         ))}
         {filtered.length === 0 ? (
           <div className="text-sm text-slate-500">Keine passenden Kurse gefunden.</div>

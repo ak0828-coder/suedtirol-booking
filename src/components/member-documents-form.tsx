@@ -46,7 +46,11 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm space-y-4">
+      <form
+        id="tour-documents-upload"
+        onSubmit={handleSubmit}
+        className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm space-y-4"
+      >
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Dokument hochladen</h2>
           <p className="text-sm text-slate-500">
@@ -74,14 +78,20 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
         {message && <div className="text-xs text-slate-500">{message}</div>}
       </form>
 
-      <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm">
+      <div
+        id="tour-documents-list"
+        className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm"
+      >
         <h3 className="text-sm font-semibold text-slate-800">Deine Dokumente</h3>
         {documents.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">Noch keine Dokumente hochgeladen.</p>
         ) : (
           <div className="mt-3 space-y-2">
             {documents.map((doc) => (
-              <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm">
+              <div
+                key={doc.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm"
+              >
                 <div>
                   <div className="font-medium text-slate-800">{doc.file_name}</div>
                   <div className="text-xs text-slate-500">
@@ -90,9 +100,21 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                   <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
                     <span>Upload</span>
                     <span>→</span>
-                    <span>{doc.ai_status === "ok" ? "KI ok" : doc.ai_status === "reject" ? "KI abgelehnt" : "KI prüft"}</span>
+                    <span>
+                      {doc.ai_status === "ok"
+                        ? "KI ok"
+                        : doc.ai_status === "reject"
+                        ? "KI abgelehnt"
+                        : "KI prüft"}
+                    </span>
                     <span>→</span>
-                    <span>{doc.review_status === "approved" ? "Bestätigt" : doc.review_status === "rejected" ? "Abgelehnt" : "Wartet"}</span>
+                    <span>
+                      {doc.review_status === "approved"
+                        ? "Bestätigt"
+                        : doc.review_status === "rejected"
+                        ? "Abgelehnt"
+                        : "Wartet"}
+                    </span>
                   </div>
                 </div>
                 <div className="text-xs text-slate-500">

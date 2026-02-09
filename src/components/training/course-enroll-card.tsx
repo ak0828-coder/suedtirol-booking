@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button"
 export function CourseEnrollCard({
   clubSlug,
   course,
+  cardId,
 }: {
   clubSlug: string
   course: any
+  cardId?: string
 }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -94,7 +96,7 @@ export function CourseEnrollCard({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
+    <div id={cardId} className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
       <div>
         <div className="flex items-start justify-between gap-2">
           <div className="text-lg font-semibold text-slate-900 tracking-tight">{course.title}</div>

@@ -6,6 +6,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { getReadableTextColor } from "@/lib/color"
+import { TourLauncher } from "@/components/tours/tour-launcher"
+import { Suspense } from "react"
 
 export default async function MemberDocumentsPage({
   params,
@@ -44,11 +46,14 @@ export default async function MemberDocumentsPage({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter"
+      className="min-h-screen bg-[#f5f5f7] pb-24 safe-bottom page-enter"
       style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
     >
       <div className="mx-auto max-w-3xl space-y-6 app-pad pt-4 sm:pt-6">
-        <header className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+        <header
+          id="tour-documents-header"
+          className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm flex flex-wrap items-center justify-between gap-3"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Meine Dokumente</h1>
@@ -58,6 +63,9 @@ export default async function MemberDocumentsPage({
               <Button variant="outline" className="rounded-full">Zurück</Button>
             </Link>
           </div>
+          <Suspense fallback={null}>
+            <TourLauncher tour="member-documents" storageKey="tour_member_documents_seen" label="Guide" autoStart />
+          </Suspense>
         </header>
 
         <MemberDocumentsForm clubSlug={slug} documents={documents} />
