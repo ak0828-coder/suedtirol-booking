@@ -2,19 +2,7 @@
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
 import { TrainerPayouts } from "@/components/admin/trainer-payouts"
-import dynamicImport from "next/dynamic"
-
-const StripeConnectButton = dynamicImport(
-  () => import("@/components/admin/stripe-connect-button").then((m) => m.StripeConnectButton),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
-        Stripe Connect wird geladen…
-      </div>
-    ),
-  }
-)
+import { StripeConnectSection } from "@/components/admin/stripe-connect-section"
 
 export const dynamic = "force-dynamic"
 
@@ -49,13 +37,10 @@ export default async function SuperAdminFinancePage({
       </div>
 
       <div className="space-y-10">
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold text-slate-900">Stripe Connect</h3>
-          <StripeConnectButton
-            clubSlug={slug}
-            initialConnected={!!club.stripe_details_submitted}
-          />
-        </section>
+        <StripeConnectSection
+          clubSlug={slug}
+          initialConnected={!!club.stripe_details_submitted}
+        />
         <section className="space-y-4">
           <h3 className="text-xl font-semibold text-slate-900">Trainerabrechnungen</h3>
           <TrainerPayouts clubSlug={slug} rows={rows} />
