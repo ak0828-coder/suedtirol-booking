@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
 import { TrainerPayouts } from "@/components/admin/trainer-payouts"
+import { StripeConnectButton } from "@/components/admin/stripe-connect-button"
 
 export const dynamic = "force-dynamic"
 
@@ -12,7 +13,7 @@ export default async function AdminFinancePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { features, locks } = await getAdminContext(slug)
+  const { club, features, locks } = await getAdminContext(slug)
   if (!features.admin.finance && !locks.admin.finance) return notFound()
   const locked = !features.admin.finance && locks.admin.finance
 
@@ -26,6 +27,13 @@ export default async function AdminFinancePage({
         <p className="text-slate-500 text-sm">Trainer-Auszahlungen und Übersichten.</p>
       </div>
       <div className="space-y-10">
+        <section className="space-y-4">
+          <h3 className="text-xl font-semibold text-slate-900">Stripe Connect</h3>
+          <StripeConnectButton
+            clubSlug={slug}
+            initialConnected={!!club.stripe_details_submitted}
+          />
+        </section>
         <section className="space-y-4">
           <h3 className="text-xl font-semibold text-slate-900">Trainerabrechnungen</h3>
           <TrainerPayouts clubSlug={slug} rows={rows} />

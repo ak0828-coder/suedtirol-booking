@@ -2,6 +2,7 @@
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
 import { TrainerPayouts } from "@/components/admin/trainer-payouts"
+import { StripeConnectButton } from "@/components/admin/stripe-connect-button"
 
 export const dynamic = "force-dynamic"
 
@@ -36,6 +37,13 @@ export default async function SuperAdminFinancePage({
       </div>
 
       <div className="space-y-10">
+        <section className="space-y-4">
+          <h3 className="text-xl font-semibold text-slate-900">Stripe Connect</h3>
+          <StripeConnectButton
+            clubSlug={slug}
+            initialConnected={!!club.stripe_details_submitted}
+          />
+        </section>
         <section className="space-y-4">
           <h3 className="text-xl font-semibold text-slate-900">Trainerabrechnungen</h3>
           <TrainerPayouts clubSlug={slug} rows={rows} />
