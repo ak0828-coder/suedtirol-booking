@@ -1,4 +1,5 @@
 import type { Tour } from "nextstepjs"
+import { AdminGoToCourses } from "@/components/tours/admin-go-to-courses"
 
 export const adminOverviewTour: Tour[] = [
   {
@@ -21,8 +22,13 @@ export const adminOverviewTour: Tour[] = [
         showSkip: true,
       },
       {
-        title: "Schnellzugriff",
-        content: "Direkt zu den wichtigsten Bereichen springen.",
+        title: "Nächster Schritt",
+        content: (
+          <>
+            <div>Wir springen jetzt gemeinsam zu den Kursen.</div>
+            <AdminGoToCourses />
+          </>
+        ),
         selector: "#tour-admin-quick",
         side: "left",
         showControls: true,
