@@ -9,7 +9,7 @@ const footerLinks = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-slate-200/60 bg-white">
+    <footer className="border-t border-slate-200/60 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 py-10 md:flex-row">
         <div className="space-y-2">
           <div className="text-sm font-semibold">Avaimo</div>

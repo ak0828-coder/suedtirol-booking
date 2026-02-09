@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Manrope, JetBrains_Mono } from "next/font/google";
+import { Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const manrope = Manrope({
+const sora = Sora({
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${sora.variable} ${jetbrainsMono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

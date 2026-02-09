@@ -25,7 +25,7 @@ export default async function SuperAdminMembersPage({
 
   return (
     <>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div>
           <h2 className="text-2xl md:text-3xl font-semibold">Mitglieder-Kartei</h2>
           <p className="text-slate-500 text-sm">Verwaltung und Einladungen an einem Ort.</p>
@@ -56,31 +56,31 @@ export default async function SuperAdminMembersPage({
       <ActivationBanner importedCount={importedCount} clubSlug={slug} />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
               <FileText className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm text-amber-700">Dokumente pruefen</div>
+              <div className="text-sm text-amber-700">Dokumente prüfen</div>
               <div className="text-2xl font-semibold text-amber-900">{stats?.reviewNeeded || 0}</div>
-              <div className="text-xs text-amber-700">KI benoetigt Bestätigung</div>
+              <div className="text-xs text-amber-700">KI benötigt Bestätigung</div>
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm text-red-700">Beitraege offen</div>
+              <div className="text-sm text-red-700">Beiträge offen</div>
               <div className="text-2xl font-semibold text-red-900">{stats?.paymentOpen || 0}</div>
-              <div className="text-xs text-red-700">Zahlung Überfaellig</div>
+              <div className="text-xs text-red-700">Zahlung überfällig</div>
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
               <CheckCircle className="h-5 w-5" />
@@ -88,7 +88,7 @@ export default async function SuperAdminMembersPage({
             <div>
               <div className="text-sm text-emerald-700">Aktive Mitglieder</div>
               <div className="text-2xl font-semibold text-emerald-900">{stats?.activeMembers || 0}</div>
-              <div className="text-xs text-emerald-700">Alles im gruenen Bereich</div>
+              <div className="text-xs text-emerald-700">Alles im grünen Bereich</div>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ export default async function SuperAdminMembersPage({
         </div>
       )}
 
-      <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">
+      <div className="border border-slate-200/60 rounded-3xl bg-white/80 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/80">
@@ -197,7 +197,7 @@ export default async function SuperAdminMembersPage({
                           ? "KI ok"
                           : m.latest_med_doc.ai_status === "reject"
                           ? "KI abgelehnt"
-                          : "KI prueft"}
+                          : "KI prüft"}
                       </div>
                     ) : (
                       <div className="text-[11px] text-slate-400">Kein Dokument</div>

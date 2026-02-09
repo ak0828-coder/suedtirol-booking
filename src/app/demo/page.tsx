@@ -77,14 +77,14 @@ export default function DemoPage() {
   }, [initialView])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-[#f5f5f7]">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm">
           <div>
             <div className="text-xs uppercase tracking-wide text-slate-500">Demo</div>
             <h1 className="text-2xl md:text-3xl font-semibold">Avaimo Live Demo</h1>
             <p className="text-sm text-slate-500">
-              Wechsel zwischen Admin-Ansicht und Mitglieder-Ansicht. Keine Anmeldung noetig.
+              Wechsel zwischen Admin-Ansicht und Mitglieder-Ansicht. Keine Anmeldung nötig.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -117,7 +117,7 @@ export default function DemoPage() {
               Mitglieder Ansicht
             </button>
             <Link href="/" className="rounded-full border border-slate-300 px-4 py-2 text-sm">
-              ZuRück zur Website
+              Zurück zur Website
             </Link>
           </div>
         </div>
@@ -165,8 +165,8 @@ export default function DemoPage() {
                 <div className="xl:col-span-2 space-y-6">
                   <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between">
-                      <CardTitle>Letzte Aktivitaeten</CardTitle>
-                      <span className="text-xs text-slate-500">{demoBookings.length} Eintraege</span>
+                      <CardTitle>Letzte Aktivitäten</CardTitle>
+                      <span className="text-xs text-slate-500">{demoBookings.length} Einträge</span>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4 max-h-[520px] overflow-auto pr-2">
@@ -306,9 +306,9 @@ export default function DemoPage() {
 
                 <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="flex gap-2 items-center">
-                      <Calendar className="text-slate-700" /> Naechster Termin
-                    </CardTitle>
+                      <CardTitle className="flex gap-2 items-center">
+                      <Calendar className="text-slate-700" /> Nächster Termin
+                      </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -337,7 +337,7 @@ export default function DemoPage() {
               <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex gap-2 items-center">
-                    <Calendar className="text-slate-700" /> Deine naechsten Spiele
+                    <Calendar className="text-slate-700" /> Deine nächsten Spiele
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

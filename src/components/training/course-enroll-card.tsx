@@ -94,10 +94,10 @@ export function CourseEnrollCard({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm space-y-3">
+    <div className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
       <div>
         <div className="flex items-start justify-between gap-2">
-          <div className="text-lg font-semibold text-slate-900">{course.title}</div>
+          <div className="text-lg font-semibold text-slate-900 tracking-tight">{course.title}</div>
           {isCourseFull ? (
             <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
               Ausgebucht
@@ -169,16 +169,21 @@ export function CourseEnrollCard({
       ) : null}
       {error ? <div className="text-xs text-red-500">{error}</div> : null}
       <Button className="rounded-full w-full" onClick={() => setOpen(true)}>
-        Details & Anmelden
+        Details & anmelden
       </Button>
 
       {open ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-5xl rounded-2xl bg-white shadow-xl p-6 space-y-4">
+          <div className="w-full max-w-5xl rounded-3xl bg-white shadow-xl p-6 space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xl font-semibold text-slate-900">{course.title}</div>
                 <div className="text-sm text-slate-500">{course.description || "Kursbeschreibung"}</div>
+                {pricingMode === "per_session" ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    Auswahl: {selected.length} von {sortedSessions.length} Terminen
+                  </div>
+                ) : null}
               </div>
               <button
                 className="text-slate-400 hover:text-slate-600"
@@ -374,7 +379,7 @@ export function CourseEnrollCard({
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-4 lg:sticky lg:top-4">
+                <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-4 sticky top-4">
                   <div className="flex items-center justify-between text-sm">
                     <div className="text-slate-600">ausgewählt</div>
                     <div className="font-semibold text-slate-900">

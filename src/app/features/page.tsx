@@ -18,15 +18,15 @@ const featureBlocks = [
     icon: Calendar,
     bullets: [
       "Live Kalender mit Kollisionserkennung",
-      "Sperrzeiten, Oeffnungszeiten und Sondertage",
-      "Gaeste und Mitglieder in einem Flow",
+      "Sperrzeiten, Öffnungszeiten und Sondertage",
+      "Gäste und Mitglieder in einem Flow",
     ],
   },
   {
     title: "Mitglieder & Abos",
     icon: Users,
     bullets: [
-      "Individuelle Mitgliedschaftsplaene",
+      "Individuelle Mitgliedschaftspläne",
       "Rabatte und kostenlose Zeiten pro Plan",
       "Einladungen, Status und Historie",
     ],
@@ -41,7 +41,7 @@ const featureBlocks = [
     ],
   },
   {
-    title: "Vertraege & Dokumente",
+    title: "Verträge & Dokumente",
     icon: FileSignature,
     bullets: [
       "Digitale Signatur und Pflichtfelder",
@@ -78,7 +78,7 @@ const extraBlocks = [
   {
     title: "Benachrichtigungen",
     icon: Bell,
-    description: "E-Mails, Erinnerungen, automatische Updates bei Ausfaellen und Änderungen.",
+    description: "E-Mails, Erinnerungen, automatische Updates bei Ausfällen und Änderungen.",
   },
   {
     title: "Engagement",
@@ -89,14 +89,14 @@ const extraBlocks = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-[#f7f4ef] text-slate-900">
+    <div className="min-h-screen bg-[#f5f5f7] text-slate-900">
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-16">
         <section className="space-y-4">
           <div className="text-xs uppercase tracking-wide text-slate-500">Funktionen</div>
           <h1 className="text-4xl font-semibold">Alles, was ein moderner Verein braucht.</h1>
           <p className="text-slate-600 max-w-3xl">
-            Avaimo verbindet Buchung, Mitglieder, Zahlungen, Vertraege und Trainer in einer Plattform.
+            Avaimo verbindet Buchung, Mitglieder, Zahlungen, Verträge und Trainer in einer Plattform.
             Modulare Features sorgen dafür, dass jeder Verein nur das sieht, was er braucht.
           </p>
         </section>

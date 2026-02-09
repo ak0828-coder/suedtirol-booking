@@ -24,7 +24,7 @@ export default async function SuperAdminBookingsPage({
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold">Buchungen</h2>
@@ -42,10 +42,10 @@ export default async function SuperAdminBookingsPage({
         </div>
       </div>
 
-      <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+      <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Aktivitat</CardTitle>
-          <span className="text-xs text-slate-500">{bookings?.length || 0} Eintrage</span>
+          <CardTitle>Aktivität</CardTitle>
+          <span className="text-xs text-slate-500">{bookings?.length || 0} Einträge</span>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

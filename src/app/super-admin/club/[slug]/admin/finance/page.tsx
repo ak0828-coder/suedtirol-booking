@@ -17,7 +17,7 @@ export default async function SuperAdminFinancePage({
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold">Finanzen</h2>
@@ -37,7 +37,7 @@ export default async function SuperAdminFinancePage({
 
       <div className="space-y-10">
         <section className="space-y-4">
-          <h3 className="text-xl font-semibold text-slate-900">Trainer Abrechnungen</h3>
+          <h3 className="text-xl font-semibold text-slate-900">Trainerabrechnungen</h3>
           <TrainerPayouts clubSlug={slug} rows={rows} />
         </section>
 
@@ -46,7 +46,7 @@ export default async function SuperAdminFinancePage({
             <h3 className="text-xl font-semibold text-slate-900">Einnahmen</h3>
             <div className="text-sm text-slate-500">Gesamt: {revenue?.total ?? 0} EUR</div>
           </div>
-          <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-5 shadow-sm">
             <div className="grid grid-cols-4 gap-3 text-xs text-slate-500 uppercase tracking-wide">
               <div>Typ</div>
               <div>Bezeichnung</div>

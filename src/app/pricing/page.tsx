@@ -11,8 +11,8 @@ const tiers = [
     features: [
       "Buchungssystem",
       "Mitgliederverwaltung",
-      "Vertraege & Dokumente",
-      "E-Mail Support",
+      "Verträge & Dokumente",
+      "E-Mail-Support",
     ],
   },
   {
@@ -47,7 +47,7 @@ const addOns = [
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-[#f7f4ef] text-slate-900">
+    <div className="min-h-screen bg-[#f5f5f7] text-slate-900">
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
         <section className="space-y-4">
@@ -81,7 +81,7 @@ export default function PricingPage() {
         <section className="rounded-3xl border border-slate-200/60 bg-white p-6">
           <div className="text-sm font-semibold">Optionale Module</div>
           <p className="mt-2 text-sm text-slate-600">
-            Du kannst jedes Paket mit zusaetzlichen Modulen erweitern.
+            Du kannst jedes Paket mit zusätzlichen Modulen erweitern.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             {addOns.map((item) => (

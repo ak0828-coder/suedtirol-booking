@@ -52,7 +52,7 @@ export default async function AdminCoursesPage({
 
   return (
     <FeatureLockWrapper locked={locked}>
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm mb-6">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm mb-6">
         <h2 className="text-2xl md:text-3xl font-semibold">Kurse & Camps</h2>
         <p className="text-slate-500 text-sm">Kurse planen, Termine blockieren und Teilnehmer verwalten.</p>
       </div>

@@ -64,7 +64,7 @@ export function TrainerManager({
             setShowForm((v) => !v)
           }}
         >
-          {showForm ? "Schließen" : "Trainer hinzufuegen"}
+          {showForm ? "Schließen" : "Trainer hinzufügen"}
         </Button>
       </div>
 
@@ -151,7 +151,7 @@ export function TrainerManager({
                 <Input name="hourlyRate" type="number" step="0.01" defaultValue={editingTrainer?.hourly_rate ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label>Verguetungstyp</Label>
+                <Label>Vergütungstyp</Label>
                 <select
                   name="salaryType"
                   className="w-full border rounded-md px-3 py-2 text-sm"
@@ -191,7 +191,7 @@ export function TrainerManager({
             <div className="flex items-center gap-2">
               <label className="text-sm text-slate-600 flex items-center gap-2">
                 <input type="checkbox" name="includeCourtFee" defaultChecked={editingTrainer ? !!editingTrainer.include_court_fee : true} />
-                Platzgebuehr einrechnen
+                Platzgebühr einrechnen
               </label>
               <label className="text-sm text-slate-600 flex items-center gap-2">
                 <input type="checkbox" name="isActive" defaultChecked={editingTrainer ? !!editingTrainer.is_active : true} />

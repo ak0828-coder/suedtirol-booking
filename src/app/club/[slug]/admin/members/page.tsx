@@ -28,7 +28,7 @@ export default async function AdminMembersPage({
 
   return (
     <FeatureLockWrapper locked={lockedPage}>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div>
           <h2 className="text-2xl md:text-3xl font-semibold">Mitglieder-Kartei</h2>
           <p className="text-slate-500 text-sm">Verwaltung und Einladungen an einem Ort.</p>
@@ -43,7 +43,7 @@ export default async function AdminMembersPage({
       <ActivationBanner importedCount={importedCount} clubSlug={slug} />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
               <FileText className="h-5 w-5" />
@@ -55,7 +55,7 @@ export default async function AdminMembersPage({
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5" />
@@ -67,7 +67,7 @@ export default async function AdminMembersPage({
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
               <CheckCircle className="h-5 w-5" />
@@ -107,7 +107,7 @@ export default async function AdminMembersPage({
         </FeatureLockWrapper>
       ) : null}
 
-      <div className="border border-slate-200/60 rounded-2xl bg-white/80 shadow-sm overflow-hidden">
+      <div className="border border-slate-200/60 rounded-3xl bg-white/80 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/80">

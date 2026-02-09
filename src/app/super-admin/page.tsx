@@ -23,9 +23,9 @@ export default async function SuperAdminPage() {
   const { count: bookingsCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true })
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-8">
+    <div className="min-h-screen bg-[#f5f5f7] p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div>
             <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">Super Admin</h1>
             <p className="text-slate-500 text-sm">Systemweite Übersicht und Verwaltung.</p>
@@ -37,7 +37,7 @@ export default async function SuperAdminPage() {
 
         {/* STATISTIKEN */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Vereine Total</CardTitle>
               <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -46,7 +46,7 @@ export default async function SuperAdminPage() {
               <div className="text-2xl font-semibold">{clubs?.length || 0}</div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Buchungen Gesamt</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -55,7 +55,7 @@ export default async function SuperAdminPage() {
               <div className="text-2xl font-semibold">{bookingsCount || 0}</div>
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">System Status</CardTitle>
               <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
@@ -69,7 +69,7 @@ export default async function SuperAdminPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* LINKE SPALTE: LISTE DER VEREINE */}
           <div className="lg:col-span-2">
-            <Card className="h-full rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+            <Card className="h-full rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
               <CardHeader>
                 <CardTitle>Vereine verwalten</CardTitle>
               </CardHeader>
@@ -109,13 +109,13 @@ export default async function SuperAdminPage() {
                         <a
                           href={`/club/${club.slug}/admin`}
                           target="_blank"
-                          className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
                         >
                           Login als Admin
                         </a>
                         <a
                           href={`/super-admin/club/${club.slug}`}
-                          className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
                         >
                           Feature-Matrix
                         </a>
@@ -137,7 +137,7 @@ export default async function SuperAdminPage() {
 
           {/* RECHTE SPALTE: NEU ERSTELLEN */}
           <div>
-            <Card className="sticky top-8 rounded-2xl border border-slate-200/60 shadow-sm bg-slate-900 text-white">
+            <Card className="sticky top-8 rounded-3xl border border-slate-200/60 shadow-sm bg-slate-900 text-white">
               <CardHeader>
                 <CardTitle className="text-white">Neuen Verein onboarden</CardTitle>
               </CardHeader>

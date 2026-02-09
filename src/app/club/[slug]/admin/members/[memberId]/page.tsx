@@ -61,7 +61,7 @@ export default async function AdminMemberDetailPage({
 
   return (
     <FeatureLockWrapper locked={lockedPage} className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div>
           <h2 className="text-2xl font-semibold">
             {profile?.first_name} {profile?.last_name || "Unbekannt"}
@@ -69,16 +69,16 @@ export default async function AdminMemberDetailPage({
           <div className="text-sm text-slate-500">{profile?.id}</div>
         </div>
         <Link href={`/club/${slug}/admin/members`}>
-          <Button variant="outline" className="rounded-full">ZuRück</Button>
+          <Button variant="outline" className="rounded-full">Zurück</Button>
         </Link>
       </div>
 
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-2">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-2">
         <div className="text-sm text-slate-600">Status: {member.status}</div>
         <div className="text-sm text-slate-600">Zahlungsstatus: {member.payment_status || "unbekannt"}</div>
         <div className="text-sm text-slate-600">E-Mail: {email}</div>
         <div className="text-sm text-slate-600">
-          Naechster Beitrag:{" "}
+          Nächster Beitrag:{" "}
           {member.next_payment_at ? new Date(member.next_payment_at).toLocaleDateString("de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">
@@ -103,7 +103,7 @@ export default async function AdminMemberDetailPage({
           Vertragsversion: {member.contract_version || "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Guthaben: {member.credit_balance ?? 0}EUR
+          Guthaben: {member.credit_balance ?? 0} EUR
         </div>
         <div className="text-sm text-slate-600">
           Einladung: {member.invite_status || "-"}</div>

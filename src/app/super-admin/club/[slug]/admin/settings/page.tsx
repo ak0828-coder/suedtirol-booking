@@ -21,7 +21,7 @@ export default async function SuperAdminSettingsPage({
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold">Einstellungen</h2>
@@ -43,14 +43,14 @@ export default async function SuperAdminSettingsPage({
           So funktioniert's:
         </div>
         <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-          <span className="rounded-full border border-slate-200 bg-white px-2 py-1">1. Vereinsdaten pruefen</span>
+          <span className="rounded-full border border-slate-200 bg-white px-2 py-1">1. Vereinsdaten prüfen</span>
           <span className="rounded-full border border-slate-200 bg-white px-2 py-1">2. Texte anpassen</span>
           <span className="rounded-full border border-slate-200 bg-white px-2 py-1">3. Speichern</span>
         </div>
       </div>
 
       <div className="space-y-8">
-        <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+        <section className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">1</div>
@@ -74,13 +74,13 @@ export default async function SuperAdminSettingsPage({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+        <section className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">3</div>
             <div>
               <h3 className="text-lg font-semibold text-slate-900">Dokumenten-KI</h3>
-              <p className="text-sm text-slate-500">Vorpruefung und gültigkeitslogik steuern.</p>
+              <p className="text-sm text-slate-500">Vorprüfung und Gültigkeitslogik steuern.</p>
             </div>
             </div>
             <FeatureGateToggle
@@ -102,7 +102,7 @@ export default async function SuperAdminSettingsPage({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+        <section className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">4</div>

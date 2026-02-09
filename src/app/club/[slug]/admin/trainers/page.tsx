@@ -34,12 +34,12 @@ export default async function AdminTrainersPage({
 
   return (
     <FeatureLockWrapper locked={locked}>
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm mb-6">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm mb-6">
         <h2 className="text-2xl md:text-3xl font-semibold">Trainer</h2>
         <p className="text-slate-500 text-sm">Trainerprofile, Preise und Auszahlungen.</p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm mb-6">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm mb-6">
         <h3 className="text-lg font-semibold text-slate-900">Offene Traineranfragen</h3>
         <div className="mt-3 space-y-2">
           {(pendingBookings || []).map((b: any) => (

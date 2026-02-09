@@ -100,10 +100,10 @@ export default function LoginPage() {
   // --- AUSWAHL SCREEN (Portal: Wenn User mehrere Rollen hat) ---
   if (showSelection) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-            <div className="w-full max-w-md space-y-6 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border dark:border-slate-800">
+        <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
+            <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold">Willkommen zurück! 👋</h1>
+                    <h1 className="text-2xl font-semibold">Willkommen zurück</h1>
                     <p className="text-slate-500 mt-2">Wähle, wohin du möchtest:</p>
                 </div>
 
@@ -140,8 +140,8 @@ export default function LoginPage() {
 
   // --- STANDARD LOGIN SCREEN ---
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <div className="w-full max-w-md space-y-8 bg-white dark:bg-slate-900 p-8 rounded-xl shadow-lg border dark:border-slate-800">
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
+      <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Login</h1>
           <p className="text-slate-500 mt-2">Südtirol Booking</p>

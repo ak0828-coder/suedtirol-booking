@@ -16,9 +16,9 @@ const defaultSections: FeatureSection[] = [
     title: "Navigation",
     key: "admin",
     items: [
-      { key: "overview", label: "Ubersicht" },
+      { key: "overview", label: "Übersicht" },
       { key: "bookings", label: "Buchungen" },
-      { key: "courts", label: "Platze" },
+      { key: "courts", label: "Plätze" },
       { key: "blocks", label: "Sperrzeiten" },
       { key: "plans", label: "Abos" },
       { key: "members", label: "Mitglieder" },

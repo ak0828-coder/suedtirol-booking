@@ -202,7 +202,7 @@ export function BookingModal({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] sm:max-w-[520px] bg-white text-slate-900 max-h-[92vh] overflow-y-auto overflow-x-hidden rounded-2xl">
+      <DialogContent className="w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] sm:max-w-[640px] bg-white text-slate-900 max-h-[92vh] overflow-y-auto overflow-x-hidden rounded-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>{courtName} buchen</span>
@@ -211,7 +211,7 @@ export function BookingModal({
             </span>
           </DialogTitle>
           <DialogDescription>
-             {courtName} ist geöffnet von {startHour || 8}:00 bis {endHour || 22}:00 Uhr.
+             Wähle Datum und Uhrzeit. Öffnungszeiten: {startHour || 8}:00 bis {endHour || 22}:00 Uhr.
           </DialogDescription>
         </DialogHeader>
 
@@ -220,7 +220,7 @@ export function BookingModal({
           {/* 1. DATUM WÄHLEN */}
           <div className="flex flex-col gap-2">
             <span className="text-sm font-semibold flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4" /> Datum wählen
+              <CalendarIcon className="w-4 h-4" /> Datum
             </span>
             <div className="border rounded-md p-2 flex justify-center bg-slate-50" style={{ ["--rdp-accent-color" as any]: "var(--club-primary)" }}>
               <Calendar
@@ -252,7 +252,7 @@ export function BookingModal({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold flex items-center gap-2">
-                  <Clock className="w-4 h-4" /> Uhrzeit wählen
+                  <Clock className="w-4 h-4" /> Uhrzeit
                 </span>
                 {isLoadingSlots && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
               </div>
@@ -329,14 +329,14 @@ export function BookingModal({
                           )}
                       </div>
                       {voucherError && <p className="text-xs text-red-500">{voucherError}</p>}
-                      {voucherSuccess && <p className="text-xs font-medium club-primary-text">✅ Gutschein über {discount}€ angewendet!</p>}
+                      {voucherSuccess && <p className="text-xs font-medium club-primary-text">Gutschein über {discount}€ angewendet.</p>}
                   </div>
                )}
 
                <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600">
                   <div className="mb-2">
-                    Zusammenfassung: <br/>
-                    <strong>{date?.toLocaleDateString('de-DE')}</strong> um <strong>{selectedTime} Uhr</strong>
+                    Zusammenfassung: <strong>{date?.toLocaleDateString("de-DE")}</strong> um{" "}
+                    <strong>{selectedTime} Uhr</strong>
                   </div>
                   
                   {/* --- NEU: PREIS ANZEIGE --- */}
@@ -397,7 +397,7 @@ export function BookingModal({
       }
                         }}
                       >
-                        {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
+                        {isBooking ? <Loader2 className="animate-spin" /> : `Online zahlen (${finalPrice}€)`}
                       </Button>
                       <Button variant="outline" className="w-full btn-press" disabled={isBooking} onClick={handleBook}>
                         Vor Ort bezahlen
@@ -449,7 +449,7 @@ export function BookingModal({
       }
                       }}
                     >
-                      {isBooking ? <Loader2 className="animate-spin" /> : `💳 Restbetrag zahlen (${finalPrice}€)`}
+                      {isBooking ? <Loader2 className="animate-spin" /> : `Online zahlen (${finalPrice}€)`}
                     </Button>
                   )}
 

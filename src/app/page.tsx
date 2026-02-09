@@ -21,7 +21,7 @@ const proof = [
 const modules = [
   {
     title: "Buchungen & Plätze",
-    description: "Live Kalender, Kollisionserkennung, Oeffnungszeiten, Sperrzeiten.",
+    description: "Live-Kalender, Kollisionserkennung, Öffnungszeiten, Sperrzeiten.",
     icon: Calendar,
   },
   {
@@ -35,7 +35,7 @@ const modules = [
     icon: CreditCard,
   },
   {
-    title: "Vertraege",
+    title: "Verträge",
     description: "Digitale Signatur, Pflichtfelder, PDF-Export, Revision.",
     icon: FileSignature,
   },
@@ -53,21 +53,21 @@ const modules = [
 
 const pains = [
   "Telefonketten und WhatsApp-Chaos für freie Plätze",
-  "Papiervertraege, Scans, manuelle Ablage",
-  "Offene Beitraege ohne klare Übersicht",
+  "Papierverträge, Scans, manuelle Ablage",
+  "Offene Beiträge ohne klare Übersicht",
   "Trainer-Abrechnung per Hand und Excel",
 ]
 
 const outcomes = [
   "Buchung und Mitgliederverwaltung in einem System",
-  "Vertraege digital und rechtssicher",
+  "Verträge digital und rechtssicher",
   "Zahlungen sauber nachvollziehbar",
   "Trainer und Kurse automatisiert abrechnen",
 ]
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#f7f4ef] text-slate-900">
+    <div className="min-h-screen bg-[#f5f5f7] text-slate-900">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#f3b87b]/40 blur-3xl" />
         <div className="absolute top-32 -left-28 h-96 w-96 rounded-full bg-[#6cc6b2]/40 blur-3xl" />
@@ -76,17 +76,17 @@ export default function Home() {
       <SiteHeader />
 
       <main className="relative z-10">
-        <section className="mx-auto max-w-6xl px-6 pt-8 pb-20">
+        <section className="mx-auto max-w-6xl px-6 pt-10 pb-20">
           <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-wide">
-                Made in Suedtirol - DSGVO ready
+                Made in Südtirol · DSGVO-ready
               </div>
               <h1 className="text-4xl md:text-5xl leading-tight">
-                Die Vereins-Software, die euren Betrieb leitet, waehrend ihr auf dem Platz seid.
+                Die Vereins-Software, die euren Betrieb leitet, während ihr auf dem Platz seid.
               </h1>
               <p className="text-lg text-slate-600">
-                Avaimo vereint Buchung, Mitgliedschaften, Zahlungen, Vertraege und Trainer in einer
+                Avaimo vereint Buchung, Mitgliedschaften, Zahlungen, Verträge und Trainer in einer
                 Plattform. Weniger Verwaltung, mehr Zeit für den Sport.
               </p>
               <div className="flex flex-wrap gap-3">
@@ -120,7 +120,7 @@ export default function Home() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-2xl bg-slate-800 p-4">
-                    <div className="text-xs text-slate-400">Offene Beitraege</div>
+                    <div className="text-xs text-slate-400">Offene Beiträge</div>
                     <div className="text-2xl font-semibold">8</div>
                   </div>
                   <div className="rounded-2xl bg-slate-800 p-4">
@@ -130,7 +130,7 @@ export default function Home() {
                 </div>
                 <div className="rounded-2xl bg-gradient-to-r from-[#6cc6b2] to-[#f3b87b] p-4 text-slate-900">
                   <div className="text-xs uppercase tracking-wide">KI Dokument Check</div>
-                  <div className="text-lg font-semibold">Attest geprueft - OK</div>
+                  <div className="text-lg font-semibold">Attest geprüft - OK</div>
                 </div>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function Home() {
 
         <section className="mx-auto max-w-6xl px-6 pb-20">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-semibold">Module, die Vereine sofort spuren</h2>
+            <h2 className="text-3xl font-semibold">Module, die Vereine sofort spüren</h2>
             <Link href="/features" className="text-sm text-slate-500 hover:text-slate-700">
               Alle Funktionen ansehen
             </Link>

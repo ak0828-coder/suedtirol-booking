@@ -78,13 +78,13 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-semibold">{bestCourt}</div>
-            <p className="text-xs text-muted-foreground">Am haeufigsten gebucht</p>
+            <p className="text-xs text-muted-foreground">Am häufigsten gebucht</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+        <Card className="col-span-4 rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle>Umsatz Übersicht</CardTitle>
           </CardHeader>
@@ -127,7 +127,7 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+        <Card className="col-span-3 rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle>Platzverteilung</CardTitle>
           </CardHeader>

@@ -29,8 +29,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border">
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
         <div className="mb-6">
             <Link href="/login" className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1">
                 <ArrowLeft className="w-4 h-4" /> Zurück zum Login

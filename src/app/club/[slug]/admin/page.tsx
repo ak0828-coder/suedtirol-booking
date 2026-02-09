@@ -39,10 +39,10 @@ export default async function AdminPage({
 
       <div className="grid xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-6">
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Letzte Aktivitaten</CardTitle>
-              <span className="text-xs text-slate-500">{bookings?.length || 0} Eintrage</span>
+              <CardTitle>Letzte Aktivitäten</CardTitle>
+              <span className="text-xs text-slate-500">{bookings?.length || 0} Einträge</span>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[620px] overflow-auto pr-2">
@@ -94,7 +94,7 @@ export default async function AdminPage({
         </div>
 
         <div className="space-y-6 xl:sticky xl:top-6 h-fit">
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle>Schnellzugriff</CardTitle>
             </CardHeader>
@@ -116,7 +116,7 @@ export default async function AdminPage({
                   href={`/club/${slug}/admin/courts`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
-                  Platze
+                  Plätze
                 </Link>
                 <Link
                   href={`/club/${slug}/admin/blocks`}

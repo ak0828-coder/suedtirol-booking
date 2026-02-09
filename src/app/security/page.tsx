@@ -19,15 +19,15 @@ const items = [
     text: "Skalierbare Architektur mit getrennten Rollen und sicherer Speicherung.",
   },
   {
-    title: "Vertraege & Nachweise",
+    title: "Verträge & Nachweise",
     icon: FileCheck,
-    text: "Digitale Signaturen, PDFs, Nachvollziehbarkeit und Exportmoeglichkeit.",
+    text: "Digitale Signaturen, PDFs, Nachvollziehbarkeit und Exportmöglichkeit.",
   },
 ]
 
 export default function SecurityPage() {
   return (
-    <div className="min-h-screen bg-[#f7f4ef] text-slate-900">
+    <div className="min-h-screen bg-[#f5f5f7] text-slate-900">
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
         <section className="space-y-4">

@@ -10,27 +10,27 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="relative z-20">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link href="/" className="text-lg font-semibold tracking-wide">
+    <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <Link href="/" className="text-lg font-semibold tracking-tight text-slate-900">
           Avaimo
         </Link>
-        <nav className="hidden items-center gap-5 text-sm md:flex">
+        <nav className="hidden items-center gap-6 text-sm md:flex">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="text-slate-700 hover:text-slate-900">
+            <Link key={item.href} href={item.href} className="text-slate-600 hover:text-slate-900">
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link
             href="/demo"
-            className="rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-white"
+            className="rounded-full border border-slate-300/80 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
           >
             Demo ansehen
           </Link>
           <Link href="/contact" className="rounded-full bg-slate-900 px-4 py-2 text-sm text-white">
-            Demo anfragen
+            Beratung
           </Link>
         </div>
       </div>

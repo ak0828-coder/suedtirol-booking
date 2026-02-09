@@ -22,11 +22,11 @@ export default async function SuperAdminCourtsPage({
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-semibold">Platze</h2>
-            <p className="text-slate-500 text-sm">Platze anlegen, bearbeiten und organisieren.</p>
+            <h2 className="text-2xl md:text-3xl font-semibold">Plätze</h2>
+            <p className="text-slate-500 text-sm">Plätze anlegen, bearbeiten und organisieren.</p>
           </div>
           <FeatureGateToggle
             clubId={club.id}

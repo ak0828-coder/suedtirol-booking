@@ -81,20 +81,20 @@ export default async function TrainingPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 p-6">
-      <div className="max-w-6xl mx-auto space-y-10">
-        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+    <div className="min-h-screen bg-[#f5f5f7]">
+      <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
+        <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm">
           <h1 className="text-3xl font-semibold text-slate-900">Training</h1>
-          <p className="text-slate-500">Trainerstunden buchen und Kurse beitreten.</p>
+          <p className="text-slate-500">Trainerstunden buchen und Kurse auswählen.</p>
         </div>
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">Trainer</h2>
-          {!user ? (
-            <div className="text-sm text-slate-500">
-              Bitte einloggen, um Trainerstunden zu buchen.
-            </div>
-          ) : null}
+          <div className="flex items-end justify-between gap-3">
+            <h2 className="text-xl font-semibold text-slate-900">Trainer</h2>
+            {!user ? (
+              <div className="text-xs text-slate-500">Login nötig, um zu buchen.</div>
+            ) : null}
+          </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {(trainers || []).map((trainer) => (
               <TrainerBookingCard key={trainer.id} clubSlug={slug} trainer={trainer} />

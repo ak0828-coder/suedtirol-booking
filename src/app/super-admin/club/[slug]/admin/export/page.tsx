@@ -14,7 +14,7 @@ export default async function SuperAdminExportPage({
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold">Export</h2>

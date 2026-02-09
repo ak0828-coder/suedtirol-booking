@@ -24,8 +24,8 @@ export default async function SuccessPage({
   const meta = session.metadata as any
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center">
+    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center rounded-3xl border border-slate-200/60 bg-white shadow-lg">
         <CardHeader>
           <div className="flex justify-center mb-4">
             <CheckCircle2 className="h-16 w-16 text-green-500" />

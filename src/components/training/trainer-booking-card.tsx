@@ -44,8 +44,9 @@ export function TrainerBookingCard({
           return `${label} ${slot.start}-${slot.end}`
         })
         .filter(Boolean)
-        .join(" | ")
+        .join(" · ")
     : ""
+  const imageUrl = trainer.image_url || trainer.imageUrl || trainer.image || ""
 
   const handleBooking = () => {
     if (!date || !time) {
@@ -70,30 +71,27 @@ export function TrainerBookingCard({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 shadow-sm space-y-3">
-      <div className="flex items-center gap-3">
-        {trainer.image_url ? (
+    <div className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
+      <div className="flex items-center gap-4">
+        {imageUrl ? (
           <img
-            src={trainer.image_url}
+            src={imageUrl}
             alt={`${trainer.first_name} ${trainer.last_name}`}
-            className="w-12 h-12 rounded-xl object-cover"
+            className="w-14 h-14 rounded-2xl object-cover border border-slate-200/60"
           />
         ) : (
-          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-600">
             {trainer.first_name?.[0]}
             {trainer.last_name?.[0]}
           </div>
         )}
         <div>
-          <div className="text-lg font-semibold text-slate-900">
+          <div className="text-lg font-semibold text-slate-900 leading-tight">
             {trainer.first_name} {trainer.last_name}
           </div>
           <div className="text-sm text-slate-500">{trainer.bio || "Trainerprofil"}</div>
         </div>
       </div>
-      {availabilityText ? (
-        <div className="text-xs text-slate-500">Verfügbar: {availabilityText}</div>
-      ) : null}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
@@ -105,13 +103,15 @@ export function TrainerBookingCard({
               Trainerstunde buchen – {trainer.first_name} {trainer.last_name}
             </DialogTitle>
             <DialogDescription>
-              Wähle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainer-Bestätigung fix.
+              Wähle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainerbestätigung fix.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {availabilityText ? (
-              <div className="text-xs text-slate-500">Verfügbar: {availabilityText}</div>
+              <div className="rounded-xl border border-slate-200/60 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                Verfügbar: {availabilityText}
+              </div>
             ) : null}
 
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -119,7 +119,7 @@ export function TrainerBookingCard({
                 <div className="text-xs text-slate-500">Datum</div>
                 <input
                   type="date"
-                  className="border rounded-md px-2 py-1 w-full"
+                  className="border rounded-xl px-3 py-2 w-full bg-white"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                 />
@@ -128,7 +128,7 @@ export function TrainerBookingCard({
                 <div className="text-xs text-slate-500">Uhrzeit</div>
                 <input
                   type="time"
-                  className="border rounded-md px-2 py-1 w-full"
+                  className="border rounded-xl px-3 py-2 w-full bg-white"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
                 />
@@ -137,14 +137,14 @@ export function TrainerBookingCard({
                 <div className="text-xs text-slate-500">Dauer (Min)</div>
                 <input
                   type="number"
-                  className="border rounded-md px-2 py-1 w-full"
+                  className="border rounded-xl px-3 py-2 w-full bg-white"
                   value={duration}
                   min={30}
                   step={30}
                   onChange={(e) => setDuration(Number(e.target.value))}
                 />
               </div>
-              <div className="text-xs text-slate-500 flex items-end">Schritte 30 Min</div>
+              <div className="text-xs text-slate-500 flex items-end">Schritte à 30 Min</div>
             </div>
 
             {error ? <div className="text-xs text-red-500">{error}</div> : null}
