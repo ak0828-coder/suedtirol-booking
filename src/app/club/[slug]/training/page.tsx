@@ -45,9 +45,9 @@ export default async function TrainingPage({
     : { data: [] as any[] }
 
   const sessionIds = (sessions || []).map((s: any) => s.id)
-  const { data: sessionBookings } = sessionIds.length
+  const { data: sessionParticipants } = sessionIds.length
     ? await supabase
-        .from("bookings")
+        .from("course_session_participants")
         .select("course_session_id, status, payment_status")
         .in("course_session_id", sessionIds)
     : { data: [] as any[] }
@@ -73,8 +73,7 @@ export default async function TrainingPage({
   }
 
   const bookedBySession = new Map<string, number>()
-  for (const b of sessionBookings || []) {
-    if (b.payment_status === "internal") continue
+  for (const b of sessionParticipants || []) {
     if (b.status === "cancelled") continue
     const key = b.course_session_id
     if (!key) continue

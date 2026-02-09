@@ -1996,24 +1996,23 @@ export async function createCourseCheckoutSession(
       return { error: "Ausgewaehlte Termine sind ungueltig." }
     }
 
-    const { data: existingBookings } = await supabase
-      .from("bookings")
+    const { data: existingParticipants } = await supabase
+      .from("course_session_participants")
       .select("id, course_session_id")
       .eq("user_id", user.id)
       .in("course_session_id", selected)
       .neq("status", "cancelled")
-    if (existingBookings && existingBookings.length > 0) {
+    if (existingParticipants && existingParticipants.length > 0) {
       return { error: "Du bist bereits fuer einen der Termine angemeldet." }
     }
 
-    const { data: sessionBookings } = await supabase
-      .from("bookings")
+    const { data: sessionParticipants } = await supabase
+      .from("course_session_participants")
       .select("course_session_id, status, payment_status")
       .in("course_session_id", selected)
 
     const counts = new Map<string, number>()
-    for (const b of sessionBookings || []) {
-      if (b.payment_status === "internal") continue
+    for (const b of sessionParticipants || []) {
       if (b.status === "cancelled") continue
       const key = b.course_session_id
       if (!key) continue
@@ -2034,29 +2033,16 @@ export async function createCourseCheckoutSession(
     const pricePerSession = Number(course.price || 0)
     const totalPrice = pricePerSession * selected.length
 
-    const bookingIds: string[] = []
     for (const s of sessionRows) {
-      const { data: booking, error: bookingError } = await supabaseAdmin
-        .from("bookings")
+      const { error: insertError } = await supabaseAdmin
+        .from("course_session_participants")
         .insert({
-          club_id: club.id,
-          court_id: s.court_id || null,
           course_session_id: s.id,
-          trainer_id: course.trainer_id,
-          booking_type: "course",
-          start_time: s.start_time,
-          end_time: s.end_time,
-          status: totalPrice > 0 ? "awaiting_payment" : "confirmed",
-          payment_status: totalPrice > 0 ? "unpaid" : "paid_cash",
-          price_paid: pricePerSession,
-          guest_name: user.email || "Mitglied",
-          guest_email: user.email || null,
           user_id: user.id,
+          status: "confirmed",
+          payment_status: totalPrice > 0 ? "unpaid" : "paid_cash",
         })
-        .select("id")
-        .single()
-      if (bookingError || !booking) return { error: "Fehler beim Reservieren der Termine." }
-      bookingIds.push(booking.id)
+      if (insertError) return { error: "Fehler beim Reservieren der Termine." }
     }
 
     const { data: existingParticipant } = await supabase
@@ -2144,7 +2130,6 @@ export async function createCourseCheckoutSession(
         clubSlug,
         userId: user.id,
         pricingMode: "per_session",
-        bookingIds: bookingIds.join(","),
         sessionIds: selected.join(","),
       },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -4880,28 +4865,27 @@ export async function exportCourseRevenueCsv(clubSlug: string, year: number, mon
     ].join(";"))
   }
 
-  const { data: courseBookings } = await supabaseAdmin
-    .from("bookings")
-    .select("course_session_id, start_time, price_paid, payment_status, status")
-    .eq("booking_type", "course")
+  const { data: sessionParticipants } = await supabaseAdmin
+    .from("course_session_participants")
+    .select("course_session_id, payment_status, status, joined_at")
     .in("payment_status", ["paid_stripe", "paid_cash", "paid_member"])
-    .gte("start_time", startDate.toISOString())
-    .lte("start_time", endDate.toISOString())
+    .gte("joined_at", startDate.toISOString())
+    .lte("joined_at", endDate.toISOString())
 
-  const sessionIds = (courseBookings || []).map((b: any) => b.course_session_id).filter(Boolean)
+  const sessionIds = (sessionParticipants || []).map((b: any) => b.course_session_id).filter(Boolean)
   const { data: sessionRows } = sessionIds.length
     ? await supabaseAdmin
         .from("course_sessions")
-        .select("id, courses:course_id(title, pricing_mode, club_id)")
+        .select("id, start_time, courses:course_id(title, pricing_mode, club_id, price)")
         .in("id", sessionIds)
     : { data: [] as any[] }
 
   const sessionCourse = new Map<string, any>()
   for (const s of sessionRows || []) {
-    sessionCourse.set(s.id, s.courses)
+    sessionCourse.set(s.id, s.courses?.[0])
   }
 
-  for (const b of courseBookings || []) {
+  for (const b of sessionParticipants || []) {
     if (b.status === "cancelled") continue
     const courseInfo = sessionCourse.get(b.course_session_id)
     if (!courseInfo || courseInfo.club_id !== club.id) continue
@@ -4911,11 +4895,11 @@ export async function exportCourseRevenueCsv(clubSlug: string, year: number, mon
     if (b.payment_status === "paid_cash") payStatus = "Bar / Vor Ort"
     if (b.payment_status === "paid_member") payStatus = "Mitglied (Kostenlos)"
     rows.push([
-      new Date(b.start_time).toLocaleDateString("de-DE"),
+      new Date(b.joined_at).toLocaleDateString("de-DE"),
       `"${courseInfo.title || "Kurs"}"`,
       `"Terminbuchung"`,
       payStatus,
-      Number(b.price_paid || 0).toString().replace(".", ","),
+      Number(courseInfo.price || 0).toString().replace(".", ","),
       b.status || "",
     ].join(";"))
   }

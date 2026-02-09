@@ -360,17 +360,17 @@ export async function POST(req: Request) {
           const courseId = session.metadata?.courseId
           const userId = session.metadata?.userId
           const pricingMode = session.metadata?.pricingMode || "full_course"
-          const bookingIdsRaw = session.metadata?.bookingIds || ""
           const sessionIdsRaw = session.metadata?.sessionIds || ""
           const amountTotal = session.amount_total ? session.amount_total / 100 : 0
           const customerEmail = session.customer_details?.email
 
           if (pricingMode === "per_session") {
-              const bookingIds = bookingIdsRaw.split(",").filter(Boolean)
-              if (bookingIds.length > 0) {
-                  await supabaseAdmin.from('bookings')
-                    .update({ status: 'confirmed', payment_status: 'paid_stripe', payment_intent_id: session.payment_intent || null })
-                    .in('id', bookingIds)
+              const sessionIds = sessionIdsRaw.split(",").filter(Boolean)
+              if (sessionIds.length > 0 && userId) {
+                  await supabaseAdmin.from('course_session_participants')
+                    .update({ payment_status: 'paid_stripe' })
+                    .eq('user_id', userId)
+                    .in('course_session_id', sessionIds)
               }
               if (courseId && userId) {
                   await supabaseAdmin.from('course_participants')
@@ -500,16 +500,19 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.expired") {
       const expired = event.data.object as any
       const bookingId = expired.metadata?.bookingId
-      const bookingIds = String(expired.metadata?.bookingIds || "")
+      const sessionIds = String(expired.metadata?.sessionIds || "")
         .split(",")
         .filter(Boolean)
       if (bookingId) {
           await supabaseAdmin.from('bookings').delete().eq('id', bookingId)
           console.log(`ðŸ§¹ Awaiting-Payment Buchung gelÃ¶scht: ${bookingId}`)
       }
-      if (bookingIds.length > 0) {
-          await supabaseAdmin.from('bookings').delete().in('id', bookingIds)
-          console.log(`ðŸ§¹ Awaiting-Payment Buchungen geloescht: ${bookingIds.join(",")}`)
+      if (sessionIds.length > 0 && expired.metadata?.userId) {
+          await supabaseAdmin.from('course_session_participants')
+            .delete()
+            .eq('user_id', expired.metadata.userId)
+            .in('course_session_id', sessionIds)
+          console.log(`ðŸ§¹ Awaiting-Payment Session-Teilnahmen geloescht: ${sessionIds.join(",")}`)
       }
   }
 
