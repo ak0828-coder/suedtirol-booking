@@ -46,6 +46,7 @@ export function TrainerManager({
             className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault()
+              const form = e.currentTarget as HTMLFormElement
               setError(null)
               const formData = new FormData(e.currentTarget)
               startTransition(async () => {
@@ -54,7 +55,7 @@ export function TrainerManager({
                   setError(res.error)
                 } else {
                   setShowForm(false)
-                  e.currentTarget.reset()
+                  form.reset()
                 }
               })
             }}
