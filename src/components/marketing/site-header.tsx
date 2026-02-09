@@ -10,14 +10,14 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-white/60 bg-white/70 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-[#0E1A14]/10 bg-[#1F3D2B]/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-slate-900">
+        <Link href="/" className="text-lg font-semibold tracking-tight text-[#F9F8F4]">
           Avaimo
         </Link>
         <nav className="hidden items-center gap-6 text-sm md:flex">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="text-slate-600 hover:text-slate-900">
+            <Link key={item.href} href={item.href} className="text-[#F9F8F4]/80 hover:text-[#F9F8F4]">
               {item.label}
             </Link>
           ))}
@@ -25,11 +25,14 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <Link
             href="/demo"
-            className="rounded-full border border-slate-300/80 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-full border border-[#F9F8F4]/30 bg-transparent px-4 py-2 text-sm text-[#F9F8F4] hover:bg-[#F9F8F4]/10"
           >
             Demo ansehen
           </Link>
-          <Link href="/contact" className="rounded-full bg-slate-900 px-4 py-2 text-sm text-white">
+          <Link
+            href="/contact"
+            className="rounded-full bg-[#CBBF9A] px-4 py-2 text-sm text-[#0E1A14] hover:opacity-90"
+          >
             Beratung
           </Link>
         </div>
