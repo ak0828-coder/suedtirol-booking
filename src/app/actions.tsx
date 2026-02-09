@@ -1196,14 +1196,13 @@ export async function createTrainer(formData: FormData): Promise<{ success?: boo
     const buffer = new Uint8Array(arrayBuffer)
 
     const supabaseAdmin = getAdminClient()
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from("trainer-photos")
-      .upload(fileName, buffer, { contentType: imageFile.type, upsert: true })
-    if (!uploadError) {
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from("trainer-photos")
+        .upload(fileName, buffer, { contentType: imageFile.type, upsert: true })
+      if (uploadError) return { error: `Bild-Upload fehlgeschlagen: ${uploadError.message}` }
       const { data: { publicUrl } } = supabaseAdmin.storage.from("trainer-photos").getPublicUrl(fileName)
       imageUrl = publicUrl
     }
-  }
 
   const { error: insertError } = await getAdminClient().from("trainers").insert({
     club_id: club!.id,
@@ -1259,14 +1258,13 @@ export async function updateTrainer(formData: FormData) {
     const buffer = new Uint8Array(arrayBuffer)
 
     const supabaseAdmin = getAdminClient()
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from("trainer-photos")
-      .upload(fileName, buffer, { contentType: imageFile.type, upsert: true })
-    if (!uploadError) {
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from("trainer-photos")
+        .upload(fileName, buffer, { contentType: imageFile.type, upsert: true })
+      if (uploadError) return { error: `Bild-Upload fehlgeschlagen: ${uploadError.message}` }
       const { data: { publicUrl } } = supabaseAdmin.storage.from("trainer-photos").getPublicUrl(fileName)
       imageUrl = publicUrl
     }
-  }
 
   const payload: any = {
     first_name: String(formData.get("firstName") || ""),
