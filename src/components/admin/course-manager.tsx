@@ -142,8 +142,8 @@ export function CourseManager({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Kurse & Camps</h3>
-        <Button className="rounded-full" onClick={() => setShowForm((v) => !v)}>
+        <h3 id="tour-courses-header" className="text-lg font-semibold text-slate-900">Kurse & Camps</h3>
+        <Button id="tour-courses-create" className="rounded-full" onClick={() => setShowForm((v) => !v)}>
           {showForm ? "Schließen" : "Kurs anlegen"}
         </Button>
       </div>
@@ -269,14 +269,14 @@ export function CourseManager({
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div id="tour-courses-sessions" className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Termine</Label>
                 <Button type="button" variant="outline" className="rounded-full" onClick={addSession}>
                   Termin hinzufuegen
                 </Button>
               </div>
-              <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
+              <div id="tour-courses-series" className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
                 <div className="text-xs font-semibold text-slate-600 mb-2">Serien-Termine</div>
                 <div className="grid md:grid-cols-6 gap-2">
                   <Input
@@ -358,7 +358,7 @@ export function CourseManager({
             </div>
 
             {validSessions.length > 0 ? (
-              <div className="rounded-xl border border-slate-200/60 bg-white p-3">
+              <div id="tour-courses-preview" className="rounded-xl border border-slate-200/60 bg-white p-3">
                 <div className="text-xs font-semibold text-slate-600 mb-2">Kalender-Vorschau</div>
                 <div className="grid grid-cols-7 gap-2 text-[11px]">
                   {dayNames.map((d) => (

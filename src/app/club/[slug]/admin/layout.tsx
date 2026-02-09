@@ -3,6 +3,8 @@ import { LogOut, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarNav } from "@/components/admin/sidebar-nav"
 import { getAdminContext } from "./_lib/get-admin-context"
+import { AdminTourButton } from "@/components/tours/admin-tour-button"
+import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
 
@@ -67,7 +69,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-[#f5f5f7] p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+        <div id="tour-admin-header" className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div
               className="w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-slate-200"
@@ -89,6 +91,9 @@ export default async function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <Suspense fallback={null}>
+              <AdminTourButton />
+            </Suspense>
             <Link href={`/club/${slug}`} target="_blank">
               <Button variant="outline" className="gap-2 rounded-full">
                 <ExternalLink className="w-4 h-4" /> Vorschau
@@ -105,7 +110,7 @@ export default async function AdminLayout({
 
         <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
           <aside className="space-y-4">
-            <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
+            <div id="tour-admin-nav" className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
                 Navigation
               </div>

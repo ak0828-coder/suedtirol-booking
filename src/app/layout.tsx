@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TourShell } from "@/components/tours/tour-shell";
 
 const sora = Sora({
   variable: "--font-sans",
@@ -32,7 +33,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <TourShell>{children}</TourShell>
         </ThemeProvider>
       </body>
     </html>

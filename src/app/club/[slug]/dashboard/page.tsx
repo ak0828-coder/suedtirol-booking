@@ -10,6 +10,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getReadableTextColor } from "@/lib/color"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { TourLauncher } from "@/components/tours/tour-launcher"
+import { Suspense } from "react"
 
 export default async function MemberDashboard({
   params,
@@ -82,11 +84,11 @@ export default async function MemberDashboard({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter"
+      className="min-h-screen bg-[#f5f5f7] pb-24 safe-bottom page-enter"
       style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
     >
       <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
-        <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
+        <header id="tour-member-header" className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
           <div
             className="absolute -top-10 -right-10 h-40 w-40 rounded-full blur-2xl"
             style={{ backgroundColor: "var(--club-primary)", opacity: 0.12 }}
@@ -107,6 +109,9 @@ export default async function MemberDashboard({
                 {member.membership_plans?.name || "Aktiv"}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Suspense fallback={null}>
+                  <TourLauncher tour="member-dashboard" storageKey="tour_member_dashboard_seen" label="Guide" autoStart />
+                </Suspense>
                 <Link href={`/club/${slug}/dashboard/settings`}>
                   <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
                     Einstellungen
@@ -118,7 +123,7 @@ export default async function MemberDashboard({
                   </Button>
                 </Link>
                 <Link href={`/club/${slug}`}>
-                  <Button variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
+                  <Button id="tour-member-book" variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
                     Zur Buchung <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
@@ -128,7 +133,7 @@ export default async function MemberDashboard({
         </header>
 
         <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card id="tour-member-next" className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
                 <Trophy className="club-primary-text" /> Dein Status
@@ -159,7 +164,7 @@ export default async function MemberDashboard({
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card id="tour-member-profile" className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
                 <Calendar className="club-primary-text" /> Nächster Termin
@@ -235,7 +240,7 @@ export default async function MemberDashboard({
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-3">
+          <Card id="tour-member-upcoming" className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-3">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
                 <Sparkles className="club-primary-text" /> Badges & Erfolge

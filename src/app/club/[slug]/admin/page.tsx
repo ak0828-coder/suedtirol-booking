@@ -39,7 +39,7 @@ export default async function AdminPage({
 
       <div className="grid xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-6">
-          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card id="tour-admin-activity" className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Letzte Aktivitäten</CardTitle>
               <span className="text-xs text-slate-500">{bookings?.length || 0} Einträge</span>
@@ -94,7 +94,7 @@ export default async function AdminPage({
         </div>
 
         <div className="space-y-6 xl:sticky xl:top-6 h-fit">
-          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card id="tour-admin-quick" className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle>Schnellzugriff</CardTitle>
             </CardHeader>
