@@ -1553,10 +1553,6 @@ export async function getTrainerPayoutSummary(clubSlug: string) {
 
 export async function createStripeConnectAccount(clubSlug: string) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return { error: "STRIPE_SECRET_KEY fehlt in der Umgebung." }
-    }
-
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: "Nicht eingeloggt" }
@@ -1565,13 +1561,12 @@ export async function createStripeConnectAccount(clubSlug: string) {
     if (error) return { error }
 
     const admin = getAdminClient()
-    const { data: clubRow, error: clubError } = await admin
+    const { data: clubRow } = await admin
       .from("clubs")
       .select("id, name, stripe_account_id")
       .eq("id", club!.id)
       .single()
 
-    if (clubError) return { error: clubError.message }
     if (!clubRow) return { error: "Club nicht gefunden" }
 
     let accountId = clubRow.stripe_account_id
@@ -1584,19 +1579,10 @@ export async function createStripeConnectAccount(clubSlug: string) {
           card_payments: { requested: true },
           transfers: { requested: true },
         },
-        business_type: "company",
-        business_profile: {
-          name: clubRow.name,
-          product_description: `Platzbuchungen für ${clubRow.name}`,
-        },
       })
 
       accountId = account.id
-      const { error: updateError } = await admin
-        .from("clubs")
-        .update({ stripe_account_id: accountId })
-        .eq("id", clubRow.id)
-      if (updateError) return { error: updateError.message }
+      await admin.from("clubs").update({ stripe_account_id: accountId }).eq("id", clubRow.id)
     }
 
     const origin = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"

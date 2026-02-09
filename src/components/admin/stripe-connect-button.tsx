@@ -15,7 +15,6 @@ export function StripeConnectButton({
 }) {
   const [loading, setLoading] = useState(false)
   const [connected, setConnected] = useState(initialConnected)
-  const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -28,24 +27,21 @@ export function StripeConnectButton({
 
   const verifyStatus = async () => {
     setLoading(true)
-    setError(null)
     const res = await checkStripeStatus(clubSlug)
     setConnected(res?.connected || false)
     setLoading(false)
-    if (res?.error) setError(res.error)
     router.refresh()
   }
 
   const handleConnect = async () => {
     setLoading(true)
-    setError(null)
     const res = await createStripeConnectAccount(clubSlug)
     if (res?.url) {
       window.location.href = res.url
       return
     }
     setLoading(false)
-    setError(res?.error || "Unbekannter Fehler")
+    alert(`Fehler: ${res?.error || "Unbekannter Fehler"}`)
   }
 
   if (connected) {
@@ -92,7 +88,6 @@ export function StripeConnectButton({
         {loading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : null}
         Jetzt mit Stripe verbinden
       </Button>
-      {error ? <div className="mt-3 text-sm text-red-600">{error}</div> : null}
     </div>
   )
 }
