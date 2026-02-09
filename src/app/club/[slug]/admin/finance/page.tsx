@@ -3,7 +3,19 @@ import { notFound } from "next/navigation"
 import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
 import { TrainerPayouts } from "@/components/admin/trainer-payouts"
-import { StripeConnectButton } from "@/components/admin/stripe-connect-button"
+import dynamic from "next/dynamic"
+
+const StripeConnectButton = dynamic(
+  () => import("@/components/admin/stripe-connect-button").then((m) => m.StripeConnectButton),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
+        Stripe Connect wird geladen…
+      </div>
+    ),
+  }
+)
 
 export const dynamic = "force-dynamic"
 
