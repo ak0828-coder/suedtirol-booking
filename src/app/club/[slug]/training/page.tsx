@@ -100,7 +100,7 @@ export default async function TrainingPage({
               <TrainerBookingCard key={trainer.id} clubSlug={slug} trainer={trainer} />
             ))}
             {(trainers || []).length === 0 ? (
-              <div className="text-sm text-slate-500">Aktuell sind keine Trainer Verfügbar.</div>
+              <div className="text-sm text-slate-500">Aktuell sind keine Trainer verfügbar.</div>
             ) : null}
           </div>
         </section>

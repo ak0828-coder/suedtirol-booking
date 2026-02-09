@@ -49,7 +49,7 @@ export function TrainerBookingCard({
 
   const handleBooking = () => {
     if (!date || !time) {
-      setError("Bitte Datum und Zeit waehlen.")
+      setError("Bitte Datum und Zeit wählen.")
       setSuccess(null)
       return
     }
@@ -105,7 +105,7 @@ export function TrainerBookingCard({
               Trainerstunde buchen – {trainer.first_name} {trainer.last_name}
             </DialogTitle>
             <DialogDescription>
-              Waehle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainer-Bestätigung fix.
+              Wähle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainer-Bestätigung fix.
             </DialogDescription>
           </DialogHeader>
 
@@ -159,5 +159,6 @@ export function TrainerBookingCard({
     </div>
   )
 }
+
 
 

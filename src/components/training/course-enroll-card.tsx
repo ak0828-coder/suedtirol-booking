@@ -39,7 +39,7 @@ export function CourseEnrollCard({
     const dayNames = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
     const [key] = Array.from(keys)
     const [day, start, end] = key.split("-")
-    return `Woechentlich ${dayNames[Number(day)]} ${start}-${end}`
+    return `Wöchentlich ${dayNames[Number(day)]} ${start}-${end}`
   })()
 
   const miniCalendar = (() => {
@@ -115,7 +115,7 @@ export function CourseEnrollCard({
       ) : null}
       {nextSession ? (
         <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-xs">
-          <div className="text-emerald-700 font-semibold">Naechster Termin</div>
+          <div className="text-emerald-700 font-semibold">Nächster Termin</div>
           <div className="text-emerald-700">
             {new Date(nextSession.start_time).toLocaleDateString("de-DE")}{" "}
             {new Date(nextSession.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
@@ -124,7 +124,7 @@ export function CourseEnrollCard({
       ) : null}
       {displaySessions.length > 0 ? (
         <div className="text-xs text-slate-500">
-          Naechste Termine:{" "}
+          Nächste Termine:{" "}
           {displaySessions.map((s: any, idx: number) => {
             const d = new Date(s.start_time)
             const dateStr = d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
@@ -291,12 +291,12 @@ export function CourseEnrollCard({
                   <div className="text-sm font-semibold text-slate-900">Deine Auswahl</div>
                   <div className="text-xs text-slate-500 mb-3">
                     {pricingMode === "per_session"
-                      ? "Waehle die Termine, an denen du teilnehmen moechtest."
+                      ? "Wähle die Termine, an denen du teilnehmen möchtest."
                       : "Dieser Kurs wird als Gesamtpaket gebucht."}
                   </div>
                   {pricingMode === "per_session" ? (
                     <div className="text-xs font-semibold text-slate-700 mb-2">
-                      {selected.length} von {sortedSessions.length} Terminen ausgewaehlt
+                      {selected.length} von {sortedSessions.length} Terminen ausgewählt
                     </div>
                   ) : null}
 
@@ -376,7 +376,7 @@ export function CourseEnrollCard({
 
                 <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-4 lg:sticky lg:top-4">
                   <div className="flex items-center justify-between text-sm">
-                    <div className="text-slate-600">Ausgewaehlt</div>
+                    <div className="text-slate-600">ausgewählt</div>
                     <div className="font-semibold text-slate-900">
                       {pricingMode === "per_session" ? `${selected.length} Termin(e)` : `${sortedSessions.length} Termine`}
                     </div>
@@ -388,7 +388,7 @@ export function CourseEnrollCard({
                     </div>
                   </div>
                   {pricingMode === "per_session" && selected.length === 0 ? (
-                    <div className="text-xs text-rose-600 mt-2">Bitte mindestens einen Termin waehlen.</div>
+                    <div className="text-xs text-rose-600 mt-2">Bitte mindestens einen Termin wählen.</div>
                   ) : null}
                 </div>
               </div>
@@ -421,5 +421,6 @@ export function CourseEnrollCard({
     </div>
   )
 }
+
 
 
