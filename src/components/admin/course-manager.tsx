@@ -56,6 +56,7 @@ export function CourseManager({
       .map((s: any) => {
         const start = new Date(s.start_time)
         const end = new Date(s.end_time)
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
         const pad = (n: number) => String(n).padStart(2, "0")
         return {
           date: start.toISOString().slice(0, 10),
@@ -64,6 +65,7 @@ export function CourseManager({
           courtId: s.court_id || courts[0]?.id || "",
         } as SessionRow
       })
+      .filter(Boolean) as SessionRow[]
 
   const isValidDate = (value: string) => {
     if (!value) return false
@@ -90,7 +92,10 @@ export function CourseManager({
   }
 
   const generateWeeklySessions = () => {
-    if (!recurrence.startDate) return
+    if (!recurrence.startDate || !isValidDate(recurrence.startDate)) {
+      setError("Bitte ein gültiges Startdatum wählen.")
+      return
+    }
     const startDate = new Date(recurrence.startDate)
     const weeks = Math.max(1, Number(recurrence.weeks || 1))
     const weekday = Number(recurrence.weekday)
