@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useMemo, useState } from "react"
 import { CourseEnrollCard } from "@/components/training/course-enroll-card"
@@ -34,14 +34,14 @@ export function CourseGrid({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm text-slate-500">
-          {onlyAvailable ? "Nur Kurse mit freien Plaetzen" : "Alle Kurse"}
+          {onlyAvailable ? "Nur Kurse mit freien Plätzen" : "Alle Kurse"}
         </div>
         <Button
           variant={onlyAvailable ? "default" : "outline"}
           className="rounded-full"
           onClick={() => setOnlyAvailable((v) => !v)}
         >
-          {onlyAvailable ? "Alle anzeigen" : "Nur freie Plaetze"}
+          {onlyAvailable ? "Alle anzeigen" : "Nur freie Plätze"}
         </Button>
       </div>
 
@@ -56,3 +56,4 @@ export function CourseGrid({
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import { SiteHeader } from "@/components/marketing/site-header"
+﻿import { SiteHeader } from "@/components/marketing/site-header"
 import { SiteFooter } from "@/components/marketing/site-footer"
 import { ShieldCheck, Lock, Server, FileCheck } from "lucide-react"
 
@@ -6,12 +6,12 @@ const items = [
   {
     title: "DSGVO & Hosting",
     icon: ShieldCheck,
-    text: "Datenhaltung in der EU, klare Rollen und Audit-Trails fuer jedes Dokument.",
+    text: "Datenhaltung in der EU, klare Rollen und Audit-Trails für jedes Dokument.",
   },
   {
     title: "Zugriffsrechte",
     icon: Lock,
-    text: "Feingranulare Rechte fuer Vorstand, Admin, Trainer und Mitglieder.",
+    text: "Feingranulare Rechte für Vorstand, Admin, Trainer und Mitglieder.",
   },
   {
     title: "Infrastruktur",
@@ -34,7 +34,7 @@ export default function SecurityPage() {
           <div className="text-xs uppercase tracking-wide text-slate-500">Sicherheit</div>
           <h1 className="text-4xl font-semibold">Sicher, nachvollziehbar, DSGVO-konform.</h1>
           <p className="text-slate-600 max-w-3xl">
-            Avaimo ist fuer Vereine gebaut, die mit sensiblen Mitgliedsdaten arbeiten.
+            Avaimo ist für Vereine gebaut, die mit sensiblen Mitgliedsdaten arbeiten.
             Sicherheit ist nicht optional, sondern Standard.
           </p>
         </section>
@@ -54,3 +54,4 @@ export default function SecurityPage() {
     </div>
   )
 }
+

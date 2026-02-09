@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import PDFDocument from "pdfkit/js/pdfkit.standalone"
 
@@ -157,7 +157,7 @@ async function buildPdfResponse({
       doc.font("Helvetica").fontSize(9).fillColor(colors.light)
       doc.text("Ort, Datum: ____________________________________________")
       doc.moveDown(0.6)
-      doc.text("Dieses Dokument wurde digital ueber Avaimo erstellt.")
+      doc.text("Dieses Dokument wurde digital Über Avaimo erstellt.")
 
       doc.end()
     })
@@ -262,3 +262,4 @@ export async function POST(
     fields: Array.isArray(payload?.fields) ? payload.fields : [],
   })
 }
+

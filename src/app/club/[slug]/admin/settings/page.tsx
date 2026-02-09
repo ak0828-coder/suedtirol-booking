@@ -1,4 +1,4 @@
-import { ClubSettings } from "@/components/admin/club-settings"
+﻿import { ClubSettings } from "@/components/admin/club-settings"
 import { ClubCmsEditor } from "@/components/admin/club-cms-editor"
 import { getClubAiSettings, getClubContent } from "@/app/actions"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
@@ -27,7 +27,7 @@ export default async function AdminSettingsPage({
       <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <h2 className="text-2xl md:text-3xl font-semibold">Einstellungen</h2>
         <p className="text-slate-500 text-sm">
-          Hier bearbeitest du Vereinsdaten und alle Texte der Club-Seite. Aenderungen sind sofort live.
+          Hier bearbeitest du Vereinsdaten und alle Texte der Club-Seite. Änderungen sind sofort live.
         </p>
         <div className="mt-4 rounded-xl border border-slate-200/60 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           So funktioniert's:
@@ -68,7 +68,7 @@ export default async function AdminSettingsPage({
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">Dokumenten-KI</h3>
-                  <p className="text-sm text-slate-500">Vorpruefung und Gueltigkeitslogik steuern.</p>
+                  <p className="text-sm text-slate-500">Vorpruefung und gültigkeitslogik steuern.</p>
                 </div>
               </div>
               <div className="mt-5">
@@ -104,3 +104,4 @@ export default async function AdminSettingsPage({
     </FeatureLockWrapper>
   )
 }
+

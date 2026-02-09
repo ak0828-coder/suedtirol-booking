@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -52,9 +52,9 @@ const demoBookings = [
 ]
 
 const navItems = [
-  { href: "", label: "Uebersicht" },
+  { href: "", label: "Übersicht" },
   { href: "/bookings", label: "Buchungen" },
-  { href: "/courts", label: "Plaetze" },
+  { href: "/courts", label: "Plätze" },
   { href: "/blocks", label: "Sperrzeiten" },
   { href: "/plans", label: "Abos" },
   { href: "/members", label: "Mitglieder" },
@@ -117,7 +117,7 @@ export default function DemoPage() {
               Mitglieder Ansicht
             </button>
             <Link href="/" className="rounded-full border border-slate-300 px-4 py-2 text-sm">
-              Zurueck zur Website
+              ZuRück zur Website
             </Link>
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function DemoPage() {
                     <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 tracking-tight">
                       Admin Dashboard
                     </h2>
-                    <p className="text-slate-500">Verwaltung fuer {demoClub.name}</p>
+                    <p className="text-slate-500">Verwaltung für {demoClub.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -223,7 +223,7 @@ export default function DemoPage() {
                         {[
                           "Einstellungen",
                           "Gutscheine",
-                          "Plaetze",
+                          "Plätze",
                           "Sperrzeiten",
                           "Abos",
                           "Mitglieder",
@@ -292,7 +292,7 @@ export default function DemoPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-semibold">Aktiv</div>
-                    <p className="text-sm text-slate-500 mt-2">Gueltig bis: 31.12.2026</p>
+                    <p className="text-sm text-slate-500 mt-2">gültig bis: 31.12.2026</p>
                     <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                       {[12, 4, 3].map((val, idx) => (
                         <div key={idx} className="rounded-xl border border-slate-200/60 bg-white/90 px-2 py-2">
@@ -373,3 +373,4 @@ export default function DemoPage() {
     </div>
   )
 }
+

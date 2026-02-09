@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { SiteHeader } from "@/components/marketing/site-header"
 import { SiteFooter } from "@/components/marketing/site-footer"
 
@@ -21,7 +21,7 @@ export default function ContactPage() {
             <div className="space-y-4">
               <div className="text-sm font-semibold">Demo anfragen</div>
               <p className="text-sm text-slate-600">
-                Schick uns eine Mail mit Vereinsname, Anzahl Plaetze und aktuellem Ablauf.
+                Schick uns eine Mail mit Vereinsname, Anzahl Plätze und aktuellem Ablauf.
               </p>
               <a
                 className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2 text-white"
@@ -49,3 +49,4 @@ export default function ContactPage() {
     </div>
   )
 }
+

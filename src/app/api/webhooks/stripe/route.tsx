@@ -290,12 +290,12 @@ export async function POST(req: Request) {
                         <h2>Neue Traineranfrage</h2>
                         <p>Ein Mitglied moechte eine Trainerstunde buchen.</p>
                         <p><strong>Termin:</strong> ${startText} (${courtName})</p>
-                        <p>Bitte bestaetigen oder ablehnen:</p>
+                        <p>Bitte Bestätigen oder ablehnen:</p>
                         <p>
                           <a href="${acceptUrl}" style="display:inline-block;margin-right:8px;padding:10px 16px;background:#0f172a;color:#fff;border-radius:20px;text-decoration:none;">Annehmen</a>
                           <a href="${rejectUrl}" style="display:inline-block;padding:10px 16px;background:#e2e8f0;color:#0f172a;border-radius:20px;text-decoration:none;">Ablehnen</a>
                         </p>
-                        <p>Der Link ist 48 Stunden gueltig.</p>
+                        <p>Der Link ist 48 Stunden gültig.</p>
                       `,
                     })
                   } catch (emailError) {
@@ -314,8 +314,8 @@ export async function POST(req: Request) {
                       html: `
                       <h2>Deine Traineranfrage ist eingegangen</h2>
                       <p>Wir haben deine Zahlung vorautorisiert, aber noch nicht abgebucht.</p>
-                      <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu bestaetigen.</p>
-                      <p>Sobald bestaetigt, wird die Zahlung automatisch abgeschlossen. Bei Ablehnung wird die Autorisierung aufgehoben.</p>
+                      <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu Bestätigen.</p>
+                      <p>Sobald Bestätigt, wird die Zahlung automatisch abgeschlossen. Bei Ablehnung wird die Autorisierung aufgehoben.</p>
                     `,
                 })
             } catch (emailError) {
@@ -437,10 +437,10 @@ export async function POST(req: Request) {
                   await resend.emails.send({
                     from: 'Avaimo <onboarding@resend.dev>',
                     to: [customerEmail],
-                    subject: `Kurs bestaetigt - ${course?.title || "Kurs"}`,
+                    subject: `Kurs Bestätigt - ${course?.title || "Kurs"}`,
                     html: `
-                      <h2>Deine Kursanmeldung ist bestaetigt</h2>
-                      <p>Du bist fuer den Kurs <strong>${course?.title || "Kurs"}</strong> angemeldet.</p>
+                      <h2>Deine Kursanmeldung ist Bestätigt</h2>
+                      <p>Du bist für den Kurs <strong>${course?.title || "Kurs"}</strong> angemeldet.</p>
                       ${sessionsHtml ? `<p><strong>Termine:</strong><br/>${sessionsHtml}</p>` : ""}
                       <p>Zahlung: ${amountTotal} EUR</p>
                     `,
@@ -527,6 +527,7 @@ export async function POST(req: Request) {
 
   return new NextResponse(null, { status: 200 })
 }
+
 
 
 

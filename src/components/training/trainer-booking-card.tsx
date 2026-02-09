@@ -60,7 +60,7 @@ export function TrainerBookingCard({
       if (res?.url) {
         window.location.href = res.url
       } else if (res?.success) {
-        setSuccess("Traineranfrage gesendet. Du bekommst eine Bestaetigung per E-Mail.")
+        setSuccess("Traineranfrage gesendet. Du bekommst eine Bestätigung per E-Mail.")
         setDate("")
         setTime("")
       } else if (res?.error) {
@@ -92,7 +92,7 @@ export function TrainerBookingCard({
         </div>
       </div>
       {availabilityText ? (
-        <div className="text-xs text-slate-500">Verfuegbar: {availabilityText}</div>
+        <div className="text-xs text-slate-500">Verfügbar: {availabilityText}</div>
       ) : null}
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -105,13 +105,13 @@ export function TrainerBookingCard({
               Trainerstunde buchen – {trainer.first_name} {trainer.last_name}
             </DialogTitle>
             <DialogDescription>
-              Waehle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainer-Bestaetigung fix.
+              Waehle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainer-Bestätigung fix.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {availabilityText ? (
-              <div className="text-xs text-slate-500">Verfuegbar: {availabilityText}</div>
+              <div className="text-xs text-slate-500">Verfügbar: {availabilityText}</div>
             ) : null}
 
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -159,4 +159,5 @@ export function TrainerBookingCard({
     </div>
   )
 }
+
 

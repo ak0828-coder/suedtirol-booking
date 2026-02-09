@@ -1,4 +1,4 @@
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+﻿import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
 import { TrainerPayouts } from "@/components/admin/trainer-payouts"
@@ -21,7 +21,7 @@ export default async function SuperAdminFinancePage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold">Finanzen</h2>
-            <p className="text-slate-500 text-sm">Trainer-Auszahlungen und Uebersichten.</p>
+            <p className="text-slate-500 text-sm">Trainer-Auszahlungen und Übersichten.</p>
           </div>
           <FeatureGateToggle
             clubId={club.id}
@@ -72,3 +72,4 @@ export default async function SuperAdminFinancePage({
     </>
   )
 }
+

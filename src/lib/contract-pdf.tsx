@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer"
 
 type ContractPdfProps = {
@@ -52,7 +52,7 @@ export function ContractPdfDocument({
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Dieses Dokument wurde digital ueber Avaimo erstellt.
+            Dieses Dokument wurde digital Über Avaimo erstellt.
           </Text>
         </View>
       </Page>
@@ -113,3 +113,4 @@ const styles = StyleSheet.create({
     color: "#94a3b8",
   },
 })
+

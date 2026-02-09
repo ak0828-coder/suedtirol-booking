@@ -1,4 +1,4 @@
-import { getAdminContext } from "../_lib/get-admin-context"
+﻿import { getAdminContext } from "../_lib/get-admin-context"
 import { notFound } from "next/navigation"
 import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
@@ -23,7 +23,7 @@ export default async function AdminFinancePage({
     <FeatureLockWrapper locked={locked}>
       <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm mb-6">
         <h2 className="text-2xl md:text-3xl font-semibold">Finanzen</h2>
-        <p className="text-slate-500 text-sm">Trainer-Auszahlungen und Uebersichten.</p>
+        <p className="text-slate-500 text-sm">Trainer-Auszahlungen und Übersichten.</p>
       </div>
       <div className="space-y-10">
         <section className="space-y-4">
@@ -62,3 +62,4 @@ export default async function AdminFinancePage({
     </FeatureLockWrapper>
   )
 }
+

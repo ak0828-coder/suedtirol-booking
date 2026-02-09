@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useTransition } from "react"
 import { createCourseWithSessions, deleteCourse, updateCourseWithSessions, updateCourseParticipantStatus, exportCourseParticipantsCsv } from "@/app/actions"
@@ -102,7 +102,7 @@ export function CourseManager({
   }
 
   const statusLabels: Record<string, string> = {
-    confirmed: "Bestaetigt",
+    confirmed: "Bestätigt",
     cancelled: "Storniert",
     waitlist: "Warteliste",
   }
@@ -127,7 +127,7 @@ export function CourseManager({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">Kurse & Camps</h3>
         <Button className="rounded-full" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Schliessen" : "Kurs anlegen"}
+          {showForm ? "Schließen" : "Kurs anlegen"}
         </Button>
       </div>
 
@@ -196,7 +196,7 @@ export function CourseManager({
                 <div className="text-xs text-slate-500">
                   {formValues.pricingMode === "per_session"
                     ? "Preis pro Termin (Mehrfach-Auswahl multipliziert den Preis)"
-                    : "Preis fuer den gesamten Kurs"}
+                    : "Preis für den gesamten Kurs"}
                 </div>
               </div>
               <div className="space-y-2">
@@ -392,7 +392,7 @@ export function CourseManager({
                 checked={formValues.isPublished}
                 onChange={(e) => setFormValues((v) => ({ ...v, isPublished: e.target.checked }))}
               />
-              Kurs veroeffentlichen
+              Kurs veröffentlichen
             </label>
 
             {error ? <div className="text-sm text-red-600">{error}</div> : null}
@@ -442,15 +442,15 @@ export function CourseManager({
                     })
                   }
                 >
-                  Loeschen
+                  Löschen
                 </Button>
               </div>
             </div>
             <div className="text-sm text-slate-600">
-              {c.price ? `${c.price} EUR` : "Kostenlos"} · {c.max_participants} Teilnehmende
+              {c.price ? `${c.price} EUR` : "Kostenlos"} Â· {c.max_participants} Teilnehmende
             </div>
             <div className="text-xs text-slate-500">
-              Trainer: {c.trainers ? `${c.trainers.first_name} ${c.trainers.last_name}` : "—"}
+              Trainer: {c.trainers ? `${c.trainers.first_name} ${c.trainers.last_name}` : "â€”"}
             </div>
 
             <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 space-y-2">
@@ -558,3 +558,4 @@ export function CourseManager({
     </div>
   )
 }
+

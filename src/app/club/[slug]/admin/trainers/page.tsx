@@ -56,7 +56,7 @@ export default async function AdminTrainersPage({
               <div className="flex items-center gap-2">
                 <form action={confirmTrainerBooking}>
                   <input type="hidden" name="bookingId" value={b.id} />
-                  <button className="rounded-full border border-slate-200 px-3 py-1 text-xs">Bestaetigen</button>
+                  <button className="rounded-full border border-slate-200 px-3 py-1 text-xs">Bestätigen</button>
                 </form>
                 <form action={rejectTrainerBooking}>
                   <input type="hidden" name="bookingId" value={b.id} />
@@ -75,4 +75,5 @@ export default async function AdminTrainersPage({
     </FeatureLockWrapper>
   )
 }
+
 

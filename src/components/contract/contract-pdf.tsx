@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
 
 export type ContractData = {
@@ -196,7 +196,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         <View style={styles.signatureSection}>
           <View style={styles.signatureBox}>
-            <Text style={{ fontSize: 9 }}>Fuer den Verein ({normalized.clubName})</Text>
+            <Text style={{ fontSize: 9 }}>für den Verein ({normalized.clubName})</Text>
           </View>
           <View style={styles.signatureBox}>
             {normalized.signatureUrl ? <Image src={normalized.signatureUrl} style={styles.signatureImage} /> : null}
@@ -208,9 +208,10 @@ export function ContractPDF({ data }: { data: ContractData }) {
         </View>
 
         <Text style={styles.footer}>
-          Dieses Dokument wurde digital ueber Avaimo erstellt am {normalized.signedAt}.
+          Dieses Dokument wurde digital Über Avaimo erstellt am {normalized.signedAt}.
         </Text>
       </Page>
     </Document>
   )
 }
+

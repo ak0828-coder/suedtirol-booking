@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+﻿import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { TrainerBookingCard } from "@/components/training/trainer-booking-card"
 import { CourseGrid } from "@/components/training/course-grid"
@@ -100,7 +100,7 @@ export default async function TrainingPage({
               <TrainerBookingCard key={trainer.id} clubSlug={slug} trainer={trainer} />
             ))}
             {(trainers || []).length === 0 ? (
-              <div className="text-sm text-slate-500">Aktuell sind keine Trainer verfuegbar.</div>
+              <div className="text-sm text-slate-500">Aktuell sind keine Trainer Verfügbar.</div>
             ) : null}
           </div>
         </section>
@@ -108,7 +108,7 @@ export default async function TrainingPage({
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-900">Kurse & Camps</h2>
           {(courses || []).length === 0 ? (
-            <div className="text-sm text-slate-500">Aktuell sind keine Kurse veroeffentlicht.</div>
+            <div className="text-sm text-slate-500">Aktuell sind keine Kurse veröffentlicht.</div>
           ) : (
             <CourseGrid
               clubSlug={slug}
@@ -128,3 +128,4 @@ export default async function TrainingPage({
     </div>
   )
 }
+

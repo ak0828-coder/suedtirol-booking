@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import {
   ArrowRight,
   Check,
@@ -20,7 +20,7 @@ const proof = [
 
 const modules = [
   {
-    title: "Buchungen & Plaetze",
+    title: "Buchungen & Plätze",
     description: "Live Kalender, Kollisionserkennung, Oeffnungszeiten, Sperrzeiten.",
     icon: Calendar,
   },
@@ -46,15 +46,15 @@ const modules = [
   },
   {
     title: "Reporting",
-    description: "Auslastung, Einnahmen, Export fuer Steuerberater.",
+    description: "Auslastung, Einnahmen, Export für Steuerberater.",
     icon: BarChart3,
   },
 ]
 
 const pains = [
-  "Telefonketten und WhatsApp-Chaos fuer freie Plaetze",
+  "Telefonketten und WhatsApp-Chaos für freie Plätze",
   "Papiervertraege, Scans, manuelle Ablage",
-  "Offene Beitraege ohne klare Uebersicht",
+  "Offene Beitraege ohne klare Übersicht",
   "Trainer-Abrechnung per Hand und Excel",
 ]
 
@@ -87,7 +87,7 @@ export default function Home() {
               </h1>
               <p className="text-lg text-slate-600">
                 Avaimo vereint Buchung, Mitgliedschaften, Zahlungen, Vertraege und Trainer in einer
-                Plattform. Weniger Verwaltung, mehr Zeit fuer den Sport.
+                Plattform. Weniger Verwaltung, mehr Zeit für den Sport.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link
@@ -190,7 +190,7 @@ export default function Home() {
                 <div className="text-xs uppercase tracking-wide text-slate-500">Ergebnisse</div>
                 <h3 className="mt-3 text-3xl font-semibold">Weniger Admin-Aufwand, mehr aktive Mitglieder.</h3>
                 <p className="mt-3 text-slate-600">
-                  Avaimo reduziert Routinearbeit und sorgt fuer volle Plaetze, transparente Finanzen
+                  Avaimo reduziert Routinearbeit und sorgt für volle Plätze, transparente Finanzen
                   und ein modernes Vereinsimage.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
@@ -205,7 +205,7 @@ export default function Home() {
               <div className="grid gap-4">
                 {[
                   ["30%", "weniger Admin-Aufwand nach 6 Wochen"],
-                  ["+18%", "mehr belegte Plaetze im Schnitt"],
+                  ["+18%", "mehr belegte Plätze im Schnitt"],
                   ["5 Min", "Trainer-Abrechnung im Monatsabschluss"],
                 ].map(([value, label]) => (
                   <div key={label} className="rounded-2xl border border-slate-200/60 bg-slate-50 p-4">
@@ -222,7 +222,7 @@ export default function Home() {
           <div className="rounded-3xl border border-slate-200/60 bg-slate-900 p-10 text-white">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400">Bereit fuer Avaimo?</div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">Bereit für Avaimo?</div>
                 <h3 className="mt-2 text-3xl font-semibold">Sieh dein Vereins-Dashboard jetzt live.</h3>
               </div>
               <Link href="/demo" className="rounded-full bg-white px-6 py-3 text-slate-900">
@@ -237,3 +237,4 @@ export default function Home() {
     </div>
   )
 }
+

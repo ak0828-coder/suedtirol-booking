@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useTransition } from "react"
 import { createTrainer, deleteTrainer, updateTrainer } from "@/app/actions"
@@ -64,7 +64,7 @@ export function TrainerManager({
             setShowForm((v) => !v)
           }}
         >
-          {showForm ? "Schliessen" : "Trainer hinzufuegen"}
+          {showForm ? "Schließen" : "Trainer hinzufuegen"}
         </Button>
       </div>
 
@@ -118,7 +118,7 @@ export function TrainerManager({
                 <Input name="image" type="file" accept="image/*" />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Verfuegbarkeit (Woche)</Label>
+                <Label>Verfügbarkeit (Woche)</Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {dayLabels.map((d, idx) => (
                     <div key={d.day} className="flex items-center gap-2 text-sm">
@@ -237,7 +237,7 @@ export function TrainerManager({
                     })
                   }
                 >
-                  Loeschen
+                  Löschen
                 </Button>
               </div>
             </div>
@@ -257,3 +257,4 @@ export function TrainerManager({
     </div>
   )
 }
+

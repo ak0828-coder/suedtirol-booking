@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { SiteHeader } from "@/components/marketing/site-header"
 import { SiteFooter } from "@/components/marketing/site-footer"
 import { Check } from "lucide-react"
@@ -7,7 +7,7 @@ const tiers = [
   {
     name: "Starter",
     price: "149 EUR / Monat",
-    description: "Fuer kleine Vereine mit Fokus auf Buchung und Mitglieder.",
+    description: "für kleine Vereine mit Fokus auf Buchung und Mitglieder.",
     features: [
       "Buchungssystem",
       "Mitgliederverwaltung",
@@ -18,7 +18,7 @@ const tiers = [
   {
     name: "Pro",
     price: "299 EUR / Monat",
-    description: "Der Standard fuer wachsende Clubs mit Zahlungen & Trainer.",
+    description: "Der Standard für wachsende Clubs mit Zahlungen & Trainer.",
     features: [
       "Alles aus Starter",
       "Online-Zahlungen & Gutscheine",
@@ -29,7 +29,7 @@ const tiers = [
   {
     name: "Enterprise",
     price: "Individuell",
-    description: "Fuer groessere Anlagen mit mehreren Standorten.",
+    description: "für Größere Anlagen mit mehreren Standorten.",
     features: [
       "Custom Workflows",
       "SLA & Support",
@@ -52,7 +52,7 @@ export default function PricingPage() {
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
         <section className="space-y-4">
           <div className="text-xs uppercase tracking-wide text-slate-500">Preise</div>
-          <h1 className="text-4xl font-semibold">Transparente Pakete fuer jeden Verein.</h1>
+          <h1 className="text-4xl font-semibold">Transparente Pakete für jeden Verein.</h1>
           <p className="text-slate-600 max-w-3xl">
             Unsere Pakete sind modular. Du kannst jederzeit upgraden oder Module hinzubuchen.
           </p>
@@ -96,3 +96,4 @@ export default function PricingPage() {
     </div>
   )
 }
+

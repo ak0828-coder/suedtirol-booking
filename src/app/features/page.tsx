@@ -1,4 +1,4 @@
-import { SiteHeader } from "@/components/marketing/site-header"
+﻿import { SiteHeader } from "@/components/marketing/site-header"
 import { SiteFooter } from "@/components/marketing/site-footer"
 import {
   Calendar,
@@ -37,7 +37,7 @@ const featureBlocks = [
     bullets: [
       "Stripe, Barzahlung, Gutscheine",
       "Automatische Zahlungsstatus",
-      "Uebersicht fuer Kassierer und Vorstand",
+      "Übersicht für Kassierer und Vorstand",
     ],
   },
   {
@@ -46,7 +46,7 @@ const featureBlocks = [
     bullets: [
       "Digitale Signatur und Pflichtfelder",
       "PDF-Export und revisionssichere Ablage",
-      "Onboarding fuer neue Mitglieder",
+      "Onboarding für neue Mitglieder",
     ],
   },
   {
@@ -63,8 +63,8 @@ const featureBlocks = [
     icon: BarChart3,
     bullets: [
       "Auslastung, Einnahmen, Trends",
-      "CSV/DATEV Export fuer Steuerberater",
-      "Monatsreports fuer Vorstand",
+      "CSV/DATEV Export für Steuerberater",
+      "Monatsreports für Vorstand",
     ],
   },
 ]
@@ -78,12 +78,12 @@ const extraBlocks = [
   {
     title: "Benachrichtigungen",
     icon: Bell,
-    description: "E-Mails, Erinnerungen, automatische Updates bei Ausfaellen und Aenderungen.",
+    description: "E-Mails, Erinnerungen, automatische Updates bei Ausfaellen und Änderungen.",
   },
   {
     title: "Engagement",
     icon: Target,
-    description: "Ranglisten, Match-Recaps und Community-Features fuer aktive Mitglieder.",
+    description: "Ranglisten, Match-Recaps und Community-Features für aktive Mitglieder.",
   },
 ]
 
@@ -97,7 +97,7 @@ export default function FeaturesPage() {
           <h1 className="text-4xl font-semibold">Alles, was ein moderner Verein braucht.</h1>
           <p className="text-slate-600 max-w-3xl">
             Avaimo verbindet Buchung, Mitglieder, Zahlungen, Vertraege und Trainer in einer Plattform.
-            Modulare Features sorgen dafuer, dass jeder Verein nur das sieht, was er braucht.
+            Modulare Features sorgen dafür, dass jeder Verein nur das sieht, was er braucht.
           </p>
         </section>
 
@@ -134,3 +134,4 @@ export default function FeaturesPage() {
     </div>
   )
 }
+

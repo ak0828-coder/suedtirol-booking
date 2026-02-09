@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 
 const footerLinks = [
   { href: "/features", label: "Funktionen" },
@@ -14,7 +14,7 @@ export function SiteFooter() {
         <div className="space-y-2">
           <div className="text-sm font-semibold">Avaimo</div>
           <div className="text-xs text-slate-500">
-            Vereinsplattform fuer Buchung, Mitglieder und Finanzen.
+            Vereinsplattform für Buchung, Mitglieder und Finanzen.
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
@@ -34,3 +34,4 @@ export function SiteFooter() {
     </footer>
   )
 }
+

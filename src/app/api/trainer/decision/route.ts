@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import Stripe from "stripe"
 import { getAdminClient } from "@/lib/supabase/admin"
@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const action = searchParams.get("action") || ""
 
   if (!token || !["accept", "reject"].includes(action)) {
-    return NextResponse.json({ error: "Ungueltiger Link" }, { status: 400 })
+    return NextResponse.json({ error: "Ungültiger Link" }, { status: 400 })
   }
 
   const supabaseAdmin = getAdminClient()
@@ -56,17 +56,17 @@ export async function GET(req: Request) {
       await resend.emails.send({
         from: "Avaimo <onboarding@resend.dev>",
         to: [booking.guest_email],
-        subject: "Trainerstunde bestaetigt",
+        subject: "Trainerstunde Bestätigt",
         html: `
-          <h2>Deine Trainerstunde ist bestaetigt</h2>
-          <p>Der Trainer hat die Stunde bestaetigt. Die Zahlung wurde abgeschlossen.</p>
+          <h2>Deine Trainerstunde ist Bestätigt</h2>
+          <p>Der Trainer hat die Stunde Bestätigt. Die Zahlung wurde abgeschlossen.</p>
           <p>Verein: ${booking.clubs?.[0]?.name || ""}</p>
         `,
       })
     }
 
     return new NextResponse(
-      "<html><body><h2>Trainerstunde bestaetigt</h2><p>Die Buchung wurde angenommen.</p></body></html>",
+      "<html><body><h2>Trainerstunde Bestätigt</h2><p>Die Buchung wurde angenommen.</p></body></html>",
       { headers: { "Content-Type": "text/html" } }
     )
   }
@@ -105,3 +105,4 @@ export async function GET(req: Request) {
     { headers: { "Content-Type": "text/html" } }
   )
 }
+

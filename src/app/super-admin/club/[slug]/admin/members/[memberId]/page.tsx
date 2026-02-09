@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+﻿import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
 import { getMemberDocumentAuditForAdmin, getMemberDocumentsForAdmin } from "@/app/actions"
@@ -67,7 +67,7 @@ export default async function SuperAdminMemberDetailPage({
           <div className="text-sm text-slate-500">{profile?.id}</div>
         </div>
         <Link href={`/super-admin/club/${slug}/admin/members`}>
-          <Button variant="outline" className="rounded-full">Zurueck</Button>
+          <Button variant="outline" className="rounded-full">ZuRück</Button>
         </Link>
       </div>
 
@@ -80,13 +80,13 @@ export default async function SuperAdminMemberDetailPage({
           {member.next_payment_at ? new Date(member.next_payment_at).toLocaleDateString("de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Mitglied gueltig bis:{" "}
+          Mitglied gültig bis:{" "}
           {member.valid_until ? new Date(member.valid_until).toLocaleDateString("de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">Mitgliedschaftsplan: {plan?.name || "Aktiv"}</div>
         <div className="text-sm text-slate-600">Telefon: {profile?.phone || "-"}</div>
         <div className="text-sm text-slate-600">
-          Attest gueltig bis:{" "}
+          Attest gültig bis:{" "}
           {member.medical_certificate_valid_until
             ? new Date(member.medical_certificate_valid_until).toLocaleDateString("de-DE")
             : "Fehlt"}
@@ -154,3 +154,4 @@ export default async function SuperAdminMemberDetailPage({
     </div>
   )
 }
+

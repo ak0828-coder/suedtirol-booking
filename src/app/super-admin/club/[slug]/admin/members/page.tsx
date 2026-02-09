@@ -1,4 +1,4 @@
-import { getClubMembers, getImportedMembersCount, getMemberAdminDashboardStats, getMembershipContract } from "@/app/actions"
+﻿import { getClubMembers, getImportedMembersCount, getMemberAdminDashboardStats, getMembershipContract } from "@/app/actions"
 import { InviteMemberDialog } from "@/components/admin/invite-member-dialog"
 import { MemberImportWizard } from "@/components/admin/member-import-wizard"
 import { ActivationBanner } from "@/components/admin/activation-banner"
@@ -64,7 +64,7 @@ export default async function SuperAdminMembersPage({
             <div>
               <div className="text-sm text-amber-700">Dokumente pruefen</div>
               <div className="text-2xl font-semibold text-amber-900">{stats?.reviewNeeded || 0}</div>
-              <div className="text-xs text-amber-700">KI benoetigt Bestaetigung</div>
+              <div className="text-xs text-amber-700">KI benoetigt Bestätigung</div>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@ export default async function SuperAdminMembersPage({
             <div>
               <div className="text-sm text-red-700">Beitraege offen</div>
               <div className="text-2xl font-semibold text-red-900">{stats?.paymentOpen || 0}</div>
-              <div className="text-xs text-red-700">Zahlung ueberfaellig</div>
+              <div className="text-xs text-red-700">Zahlung Überfaellig</div>
             </div>
           </div>
         </div>
@@ -171,7 +171,7 @@ export default async function SuperAdminMembersPage({
                   <div className="space-y-1">
                     {m.medical_certificate_valid_until ? (
                       <div className="text-sm">
-                        Gueltig bis {new Date(m.medical_certificate_valid_until).toLocaleDateString()}
+                        gültig bis {new Date(m.medical_certificate_valid_until).toLocaleDateString()}
                       </div>
                     ) : (
                       <span className="text-red-400 text-sm">Fehlt</span>
@@ -190,7 +190,7 @@ export default async function SuperAdminMembersPage({
                           }`}
                         />
                         {m.latest_med_doc.review_status === "approved"
-                          ? "Bestaetigt"
+                          ? "Bestätigt"
                           : m.latest_med_doc.review_status === "rejected"
                           ? "Abgelehnt"
                           : m.latest_med_doc.ai_status === "ok"
@@ -239,3 +239,4 @@ export default async function SuperAdminMembersPage({
     </>
   )
 }
+

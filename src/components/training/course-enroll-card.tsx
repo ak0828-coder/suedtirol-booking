@@ -187,7 +187,7 @@ export function CourseEnrollCard({
                   setSelected([])
                 }}
               >
-                Schliessen
+                Schließen
               </button>
             </div>
 
@@ -195,7 +195,7 @@ export function CourseEnrollCard({
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">Plaetze</div>
+                    <div className="text-xs text-slate-500">Plätze</div>
                     <div className="font-semibold text-slate-900">
                       {course.confirmed_count ?? 0}/{course.max_participants ?? "-"}
                     </div>
@@ -421,4 +421,5 @@ export function CourseEnrollCard({
     </div>
   )
 }
+
 

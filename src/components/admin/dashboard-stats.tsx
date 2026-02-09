@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Pie, PieChart } from "recharts"
@@ -30,7 +30,7 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
     total: revenueByDayMap[key],
   }))
 
-  // Beliebteste Plaetze
+  // Beliebteste Plätze
   const popularityMap = safeBookings.reduce((acc: any, booking) => {
     const court = safeCourts.find((c) => c.id === booking.court_id)
     const name = court ? court.name : "Unbekannt"
@@ -86,7 +86,7 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4 rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
-            <CardTitle>Umsatz Uebersicht</CardTitle>
+            <CardTitle>Umsatz Übersicht</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[240px]">
@@ -175,3 +175,4 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
     </div>
   )
 }
+

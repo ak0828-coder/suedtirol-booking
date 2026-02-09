@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import React, { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -110,8 +110,8 @@ export function ContractEditor({
         setPreviewUrl(nextUrl)
       } catch (err) {
         if ((err as Error)?.name === "AbortError") return
-        const message = err instanceof Error ? err.message : "PDF Vorschau nicht verfuegbar."
-        setPreviewError(message || "PDF Vorschau nicht verfuegbar.")
+        const message = err instanceof Error ? err.message : "PDF Vorschau nicht Verfügbar."
+        setPreviewError(message || "PDF Vorschau nicht Verfügbar.")
       } finally {
         setPreviewLoading(false)
       }
@@ -340,7 +340,7 @@ export function ContractEditor({
       <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
         <CardHeader>
           <CardTitle>PDF Vorschau</CardTitle>
-          <p className="text-sm text-slate-500">So sieht der Vertrag fuer Mitglieder aus.</p>
+          <p className="text-sm text-slate-500">So sieht der Vertrag für Mitglieder aus.</p>
         </CardHeader>
         <CardContent>
           <div className="aspect-[3/4] w-full rounded-xl border border-slate-200 bg-white overflow-hidden">
@@ -359,7 +359,7 @@ export function ContractEditor({
                   rel="noreferrer"
                   className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
                 >
-                  PDF oeffnen
+                  PDF öffnen
                 </a>
               </div>
             )}
@@ -378,3 +378,4 @@ export function ContractEditor({
     </div>
   )
 }
+
