@@ -4,6 +4,8 @@ import { TrainerBookingCard } from "@/components/training/trainer-booking-card"
 import { CourseGrid } from "@/components/training/course-grid"
 import { TourLauncher } from "@/components/tours/tour-launcher"
 import { Suspense } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
 
@@ -93,9 +95,14 @@ export default async function TrainingPage({
             <h1 className="text-3xl font-semibold text-slate-900">Training</h1>
             <p className="text-slate-500">Trainerstunden buchen und Kurse auswählen.</p>
           </div>
-          <Suspense fallback={null}>
-            <TourLauncher tour="training" storageKey="tour_training_seen" label="Guide" autoStart />
-          </Suspense>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={`/club/${slug}`}>
+              <Button variant="outline" className="rounded-full">Zur Startseite</Button>
+            </Link>
+            <Suspense fallback={null}>
+              <TourLauncher tour="training" storageKey="tour_training_seen" label="Guide" autoStart />
+            </Suspense>
+          </div>
         </div>
 
         <section id="tour-training-trainers" className="space-y-4">
