@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+﻿import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { CalendarDays, MapPin, Check, LogIn, User, Sparkles, ChevronRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,6 +10,10 @@ import { MembershipPlans } from "@/components/membership-plans"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { getReadableTextColor } from "@/lib/color"
+import { TourLauncher } from "@/components/tours/tour-launcher"
+import { Suspense } from "react"
+import { TourLauncher } from "@/components/tours/tour-launcher"
+import { Suspense } from "react"
 
 // Helper, um Daten zu holen
 async function getClubData(slug: string) {
@@ -92,7 +96,7 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
       style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
     >
       {/* HEADER */}
-      <header className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
+      <header id="tour-booking-header" className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur">
         <div className="absolute inset-0 pointer-events-none">
           <div
             className="absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl"
@@ -108,8 +112,11 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           {/* Navigation Oben Rechts */}
           <div className="flex items-center justify-end gap-2">
             <ModeToggle />
+            <Suspense fallback={null}>
+              <TourLauncher tour="member-booking" storageKey="tour_member_booking_seen" label="Guide" autoStart />
+            </Suspense>
             <Link href={`/club/${slug}/training`}>
-              <Button variant="outline" className="gap-2 rounded-full btn-press">
+              <Button id="tour-booking-training" variant="outline" className="gap-2 rounded-full btn-press">
                 <Sparkles className="w-4 h-4" /> Training
               </Button>
             </Link>
@@ -235,12 +242,13 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-5 sm:gap-6">
-          {courts?.map((court: any) => {
+        <div id="tour-booking-courts" className="grid md:grid-cols-2 gap-5 sm:gap-6">
+          {courts?.map((court: any, idx: number) => {
             const duration = court.duration_minutes || 60
             return (
               <Card
                 key={court.id}
+                id={idx === 0 ? "tour-booking-first" : undefined}
                 className="group overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 shadow-sm hover:shadow-md transition-shadow"
               >
                 <CardContent className="p-0">
@@ -330,3 +338,5 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
     </div>
   )
 }
+
+

@@ -1,5 +1,6 @@
 import type { Tour } from "nextstepjs"
 import { AdminGoToCourses } from "@/components/tours/admin-go-to-courses"
+import { MemberGoToBooking } from "@/components/tours/member-go-to-booking"
 
 export const adminOverviewTour: Tour[] = [
   {
@@ -108,7 +109,12 @@ export const memberDashboardTour: Tour[] = [
       },
       {
         title: "Zur Buchung",
-        content: "Buche schnell neue Plätze und Trainings.",
+        content: (
+          <>
+            <div>Wir wechseln jetzt direkt zur Buchungsseite.</div>
+            <MemberGoToBooking />
+          </>
+        ),
         selector: "#tour-member-book",
         side: "bottom",
         showControls: true,
@@ -126,6 +132,38 @@ export const memberDashboardTour: Tour[] = [
         title: "Deine Buchungen",
         content: "Alle anstehenden Spiele und Termine an einem Ort.",
         selector: "#tour-member-upcoming",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+    ],
+  },
+]
+
+export const memberBookingTour: Tour[] = [
+  {
+    tour: "member-booking",
+    steps: [
+      {
+        title: "Buchungsseite",
+        content: "Hier buchst du Plätze und siehst die wichtigsten Infos.",
+        selector: "#tour-booking-header",
+        side: "bottom",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Plätze",
+        content: "Wähle einen Platz und prüfe Preis, Dauer und Verfügbarkeit.",
+        selector: "#tour-booking-courts",
+        side: "top",
+        showControls: true,
+        showSkip: true,
+      },
+      {
+        title: "Buchung starten",
+        content: "Mit einem Klick öffnest du die Buchung und wählst Datum & Zeit.",
+        selector: "#tour-booking-first",
         side: "top",
         showControls: true,
         showSkip: true,
