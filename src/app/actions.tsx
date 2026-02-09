@@ -2394,11 +2394,29 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
 
   const paymentIntentData = buildClubPaymentIntentData(club)
 
+  if (!club.stripe_account_id) {
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  }
+
+  const subscriptionData: any = {
+    transfer_data: { destination: club.stripe_account_id }
+  }
+
+  if (club.application_fee_cents && club.application_fee_cents > 0) {
+    const price = await stripe.prices.retrieve(stripePriceId)
+    const unitAmount = price.unit_amount || 0
+    if (unitAmount > 0) {
+      const feePctRaw = (club.application_fee_cents / unitAmount) * 100
+      const feePct = Math.max(0, Math.min(100, Number(feePctRaw.toFixed(2))))
+      subscriptionData.application_fee_percent = feePct
+    }
+  }
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [{ price: stripePriceId, quantity: 1 }],
     mode: 'subscription',
-    payment_intent_data: paymentIntentData,
+    subscription_data: subscriptionData,
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?membership_success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}`,
     customer_email: user?.email,
@@ -4759,13 +4777,19 @@ export async function createMembershipOneTimeCheckout(clubSlug: string) {
   if (!user) return { error: "Nicht eingeloggt" }
 
   const { data: club } = await supabase
-    .from("clubs")
-    .select("id, name, membership_fee, membership_fee_currency, membership_fee_enabled")
-    .eq("slug", clubSlug)
-    .single()
+      .from("clubs")
+      .select("id, name, membership_fee, membership_fee_currency, membership_fee_enabled, stripe_account_id, application_fee_cents")
+      .eq("slug", clubSlug)
+      .single()
   if (!club || !club.membership_fee_enabled || !club.membership_fee) {
     return { error: "Mitgliedsbeitrag nicht konfiguriert" }
   }
+
+  if (!club.stripe_account_id) {
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  }
+
+  const paymentIntentData = buildClubPaymentIntentData(club)
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -4778,12 +4802,13 @@ export async function createMembershipOneTimeCheckout(clubSlug: string) {
         },
         quantity: 1,
       },
-    ],
-    mode: "payment",
-    metadata: {
-      type: "membership_one_time",
-      clubId: club.id,
-      userId: user.id,
+      ],
+      mode: "payment",
+      payment_intent_data: paymentIntentData,
+      metadata: {
+        type: "membership_one_time",
+        clubId: club.id,
+        userId: user.id,
       clubSlug
     },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}/onboarding?paid=1`,
