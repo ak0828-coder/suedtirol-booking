@@ -1552,79 +1552,103 @@ export async function getTrainerPayoutSummary(clubSlug: string) {
 // --- STRIPE CONNECT ONBOARDING ---
 
 export async function createStripeConnectAccount(clubSlug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "Nicht eingeloggt" }
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return { error: "STRIPE_SECRET_KEY fehlt in der Umgebung." }
+    }
 
-  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
-  if (error) return { error }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Nicht eingeloggt" }
 
-  const admin = getAdminClient()
-  const { data: clubRow } = await admin
-    .from("clubs")
-    .select("id, name, stripe_account_id")
-    .eq("id", club!.id)
-    .single()
+    const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+    if (error) return { error }
 
-  if (!clubRow) return { error: "Club nicht gefunden" }
+    const admin = getAdminClient()
+    const { data: clubRow, error: clubError } = await admin
+      .from("clubs")
+      .select("id, name, stripe_account_id")
+      .eq("id", club!.id)
+      .single()
 
-  let accountId = clubRow.stripe_account_id
+    if (clubError) return { error: clubError.message }
+    if (!clubRow) return { error: "Club nicht gefunden" }
 
-  if (!accountId) {
-    const account = await stripe.accounts.create({
-      type: "express",
-      country: "IT",
-      capabilities: {
-        card_payments: { requested: true },
-        transfers: { requested: true },
-      },
-      business_type: "company",
-      business_profile: {
-        name: clubRow.name,
-        product_description: `Platzbuchungen für ${clubRow.name}`,
-      },
+    let accountId = clubRow.stripe_account_id
+
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        country: "IT",
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        business_type: "company",
+        business_profile: {
+          name: clubRow.name,
+          product_description: `Platzbuchungen für ${clubRow.name}`,
+        },
+      })
+
+      accountId = account.id
+      const { error: updateError } = await admin
+        .from("clubs")
+        .update({ stripe_account_id: accountId })
+        .eq("id", clubRow.id)
+      if (updateError) return { error: updateError.message }
+    }
+
+    const origin = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${origin}/club/${clubSlug}/admin/finance`,
+      return_url: `${origin}/club/${clubSlug}/admin/finance?stripe_connected=true`,
+      type: "account_onboarding",
     })
 
-    accountId = account.id
-    await admin.from("clubs").update({ stripe_account_id: accountId }).eq("id", clubRow.id)
+    return { url: accountLink.url }
+  } catch (err: any) {
+    console.error("Stripe Connect Error:", err)
+    return { error: err?.message || "Stripe Connect Fehler" }
   }
-
-  const origin = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  const accountLink = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${origin}/club/${clubSlug}/admin/finance`,
-    return_url: `${origin}/club/${clubSlug}/admin/finance?stripe_connected=true`,
-    type: "account_onboarding",
-  })
-
-  return { url: accountLink.url }
 }
 
 export async function checkStripeStatus(clubSlug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { connected: false }
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return { connected: false, error: "STRIPE_SECRET_KEY fehlt in der Umgebung." }
+    }
 
-  const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
-  if (error) return { connected: false }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { connected: false }
 
-  const admin = getAdminClient()
-  const { data: clubRow } = await admin
-    .from("clubs")
-    .select("id, stripe_account_id, stripe_details_submitted")
-    .eq("id", club!.id)
-    .single()
+    const { club, error } = await assertClubAdmin(clubSlug, user.id, user.email || "")
+    if (error) return { connected: false }
 
-  if (!clubRow?.stripe_account_id) return { connected: false }
+    const admin = getAdminClient()
+    const { data: clubRow, error: clubError } = await admin
+      .from("clubs")
+      .select("id, stripe_account_id, stripe_details_submitted")
+      .eq("id", club!.id)
+      .single()
 
-  const account = await stripe.accounts.retrieve(clubRow.stripe_account_id)
-  const isSubmitted = !!account.details_submitted
+    if (clubError) return { connected: false, error: clubError.message }
+    if (!clubRow?.stripe_account_id) return { connected: false }
 
-  if (isSubmitted && !clubRow.stripe_details_submitted) {
-    await admin.from("clubs").update({ stripe_details_submitted: true }).eq("id", clubRow.id)
+    const account = await stripe.accounts.retrieve(clubRow.stripe_account_id)
+    const isSubmitted = !!account.details_submitted
+
+    if (isSubmitted && !clubRow.stripe_details_submitted) {
+      await admin.from("clubs").update({ stripe_details_submitted: true }).eq("id", clubRow.id)
+    }
+
+    return { connected: isSubmitted }
+  } catch (err: any) {
+    console.error("Stripe Status Error:", err)
+    return { connected: false, error: err?.message || "Stripe Status Fehler" }
   }
-
-  return { connected: isSubmitted }
 }
 
 export async function markTrainerPayoutsPaid(clubSlug: string, trainerId: string) {
