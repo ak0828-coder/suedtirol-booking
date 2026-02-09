@@ -33,10 +33,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-sora), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   h1, h2, h3, h4 {
-    font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  code, pre, kbd, samp {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
   html {
     scroll-behavior: smooth;
