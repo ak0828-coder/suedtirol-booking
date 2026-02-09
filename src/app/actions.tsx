@@ -774,6 +774,11 @@ export async function updateClub(formData: FormData) {
     ? parseInt(formData.get("cancellation_buffer_hours") as string)
     : 24
 
+  const applicationFeeCentsRaw = formData.get("application_fee_cents")
+  const applicationFeeCents = applicationFeeCentsRaw
+    ? Math.max(0, parseInt(applicationFeeCentsRaw as string))
+    : undefined
+
   const supabaseAdmin = getAdminClient()
 
   let logoUrl = null
@@ -826,6 +831,10 @@ export async function updateClub(formData: FormData) {
     has_gamification: hasGamification,
     has_vouchers: hasVouchers,
     feature_flags: featureFlags
+  }
+
+  if (isSuperAdmin && typeof applicationFeeCents === "number") {
+    updateData.application_fee_cents = applicationFeeCents
   }
 
   if (logoUrl) {
@@ -1812,10 +1821,10 @@ export async function exportCourseParticipantsCsv(courseId: string) {
   const supabaseAdmin = getAdminClient()
 
   const { data: club } = await supabase
-    .from("clubs")
-    .select("id, name")
-    .eq("slug", clubSlug)
-    .single()
+      .from("clubs")
+      .select("id, name, stripe_account_id, application_fee_cents")
+      .eq("slug", clubSlug)
+      .single()
   if (!club) return { error: "Club nicht gefunden" }
 
   const { data: trainer } = await supabase
@@ -1987,25 +1996,11 @@ export async function exportCourseParticipantsCsv(courseId: string) {
       return { success: true }
     }
 
-  let paymentIntentData: any = { capture_method: "manual" }
-  if (trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
-    let trainerShare = 0
-    if (trainer.salary_type === "commission") {
-      trainerShare = finalPrice * (Number(trainer.default_rate || 0) / 100)
-    } else if (trainer.salary_type === "hourly") {
-      trainerShare = Number(trainer.default_rate || 0)
-    }
-    if (trainerShare > finalPrice) trainerShare = finalPrice
-    if (trainerShare > 0) {
-      paymentIntentData = {
-        capture_method: "manual",
-        transfer_data: {
-          destination: trainer.stripe_account_id,
-          amount: Math.round(trainerShare * 100),
-        },
-      }
-    }
+  if (finalPrice > 0 && !club?.stripe_account_id) {
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
+
+  const paymentIntentData = buildClubPaymentIntentData(club, { captureManual: true })
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -2051,10 +2046,10 @@ export async function createCourseCheckoutSession(
   if (!user) return { error: "Bitte einloggen" }
 
   const { data: club } = await supabase
-    .from("clubs")
-    .select("id, name")
-    .eq("slug", clubSlug)
-    .single()
+      .from("clubs")
+      .select("id, name, stripe_account_id, application_fee_cents")
+      .eq("slug", clubSlug)
+      .single()
   if (!club) return { error: "Club nicht gefunden" }
 
   const { data: course } = await supabase
@@ -2170,31 +2165,11 @@ export async function createCourseCheckoutSession(
       return { success: true }
     }
 
-    let coursePaymentIntentData: any = undefined
-    if (course.trainer_id) {
-      const { data: trainer } = await supabase
-        .from("trainers")
-        .select("*")
-        .eq("id", course.trainer_id)
-        .single()
-      if (trainer && trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
-        let trainerShare = 0
-        if (trainer.salary_type === "commission") {
-          trainerShare = totalPrice * (Number(trainer.default_rate || 0) / 100)
-        } else if (trainer.salary_type === "hourly") {
-          trainerShare = Number(trainer.default_rate || 0)
-        }
-        if (trainerShare > totalPrice) trainerShare = totalPrice
-        if (trainerShare > 0) {
-          coursePaymentIntentData = {
-            transfer_data: {
-              destination: trainer.stripe_account_id,
-              amount: Math.round(trainerShare * 100),
-            },
-          }
-        }
-      }
-    }
+  if (totalPrice > 0 && !club?.stripe_account_id) {
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  }
+
+  let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -2275,31 +2250,11 @@ export async function createCourseCheckoutSession(
     return { success: true }
   }
 
-  let coursePaymentIntentData: any = undefined
-  if (course.trainer_id) {
-    const { data: trainer } = await supabase
-      .from("trainers")
-      .select("*")
-      .eq("id", course.trainer_id)
-      .single()
-    if (trainer && trainer.payout_method === "stripe_connect" && trainer.stripe_account_id) {
-      let trainerShare = 0
-      if (trainer.salary_type === "commission") {
-        trainerShare = Number(course.price || 0) * (Number(trainer.default_rate || 0) / 100)
-      } else if (trainer.salary_type === "hourly") {
-        trainerShare = Number(trainer.default_rate || 0)
-      }
-      if (trainerShare > Number(course.price || 0)) trainerShare = Number(course.price || 0)
-      if (trainerShare > 0) {
-        coursePaymentIntentData = {
-          transfer_data: {
-            destination: trainer.stripe_account_id,
-            amount: Math.round(trainerShare * 100),
-          },
-        }
-      }
-    }
+  if (Number(course.price || 0) > 0 && !club?.stripe_account_id) {
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
+
+  let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -2416,7 +2371,11 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: club } = await supabase.from('clubs').select('id').eq('slug', clubSlug).single()
+  const { data: club } = await supabase
+    .from('clubs')
+    .select('id, stripe_account_id, application_fee_cents')
+    .eq('slug', clubSlug)
+    .single()
   if (!club) return { url: "" }
 
   const metadata: any = {
@@ -2429,10 +2388,17 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     metadata.userId = user.id
   }
 
+  if (!club.stripe_account_id) {
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  }
+
+  const paymentIntentData = buildClubPaymentIntentData(club)
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [{ price: stripePriceId, quantity: 1 }],
     mode: 'subscription',
+    payment_intent_data: paymentIntentData,
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?membership_success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}`,
     customer_email: user?.email,
@@ -2463,6 +2429,21 @@ function applyMemberPricing(
   return price
 }
 
+function buildClubPaymentIntentData(
+  club: { stripe_account_id?: string | null; application_fee_cents?: number | null },
+  opts?: { captureManual?: boolean }
+) {
+  const data: any = {}
+  if (opts?.captureManual) data.capture_method = "manual"
+  if (club?.stripe_account_id) {
+    data.transfer_data = { destination: club.stripe_account_id }
+  }
+  if (club?.application_fee_cents && club.application_fee_cents > 0) {
+    data.application_fee_amount = club.application_fee_cents
+  }
+  return Object.keys(data).length > 0 ? data : undefined
+}
+
 export async function createBooking(
   courtId: string,
   clubSlug: string,
@@ -2478,11 +2459,11 @@ export async function createBooking(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: club } = await supabase
-    .from('clubs')
-    .select('id, admin_email, member_booking_pricing_mode, member_booking_pricing_value')
-    .eq('slug', clubSlug)
-    .single()
+    const { data: club } = await supabase
+      .from('clubs')
+      .select('id, admin_email, member_booking_pricing_mode, member_booking_pricing_value, stripe_account_id, application_fee_cents')
+      .eq('slug', clubSlug)
+      .single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
 
   let finalPrice = price
@@ -2894,23 +2875,30 @@ export async function createCheckoutSession(
   }
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'eur',
-          product_data: { name: `Buchung: ${courtName} (${durationMinutes} Min)` },
-          unit_amount: Math.round(finalPrice * 100),
+      if (finalPrice > 0 && !club.stripe_account_id) {
+        return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+      }
+
+      const paymentIntentData = buildClubPaymentIntentData(club)
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'eur',
+            product_data: { name: `Buchung: ${courtName} (${durationMinutes} Min)` },
+            unit_amount: Math.round(finalPrice * 100),
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        payment_intent_data: paymentIntentData,
+        metadata: {
+          ...metadata,
+          bookingId: booking.id,
+          guestName,
+          userId: user?.id || null
         },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      metadata: {
-        ...metadata,
-        bookingId: booking.id,
-        guestName,
-        userId: user?.id || null
-      },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
       customer_email: user?.email || guestEmail,

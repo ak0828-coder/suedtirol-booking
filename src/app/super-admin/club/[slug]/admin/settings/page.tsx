@@ -14,7 +14,7 @@ export default async function SuperAdminSettingsPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { club, features, locks } = await getAdminContext(slug)
+  const { club, features, locks, isSuperAdmin } = await getAdminContext(slug)
   const storedContent = await getClubContent(slug)
   const initialContent = applyClubDefaults(mergeClubContent(storedContent), club.name)
   const aiSettings = await getClubAiSettings(slug)
@@ -70,7 +70,7 @@ export default async function SuperAdminSettingsPage({
             />
           </div>
           <div className="mt-5">
-            <ClubSettings club={club} />
+            <ClubSettings club={club} isSuperAdmin={isSuperAdmin} />
           </div>
         </section>
 
