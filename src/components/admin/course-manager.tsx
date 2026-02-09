@@ -65,6 +65,18 @@ export function CourseManager({
         } as SessionRow
       })
 
+  const isValidDate = (value: string) => {
+    if (!value) return false
+    const d = new Date(`${value}T00:00:00`)
+    return !Number.isNaN(d.getTime())
+  }
+
+  const isSessionComplete = (s: SessionRow) =>
+    !!s.date && isValidDate(s.date) && !!s.start && !!s.end && !!s.courtId
+
+  const validSessions = sessions.filter(isSessionComplete)
+  const hasIncompleteSessions = sessions.length > 0 && validSessions.length !== sessions.length
+
   const addSession = () => {
     setSessions((prev) => [...prev, { date: "", start: "", end: "", courtId: courts[0]?.id || "" }])
   }
@@ -140,6 +152,10 @@ export function CourseManager({
               setError(null)
               const formData = new FormData(e.currentTarget)
               if (editingId) formData.set("courseId", editingId)
+              if (hasIncompleteSessions) {
+                setError("Bitte alle Termine mit Datum, Uhrzeit und Platz vollständig ausfüllen.")
+                return
+              }
               startTransition(async () => {
                 const res = editingId
                   ? await updateCourseWithSessions(formData)
@@ -156,7 +172,7 @@ export function CourseManager({
             }}
           >
             <input type="hidden" name="clubSlug" value={clubSlug} />
-            <input type="hidden" name="sessions" value={JSON.stringify(sessions)} readOnly />
+            <input type="hidden" name="sessions" value={JSON.stringify(validSessions)} readOnly />
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -336,7 +352,7 @@ export function CourseManager({
               </div>
             </div>
 
-            {sessions.length > 0 ? (
+            {validSessions.length > 0 ? (
               <div className="rounded-xl border border-slate-200/60 bg-white p-3">
                 <div className="text-xs font-semibold text-slate-600 mb-2">Kalender-Vorschau</div>
                 <div className="grid grid-cols-7 gap-2 text-[11px]">
@@ -344,7 +360,9 @@ export function CourseManager({
                     <div key={d} className="text-center font-semibold text-slate-500">{d}</div>
                   ))}
                   {(() => {
-                    const sorted = sessions.slice().sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+                    const sorted = validSessions
+                      .slice()
+                      .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
                     const weekStart = getWeekStart(sorted[0].date)
                     return Array.from({ length: 7 }).map((_, idx) => {
                       const d = new Date(weekStart)
@@ -370,7 +388,7 @@ export function CourseManager({
                   })()}
                 </div>
                 <div className="max-h-48 overflow-auto space-y-1 text-sm mt-3">
-                  {sessions
+                  {validSessions
                     .slice()
                     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
                     .map((s, idx) => (
@@ -385,6 +403,11 @@ export function CourseManager({
               </div>
             ) : null}
 
+            {hasIncompleteSessions ? (
+              <div className="text-xs text-rose-600">
+                Bitte alle Termine vollständig ausfüllen, sonst werden sie nicht gespeichert.
+              </div>
+            ) : null}
             <label className="text-sm text-slate-600 flex items-center gap-2">
               <input
                 type="checkbox"
