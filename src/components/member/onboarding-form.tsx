@@ -9,13 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ContractPreview } from "@/components/contract/contract-preview"
 import { ContractData } from "@/components/contract/contract-pdf"
-import {
-  createMembershipCheckout,
-  createMembershipOneTimeCheckout,
-  markMembershipPaymentOffline,
-  submitMembershipSignature,
-  updateProfile,
-} from "@/app/actions"
+import { createMembershipCheckout, submitMembershipSignature, updateProfile } from "@/app/actions"
 import { Eraser, Loader2, PenLine } from "lucide-react"
 
 type Plan = {
@@ -75,9 +69,6 @@ export function MemberOnboardingForm({
   const [accepted, setAccepted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [paymentChoice, setPaymentChoice] = useState<"subscription" | "one_time" | "offline">(
-    allowSubscription ? "subscription" : feeEnabled ? "one_time" : "offline"
-  )
   const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id || "")
   const [formData, setFormData] = useState(initialMember)
   const [customValues, setCustomValues] = useState<Record<string, string | boolean>>({})
@@ -92,13 +83,12 @@ export function MemberOnboardingForm({
     }
   }, [])
 
-  const formattedDate = useMemo(
-    () => new Date().toLocaleDateString("de-DE"),
-    []
-  )
+  const formattedDate = useMemo(() => new Date().toLocaleDateString("de-DE"), [])
 
   const replaceTokens = (text: string) => {
-    const fee = feeEnabled ? `${feeAmount.toFixed(2).replace(".", ",")} EUR` : "0 EUR"
+    const selectedPlan = plans.find((p) => p.id === selectedPlanId)
+    const feeValue = selectedPlan?.price ?? (feeEnabled ? feeAmount : 0)
+    const fee = `${Number(feeValue || 0).toFixed(2).replace(".", ",")} EUR`
     let result = text
       .replace(/{{\s*name\s*}}/gi, `${formData.firstName} ${formData.lastName}`.trim())
       .replace(/{{\s*first_name\s*}}/gi, formData.firstName)
@@ -113,8 +103,7 @@ export function MemberOnboardingForm({
 
     for (const field of contractFields) {
       const value = customValues[field.key]
-      const asText =
-        typeof value === "boolean" ? (value ? "Ja" : "Nein") : value || ""
+      const asText = typeof value === "boolean" ? (value ? "Ja" : "Nein") : value || ""
       if (!field.key) continue
       const pattern = new RegExp(`{{\\s*${field.key}\\s*}}`, "gi")
       result = result.replace(pattern, asText)
@@ -131,6 +120,8 @@ export function MemberOnboardingForm({
     formattedDate,
     contractFields,
     customValues,
+    selectedPlanId,
+    plans,
   ])
 
   const pdfData: ContractData = {
@@ -206,7 +197,7 @@ export function MemberOnboardingForm({
       return typeof value === "string" ? value.trim().length === 0 : true
     })
     if (missingRequired) {
-      setError(`Bitte fÃ¼lle das Feld "${missingRequired.label}" aus.`)
+      setError(`Bitte fülle das Feld "${missingRequired.label}" aus.`)
       return
     }
     setSaving(true)
@@ -245,36 +236,18 @@ export function MemberOnboardingForm({
       return
     }
 
-    if (paymentChoice === "subscription") {
-      const plan = plans.find((p) => p.id === selectedPlanId)
-      if (!plan) {
-        setSaving(false)
-        setError("Bitte wähle einen Tarif.")
-        return
-      }
-      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
-      if (result?.url) window.location.href = result.url
-      else {
-        setSaving(false)
-        setError("Zahlungslink konnte nicht erstellt werden.")
-      }
+    const plan = plans.find((p) => p.id === selectedPlanId)
+    if (!plan) {
+      setSaving(false)
+      setError("Bitte wähle einen Tarif.")
       return
     }
-
-    if (paymentChoice === "one_time") {
-      const result = await createMembershipOneTimeCheckout(clubSlug)
-      if (result?.url) window.location.href = result.url
-      else {
-        setSaving(false)
-        setError("Zahlungslink konnte nicht erstellt werden.")
-      }
-      return
+    const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
+    if (result?.url) window.location.href = result.url
+    else {
+      setSaving(false)
+      setError("Zahlungslink konnte nicht erstellt werden.")
     }
-
-    if (paymentChoice === "offline") {
-      await markMembershipPaymentOffline(clubSlug)
-    }
-    setSaving(false)
   }
 
   return (
@@ -390,42 +363,8 @@ export function MemberOnboardingForm({
           </div>
 
           <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-900">Zahlung wählen</div>
-            <div className="grid gap-2 text-sm">
-              {allowSubscription && plans.length > 0 ? (
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="payment"
-                    checked={paymentChoice === "subscription"}
-                    onChange={() => setPaymentChoice("subscription")}
-                  />
-                  Abo per Stripe (jährlich)
-                </label>
-              ) : null}
-              {feeEnabled ? (
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="payment"
-                    checked={paymentChoice === "one_time"}
-                    onChange={() => setPaymentChoice("one_time")}
-                  />
-                  Einmalzahlung ({feeAmount}€)
-                </label>
-              ) : null}
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="payment"
-                  checked={paymentChoice === "offline"}
-                  onChange={() => setPaymentChoice("offline")}
-                />
-                Bar/Überweisung (später)
-              </label>
-            </div>
-
-            {paymentChoice === "subscription" && plans.length > 1 ? (
+            <div className="text-sm font-semibold text-slate-900">Abo wählen</div>
+            {plans.length > 1 ? (
               <select
                 className="w-full rounded-md border px-3 py-2 text-sm"
                 value={selectedPlanId}
@@ -437,7 +376,11 @@ export function MemberOnboardingForm({
                   </option>
                 ))}
               </select>
-            ) : null}
+            ) : (
+              <div className="text-sm text-slate-600">
+                {plans[0]?.name} – {plans[0]?.price}€ pro Jahr
+              </div>
+            )}
           </Card>
 
           <Button

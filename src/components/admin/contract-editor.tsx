@@ -22,8 +22,6 @@ export function ContractEditor({
   initialTitle,
   initialBody,
   initialFee,
-  feeEnabled,
-  allowSubscription,
   memberPricingMode,
   memberPricingValue,
   contractFields,
@@ -36,8 +34,6 @@ export function ContractEditor({
   initialTitle: string
   initialBody: string
   initialFee: number
-  feeEnabled: boolean
-  allowSubscription: boolean
   memberPricingMode: string
   memberPricingValue: number
   contractFields: ContractField[]
@@ -47,8 +43,6 @@ export function ContractEditor({
   const [title, setTitle] = useState(initialTitle)
   const [body, setBody] = useState(initialBody)
   const [fee, setFee] = useState(String(initialFee || 0))
-  const [feeIsEnabled, setFeeIsEnabled] = useState(!!feeEnabled)
-  const [allowSub, setAllowSub] = useState(!!allowSubscription)
   const [pricingMode, setPricingMode] = useState(memberPricingMode || "full_price")
   const [pricingValue, setPricingValue] = useState(String(memberPricingValue || 0))
   const [fields, setFields] = useState<ContractField[]>(Array.isArray(contractFields) ? contractFields : [])
@@ -139,8 +133,8 @@ export function ContractEditor({
       title,
       body,
       Number(fee || 0),
-      feeIsEnabled,
-      allowSub,
+      false,
+      true,
       pricingMode,
       Number(pricingValue || 0),
       fields
@@ -287,24 +281,11 @@ export function ContractEditor({
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Mitgliedsbeitrag (EUR)</label>
+              <label className="text-sm font-medium">Mitgliedsbeitrag (Abo, EUR)</label>
               <Input value={fee} onChange={(e) => setFee(e.target.value)} type="number" min="0" step="0.01" />
             </div>
-            <div className="flex items-center gap-2 pt-6">
-              <input
-                type="checkbox"
-                checked={feeIsEnabled}
-                onChange={(e) => setFeeIsEnabled(e.target.checked)}
-              />
-              <span className="text-sm">Einmalzahlung erlauben</span>
-            </div>
-            <div className="flex items-center gap-2 pt-6">
-              <input
-                type="checkbox"
-                checked={allowSub}
-                onChange={(e) => setAllowSub(e.target.checked)}
-              />
-              <span className="text-sm">Abo per Stripe erlauben</span>
+            <div className="text-xs text-slate-500 pt-6">
+              Mitgliedschaften laufen ausschließlich als Abo.
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">

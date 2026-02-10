@@ -96,8 +96,6 @@ export default async function AdminMembersPage({
             initialTitle={contract.title}
             initialBody={contract.body}
             initialFee={contract.membership_fee}
-            feeEnabled={contract.membership_fee_enabled}
-            allowSubscription={contract.membership_allow_subscription}
             memberPricingMode={contract.member_booking_pricing_mode}
             memberPricingValue={contract.member_booking_pricing_value}
             contractFields={contract.membership_contract_fields || []}

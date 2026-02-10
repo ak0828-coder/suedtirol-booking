@@ -4771,78 +4771,7 @@ export async function submitMembershipSignature(
   return { success: true }
 }
 
-export async function createMembershipOneTimeCheckout(clubSlug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "Nicht eingeloggt" }
-
-  const { data: club } = await supabase
-      .from("clubs")
-      .select("id, name, membership_fee, membership_fee_currency, membership_fee_enabled, stripe_account_id, application_fee_cents")
-      .eq("slug", clubSlug)
-      .single()
-  if (!club || !club.membership_fee_enabled || !club.membership_fee) {
-    return { error: "Mitgliedsbeitrag nicht konfiguriert" }
-  }
-
-  if (!club.stripe_account_id) {
-    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
-  }
-
-  const paymentIntentData = buildClubPaymentIntentData(club)
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: (club.membership_fee_currency || "EUR").toLowerCase(),
-          product_data: { name: `${club.name} Mitgliedsbeitrag` },
-          unit_amount: Math.round(Number(club.membership_fee) * 100),
-        },
-        quantity: 1,
-      },
-      ],
-      mode: "payment",
-      payment_intent_data: paymentIntentData,
-      metadata: {
-        type: "membership_one_time",
-        clubId: club.id,
-        userId: user.id,
-      clubSlug
-    },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}/onboarding?paid=1`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}/onboarding?canceled=1`,
-    customer_email: user.email || undefined,
-  })
-
-  return { url: session.url }
-}
-
-export async function markMembershipPaymentOffline(clubSlug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: "Nicht eingeloggt" }
-
-  const { data: club } = await supabase
-    .from("clubs")
-    .select("id")
-    .eq("slug", clubSlug)
-    .single()
-  if (!club) return { success: false, error: "Club nicht gefunden" }
-
-  const supabaseAdmin = getAdminClient()
-  await supabaseAdmin
-    .from("club_members")
-    .update({
-      payment_status: "unpaid",
-      next_payment_at: null
-    })
-    .eq("club_id", club.id)
-    .eq("user_id", user.id)
-
-  return { success: true }
-}
+  // One-time membership payments removed: membership runs via subscription only.
 
 // --- NEU: CSV EXPORT ---
 export async function exportBookingsCsv(clubSlug: string, year: number, month: number) {
