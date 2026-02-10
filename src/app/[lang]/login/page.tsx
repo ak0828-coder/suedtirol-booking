@@ -1,4 +1,4 @@
-"use client"
+ï»¿"use client"
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
@@ -95,8 +95,8 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
         <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
           <div className="text-center">
-            <h1 className="text-2xl font-semibold">{t("auth.portal.title", "Willkommen zurück")}</h1>
-            <p className="text-slate-500 mt-2">{t("auth.portal.subtitle", "Wähle, wohin du möchtest:")}</p>
+            <h1 className="text-2xl font-semibold">{t("auth.portal.title", "Willkommen zurÃ¼ck")}</h1>
+            <p className="text-slate-500 mt-2">{t("auth.portal.subtitle", "WÃ¤hle, wohin du mÃ¶chtest:")}</p>
           </div>
 
           <div className="space-y-3">
@@ -137,7 +137,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
         <div className="text-center">
           <h1 className="text-2xl font-bold">{t("auth.login.title", "Login")}</h1>
-          <p className="text-slate-500 mt-2">{t("auth.login.subtitle", "Südtirol Booking")}</p>
+          <p className="text-slate-500 mt-2">{t("auth.login.subtitle", "SÃ¼dtirol Booking")}</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -182,3 +182,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

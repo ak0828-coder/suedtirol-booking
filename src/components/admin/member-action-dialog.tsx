@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -98,7 +98,7 @@ export function MemberActionDialog({ memberId, clubSlug, isBlocked, userName }: 
         <DropdownMenuSeparator />
         
         <DropdownMenuItem onClick={handleDelete} disabled={loading} className="text-red-600 focus:text-red-600">
-          <Trash className="mr-2 h-4 w-4" /> Mitglied löschen
+          <Trash className="mr-2 h-4 w-4" /> Mitglied Löschen
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

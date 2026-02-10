@@ -1,4 +1,4 @@
-"use client"
+ï»¿"use client"
 
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
             href={`/${lang}/login`}
             className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1"
           >
-            <ArrowLeft className="w-4 h-4" /> {t("auth.forgot.back", "Zurück zum Login")}
+            <ArrowLeft className="w-4 h-4" /> {t("auth.forgot.back", "ZurÃ¼ck zum Login")}
           </Link>
         </div>
 
@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
           <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg text-center">
             <Mail className="w-8 h-8 mx-auto mb-2 text-green-600" />
             <p className="font-medium">{t("auth.forgot.sent_title", "E-Mail gesendet!")}</p>
-            <p className="text-sm mt-1">{t("auth.forgot.sent_subtitle", "Bitte prüfe deinen Posteingang (und Spam-Ordner).")}</p>
+            <p className="text-sm mt-1">{t("auth.forgot.sent_subtitle", "Bitte prÃ¼fe deinen Posteingang (und Spam-Ordner).")}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,3 +79,4 @@ export default function ForgotPasswordPage() {
     </div>
   )
 }
+
