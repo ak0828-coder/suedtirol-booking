@@ -21,7 +21,7 @@ export function SiteFooter() {
         <div className="space-y-2">
           <div className="text-sm font-semibold text-[#F9F8F4]">{t("app.name", "Avaimo")}</div>
           <div className="text-xs text-[#F9F8F4]/70">
-            {t("footer.tagline_short", "Vereinsplattform für Buchung, Mitglieder und Finanzen.")}
+            {t("footer.tagline_short", "Vereinsplattform fÃ¼r Buchung, Mitglieder und Finanzen.")}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-xs text-[#F9F8F4]/70">

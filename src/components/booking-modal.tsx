@@ -103,7 +103,7 @@ export function BookingModal({
       setDiscount(res.amount || 0)
       setVoucherSuccess(true)
     } else {
-      setVoucherError(res.error || t("booking.message.invalid_code", "Ungültiger Code"))
+      setVoucherError(res.error || t("booking.message.invalid_code", "UngÃ¼ltiger Code"))
       setDiscount(0)
       setVoucherSuccess(false)
     }
@@ -209,7 +209,7 @@ export function BookingModal({
             </span>
           </DialogTitle>
           <DialogDescription>
-            {t("booking.subtitle", "Wähle Datum und Uhrzeit. Öffnungszeiten: {start}:00 bis {end}:00 Uhr.")
+            {t("booking.subtitle", "WÃ¤hle Datum und Uhrzeit. Ã–ffnungszeiten: {start}:00 bis {end}:00 Uhr.")
               .replace("{start}", String(startHour || 8))
               .replace("{end}", String(endHour || 22))}
           </DialogDescription>
@@ -242,7 +242,7 @@ export function BookingModal({
             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-center gap-3">
               <AlertTriangle className="w-5 h-5" />
               <div>
-                <div className="font-bold">{t("booking.blocked", "Keine Buchung möglich")}</div>
+                <div className="font-bold">{t("booking.blocked", "Keine Buchung mÃ¶glich")}</div>
                 <div className="text-sm">{t("booking.blocked_reason", "Grund")}: {toText(activeBlock.reason)}</div>
               </div>
             </div>
@@ -273,7 +273,7 @@ export function BookingModal({
                   )
                 })}
               </div>
-              {timeSlots.length === 0 && <div className="text-sm text-slate-500">{t("booking.time_empty", "Keine Spielzeiten verfügbar.")}</div>}
+              {timeSlots.length === 0 && <div className="text-sm text-slate-500">{t("booking.time_empty", "Keine Spielzeiten verfÃ¼gbar.")}</div>}
             </div>
           )}
 
@@ -291,7 +291,7 @@ export function BookingModal({
                   />
                   <input
                     type="email"
-                    placeholder={t("booking.email", "E-Mail für Bestätigung")}
+                    placeholder={t("booking.email", "E-Mail fÃ¼r BestÃ¤tigung")}
                     className="border rounded px-3 py-2 text-sm input-glow"
                     value={guestEmail}
                     onChange={(e) => setGuestEmail(e.target.value)}
@@ -315,7 +315,7 @@ export function BookingModal({
                     />
                     {!voucherSuccess ? (
                       <Button size="sm" variant="outline" onClick={checkVoucher} disabled={isValidatingVoucher || !voucherCode}>
-                        {isValidatingVoucher ? <Loader2 className="w-3 h-3 animate-spin" /> : t("booking.voucher.apply", "Einlösen")}
+                        {isValidatingVoucher ? <Loader2 className="w-3 h-3 animate-spin" /> : t("booking.voucher.apply", "EinlÃ¶sen")}
                       </Button>
                     ) : (
                       <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => {
@@ -329,7 +329,7 @@ export function BookingModal({
                   </div>
                   {voucherError && <p className="text-xs text-red-500">{voucherError}</p>}
                   {voucherSuccess && <p className="text-xs font-medium club-primary-text">
-                    {t("booking.voucher.applied", "Gutschein über {amount}€ angewendet.").replace("{amount}", String(discount))}
+                    {t("booking.voucher.applied", "Gutschein Ã¼ber {amount}â‚¬ angewendet.").replace("{amount}", String(discount))}
                   </p>}
                 </div>
               )}
@@ -344,12 +344,12 @@ export function BookingModal({
                   <span>{t("booking.payable", "Zu zahlen")}: </span>
                   <div className="text-right">
                     {memberBasePrice !== price && (
-                      <span className="text-slate-400 line-through mr-2">{price}€</span>
+                      <span className="text-slate-400 line-through mr-2">{price}â‚¬</span>
                     )}
                     {discount > 0 && (
-                      <span className="text-slate-400 line-through mr-2">{memberBasePrice}€</span>
+                      <span className="text-slate-400 line-through mr-2">{memberBasePrice}â‚¬</span>
                     )}
-                    <span className="font-bold text-lg">{finalPrice}€</span>
+                    <span className="font-bold text-lg">{finalPrice}â‚¬</span>
                   </div>
                 </div>
                 {isMember && memberBasePrice !== price && (
@@ -357,7 +357,7 @@ export function BookingModal({
                     {t("booking.member.active", "Mitgliedervorteil aktiv")}: {memberPricingMode === "discount_percent"
                       ? t("booking.member.discount", "{value}% Rabatt").replace("{value}", String(memberPricingValue))
                       : memberPricingMode === "member_price"
-                        ? t("booking.member.member_price", "Mitgliederpreis {value}€").replace("{value}", String(memberPricingValue))
+                        ? t("booking.member.member_price", "Mitgliederpreis {value}â‚¬").replace("{value}", String(memberPricingValue))
                         : t("booking.member.status", "Mitgliedsstatus")}
                   </div>
                 )}
@@ -396,7 +396,7 @@ export function BookingModal({
                           }
                         }}
                       >
-                        {isBooking ? <Loader2 className="animate-spin" /> : t("booking.pay_online", "Online zahlen ({amount}€)").replace("{amount}", String(finalPrice))}
+                        {isBooking ? <Loader2 className="animate-spin" /> : t("booking.pay_online", "Online zahlen ({amount}â‚¬)").replace("{amount}", String(finalPrice))}
                       </Button>
                       <Button variant="outline" className="w-full btn-press" disabled={isBooking} onClick={handleBook}>
                         {t("booking.pay_onsite", "Vor Ort bezahlen")}
@@ -447,7 +447,7 @@ export function BookingModal({
                         }
                       }}
                     >
-                      {isBooking ? <Loader2 className="animate-spin" /> : t("booking.pay_online", "Online zahlen ({amount}€)").replace("{amount}", String(finalPrice))}
+                      {isBooking ? <Loader2 className="animate-spin" /> : t("booking.pay_online", "Online zahlen ({amount}â‚¬)").replace("{amount}", String(finalPrice))}
                     </Button>
                   )}
 
