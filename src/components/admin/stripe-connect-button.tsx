@@ -78,7 +78,7 @@ export function StripeConnectButton({
 
       <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-md mb-6 flex gap-2">
         <AlertCircle className="w-5 h-5 shrink-0" />
-        <p>{t("admin_stripe.note", "Du wirst zu Stripe weitergeleitet, um die Identität des Vereins zu bestätigen.")}</p>
+        <p>{t("admin_stripe.note", "Du wirst zu Stripe weitergeleitet, um die Identitï¿½t des Vereins zu bestï¿½tigen.")}</p>
       </div>
 
       <Button
