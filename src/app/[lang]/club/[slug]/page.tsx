@@ -43,8 +43,12 @@ async function getClubData(slug: string) {
   return { club, courts, plans }
 }
 
-export default async function ClubPage({ params }: { params: { lang: string; slug: string } }) {
-  const { slug, lang } = params
+export default async function ClubPage({
+  params,
+}: {
+  params: Promise<{ lang: string; slug: string }>
+}) {
+  const { slug, lang } = await params
   const dict = await getDictionary(lang as any)
   const t = createTranslator(dict)
   const supabase = await createClient()

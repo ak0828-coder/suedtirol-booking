@@ -18,7 +18,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export function MemberQuickActions({ clubSlug, memberId, isBlocked }: { clubSlug: string, memberId: string, isBlocked: boolean }) {
+export type AdminMemberQuickActionsProps = {
+  clubSlug: string
+  memberId: string
+  isBlocked: boolean
+  memberEmail?: string
+  contractAvailable?: boolean
+}
+
+export function MemberQuickActions({
+  clubSlug,
+  memberId,
+  isBlocked,
+}: AdminMemberQuickActionsProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const router = useRouter()
 
@@ -117,6 +129,8 @@ export function MemberQuickActions({ clubSlug, memberId, isBlocked }: { clubSlug
     </div>
   )
 }
+
+export const AdminMemberQuickActions = MemberQuickActions
 
 
 

@@ -66,6 +66,11 @@ export default async function MatchRecapPage({
     playerProfile?.first_name || playerProfile?.last_name
       ? `${playerProfile?.first_name || ""} ${playerProfile?.last_name || ""}`.trim()
       : recap.guest_name || "Spieler"
+  const memberOptions =
+    (members || []).map((m: any) => ({
+      id: m.id,
+      label: m.name || `${m.first_name || ""} ${m.last_name || ""}`.trim(),
+    })) || []
 
   return (
     <div
@@ -84,7 +89,7 @@ export default async function MatchRecapPage({
           initialOpponentName={recap.opponent_name}
           initialResult={recap.result_text}
           isMemberMode={!!recap.player_user_id}
-          memberOptions={members}
+          memberOptions={memberOptions}
         />
       </div>
     </div>

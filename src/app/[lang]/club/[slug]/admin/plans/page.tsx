@@ -28,7 +28,7 @@ export default async function AdminPlansPage({
         <h2 className="text-2xl md:text-3xl font-semibold">Abos</h2>
         <p className="text-slate-500 text-sm">Mitgliedschaftspläne verwalten.</p>
       </div>
-      <PlanManager clubSlug={slug} plans={plans || []} />
+      <PlanManager clubSlug={slug} initialPlans={plans || []} />
     </FeatureLockWrapper>
   )
 }

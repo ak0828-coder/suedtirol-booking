@@ -14,8 +14,13 @@ import { SiteFooter } from "@/components/marketing/site-footer"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
 
-export default async function Home({ params }: { params: { lang: string } }) {
-  const dict = await getDictionary(params.lang as any)
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}) {
+  const { lang } = await params
+  const dict = await getDictionary(lang as any)
   const t = createTranslator(dict)
   const proof = [
     { label: t("home.proof.fast"), value: t("home.proof.onboarding") },
@@ -64,8 +69,6 @@ export default async function Home({ params }: { params: { lang: string } }) {
     t("home.outcomes.2"),
     t("home.outcomes.3"),
   ]
-
-  const lang = params.lang
 
   return (
     <div className="min-h-screen bg-[#F9F8F4] text-[#0E1A14]">

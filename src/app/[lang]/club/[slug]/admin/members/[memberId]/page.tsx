@@ -129,6 +129,7 @@ export default async function AdminMemberDetailPage({
           <AdminMemberQuickActions
             clubSlug={slug}
             memberId={member.id}
+            isBlocked={member.status === "blocked"}
             memberEmail={email}
             contractAvailable={documents.some((d) => d.doc_type === "contract")}
           />

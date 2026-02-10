@@ -18,9 +18,9 @@ import { createTranslator } from "@/lib/translator"
 export default async function MemberDashboard({
   params,
 }: {
-  params: { lang: string; slug: string }
+  params: Promise<{ lang: string; slug: string }>
 }) {
-  const { slug, lang } = params
+  const { slug, lang } = await params
   const dict = await getDictionary(lang as any)
   const t = createTranslator(dict)
   const supabase = await createClient()
@@ -361,7 +361,7 @@ export default async function MemberDashboard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ProfileForm initialData={profile} />
+            <ProfileForm profile={profile} />
           </CardContent>
         </Card>
       </div>

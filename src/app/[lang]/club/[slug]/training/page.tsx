@@ -14,9 +14,9 @@ export const dynamic = "force-dynamic"
 export default async function TrainingPage({
   params,
 }: {
-  params: { lang: string; slug: string }
+  params: Promise<{ lang: string; slug: string }>
 }) {
-  const { slug, lang } = params
+  const { slug, lang } = await params
   const dict = await getDictionary(lang as any)
   const t = createTranslator(dict)
   const supabase = await createClient()

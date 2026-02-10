@@ -16,22 +16,41 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 interface MemberActionDialogProps {
-  memberId: string
+  memberId?: string
   clubSlug: string
   isBlocked?: boolean
-  userName: string
+  userName?: string
+  member?: any
+  trigger?: React.ReactNode
 }
 
-export function MemberActionDialog({ memberId, clubSlug, isBlocked, userName }: MemberActionDialogProps) {
+export function MemberActionDialog({
+  memberId,
+  clubSlug,
+  isBlocked,
+  userName,
+  member,
+  trigger,
+}: MemberActionDialogProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const resolvedMemberId = member?.id ?? memberId
+  const resolvedName =
+    userName ??
+    ([member?.profiles?.first_name, member?.profiles?.last_name]
+      .filter(Boolean)
+      .join(" ") ||
+      "Mitglied")
+  const resolvedBlocked =
+    typeof isBlocked === "boolean" ? isBlocked : member?.status === "blocked"
 
   const handleResetPassword = async () => {
     setLoading(true)
-    const res = await resetMemberPassword(clubSlug, memberId)
+    if (!resolvedMemberId) return
+    const res = await resetMemberPassword(clubSlug, resolvedMemberId)
     setLoading(false)
     if (res.success) {
-      toast.success(`Passwort-Reset für ${userName} gesendet`)
+      toast.success(`Passwort-Reset für ${resolvedName} gesendet`)
     } else {
       toast.error(res.error || "Fehler beim Senden")
     }
@@ -39,10 +58,11 @@ export function MemberActionDialog({ memberId, clubSlug, isBlocked, userName }: 
 
   const handleBlock = async () => {
     setLoading(true)
-    const res = await blockMember(clubSlug, memberId, !isBlocked)
+    if (!resolvedMemberId) return
+    const res = await blockMember(clubSlug, resolvedMemberId, !resolvedBlocked)
     setLoading(false)
     if (res.success) {
-      toast.success(isBlocked ? "Mitglied entsperrt" : "Mitglied gesperrt")
+      toast.success(resolvedBlocked ? "Mitglied entsperrt" : "Mitglied gesperrt")
       router.refresh()
     } else {
       toast.error("Fehler beim Ändern des Status")
@@ -50,10 +70,11 @@ export function MemberActionDialog({ memberId, clubSlug, isBlocked, userName }: 
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Möchtest du ${userName} wirklich entfernen?`)) return
+    if (!resolvedMemberId) return
+    if (!confirm(`Möchtest du ${resolvedName} wirklich entfernen?`)) return
     
     setLoading(true)
-    const res = await deleteMember(clubSlug, memberId)
+    const res = await deleteMember(clubSlug, resolvedMemberId)
     setLoading(false)
     
     if (res.success) {
@@ -67,14 +88,23 @@ export function MemberActionDialog({ memberId, clubSlug, isBlocked, userName }: 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Menü öffnen</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Menü öffnen</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(memberId)}>
+        <DropdownMenuItem
+          onClick={() => {
+            if (!resolvedMemberId) return
+            navigator.clipboard.writeText(resolvedMemberId)
+          }}
+        >
           ID kopieren
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -84,7 +114,7 @@ export function MemberActionDialog({ memberId, clubSlug, isBlocked, userName }: 
         </DropdownMenuItem>
         
         <DropdownMenuItem onClick={handleBlock} disabled={loading}>
-          {isBlocked ? (
+          {resolvedBlocked ? (
             <>
               <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Entsperren
             </>

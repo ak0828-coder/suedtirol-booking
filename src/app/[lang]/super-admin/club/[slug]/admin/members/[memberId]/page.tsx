@@ -116,6 +116,7 @@ export default async function SuperAdminMemberDetailPage({
       <AdminMemberQuickActions
         clubSlug={slug}
         memberId={member.id}
+        isBlocked={member.status === "blocked"}
         memberEmail={email}
         contractAvailable={documents.some((d) => d.doc_type === "contract")}
       />

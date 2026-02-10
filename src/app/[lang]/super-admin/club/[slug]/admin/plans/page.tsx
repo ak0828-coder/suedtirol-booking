@@ -38,7 +38,7 @@ export default async function SuperAdminPlansPage({
           />
         </div>
       </div>
-      <PlanManager clubSlug={slug} plans={plans || []} />
+      <PlanManager clubSlug={slug} initialPlans={plans || []} />
     </>
   )
 }

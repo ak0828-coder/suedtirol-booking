@@ -9,9 +9,11 @@ import { useParams } from "next/navigation"
 export function MemberDocumentsAdmin({
   clubSlug,
   documents,
+  audit,
 }: {
   clubSlug: string
   documents: any[]
+  audit?: any[]
 }) {
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState<string | null>(null)

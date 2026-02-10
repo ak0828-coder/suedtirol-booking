@@ -5,11 +5,14 @@ import { Check } from "lucide-react"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
 
-export default async function PricingPage({ params }: { params: { lang: string } }) {
-  const dict = await getDictionary(params.lang as any)
+export default async function PricingPage({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}) {
+  const { lang } = await params
+  const dict = await getDictionary(lang as any)
   const t = createTranslator(dict)
-  const lang = params.lang
-
   const tiers = [
     {
       name: t("pricing.tiers.starter.name"),
