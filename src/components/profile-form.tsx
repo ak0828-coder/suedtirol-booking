@@ -1,49 +1,54 @@
 "use client"
 
-import { useState } from "react"
+import { useTransition, useState } from "react"
 import { updateProfile } from "@/app/actions"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
+import { useI18n } from "@/components/i18n/locale-provider"
 
-export function ProfileForm({ initialData }: { initialData: any }) {
-  const [loading, setLoading] = useState(false)
-
-  async function onSubmit(formData: FormData) {
-    setLoading(true)
-    const res = await updateProfile(formData)
-    setLoading(false)
-
-    if (res.success) {
-      alert("Profil aktualisiert!")
-    } else {
-      alert("Fehler: " + res.error)
-    }
-  }
+export function ProfileForm({ profile }: { profile: any }) {
+  const [pending, startTransition] = useTransition()
+  const [message, setMessage] = useState<string | null>(null)
+  const { t } = useI18n()
 
   return (
-    <form action={onSubmit} className="space-y-4 max-w-lg">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">Vorname</Label>
-          <Input name="firstName" defaultValue={initialData?.first_name || ""} required />
+    <form
+      className="space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault()
+        setMessage(null)
+        const formData = new FormData(event.currentTarget)
+        startTransition(async () => {
+          const res = await updateProfile(formData)
+          if (res?.success) {
+            setMessage(t("profile.saved", "Profil aktualisiert."))
+          } else {
+            setMessage(res?.error || t("profile.error", "Profil konnte nicht gespeichert werden."))
+          }
+        })
+      }}
+    >
+      <div className="grid gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="first_name">{t("profile.first_name", "Vorname")}</Label>
+          <Input id="first_name" name="first_name" defaultValue={profile.first_name || ""} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Nachname</Label>
-          <Input name="lastName" defaultValue={initialData?.last_name || ""} required />
+        <div className="space-y-1">
+          <Label htmlFor="last_name">{t("profile.last_name", "Nachname")}</Label>
+          <Input id="last_name" name="last_name" defaultValue={profile.last_name || ""} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="phone">{t("profile.phone", "Telefonnummer (für Rückfragen)")}</Label>
+          <Input id="phone" name="phone" defaultValue={profile.phone || ""} />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">Telefonnummer (fÃ¼r RÃ¼ckfragen)</Label>
-        <Input name="phone" type="tel" defaultValue={initialData?.phone || ""} />
-      </div>
-
-      <Button type="submit" disabled={loading}>
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Speichern
+      <Button className="rounded-full" type="submit" disabled={pending}>
+        {pending ? t("profile.saving", "Speichern...") : t("profile.save", "Speichern")}
       </Button>
+
+      {message && <div className="text-xs text-slate-500">{message}</div>}
     </form>
   )
 }

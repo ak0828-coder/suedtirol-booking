@@ -10,20 +10,22 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Sparkles, UploadCloud, CheckCircle, ArrowRight } from "lucide-react"
 import { analyzeCsvHeaders, importMembersBatch } from "@/app/actions"
-
-const DB_FIELDS = [
-  { id: "first_name", label: "Vorname" },
-  { id: "last_name", label: "Nachname" },
-  { id: "email", label: "E-Mail (Pflicht)" },
-  { id: "phone", label: "Telefon" },
-  { id: "credit_balance", label: "Guthaben" },
-  { id: "membership_start_date", label: "Eintrittsdatum (Start)" },
-  { id: "membership_end_date", label: "GÃ¼ltig bis (Ende)" },
-]
-
-type Mapping = Record<string, string>
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
+  const { t } = useI18n()
+  const DB_FIELDS = [
+    { id: "first_name", label: t("admin_import.first", "Vorname") },
+    { id: "last_name", label: t("admin_import.last", "Nachname") },
+    { id: "email", label: t("admin_import.email", "E-Mail (Pflicht)") },
+    { id: "phone", label: t("admin_import.phone", "Telefon") },
+    { id: "credit_balance", label: t("admin_import.balance", "Guthaben") },
+    { id: "membership_start_date", label: t("admin_import.start", "Eintrittsdatum (Start)") },
+    { id: "membership_end_date", label: t("admin_import.end", "Gültig bis (Ende)") },
+  ]
+
+  type Mapping = Record<string, string>
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [csvData, setCsvData] = useState<any[]>([])
   const [headers, setHeaders] = useState<string[]>([])
@@ -68,11 +70,11 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
   const runImport = async (activateNow: boolean) => {
     setErrorMessage(null)
     if (!mapping.email) {
-      setErrorMessage("Bitte ordne eine E-Mail-Spalte zu (Pflichtfeld).")
+      setErrorMessage(t("admin_import.error_email", "Bitte ordne eine E-Mail-Spalte zu (Pflichtfeld)."))
       return
     }
     if (csvData.length === 0) {
-      setErrorMessage("Keine DatensÃ¤tze gefunden.")
+      setErrorMessage(t("admin_import.error_empty", "Keine Datensätze gefunden."))
       return
     }
     setImporting(true)
@@ -104,9 +106,9 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
   return (
     <Card className="border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm">
       <CardHeader>
-        <CardTitle>Switchâ€‘Kit: Mitglieder importieren</CardTitle>
+        <CardTitle>{t("admin_import.title", "Switch-Kit: Mitglieder importieren")}</CardTitle>
         <CardDescription>
-          CSV/Excel hochladen, KI ordnet Spalten zu, optional sofort einladen.
+          {t("admin_import.subtitle", "CSV/Excel hochladen, KI ordnet Spalten zu, optional sofort einladen.")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -115,9 +117,9 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
               <UploadCloud className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold">CSV Datei hochladen</h3>
+            <h3 className="text-lg font-semibold">{t("admin_import.upload", "CSV Datei hochladen")}</h3>
             <p className="text-sm text-slate-500 mt-2">
-              Wansport/eTennis Export auswÃ¤hlen â€“ wir kÃ¼mmern uns um den Rest.
+              {t("admin_import.upload_hint", "Wansport/eTennis Export auswählen – wir kümmern uns um den Rest.")}
             </p>
             <div className="mt-4 flex justify-center">
               <Input type="file" accept=".csv" onChange={handleFileUpload} className="max-w-xs" />
@@ -130,12 +132,12 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  Spalten zuordnen
+                  {t("admin_import.map", "Spalten zuordnen")}
                   {isAnalyzing && <Sparkles className="h-4 w-4 text-indigo-500 animate-pulse" />}
                 </h3>
-                <p className="text-sm text-slate-500">KIâ€‘Vorschlag bitte kurz prÃ¼fen.</p>
+                <p className="text-sm text-slate-500">{t("admin_import.ai_hint", "KI-Vorschlag bitte kurz prüfen.")}</p>
               </div>
-              <Badge variant="outline">{csvData.length} Zeilen</Badge>
+              <Badge variant="outline">{csvData.length} {t("admin_import.rows", "Zeilen")}</Badge>
             </div>
 
             {isAnalyzing ? (
@@ -152,7 +154,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
                       onValueChange={(val) => setMapping((prev) => ({ ...prev, [field.id]: val }))}
                     >
                       <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Nicht importieren" />
+                        <SelectValue placeholder={t("admin_import.skip", "Nicht importieren")} />
                       </SelectTrigger>
                       <SelectContent>
                         {headers.map((h) => (
@@ -169,7 +171,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
 
             {!isAnalyzing && (
               <div className="rounded-xl border border-slate-200/60 bg-white p-4 space-y-2">
-                <Label>Falls kein Enddatum vorhanden ist</Label>
+                <Label>{t("admin_import.fallback", "Falls kein Enddatum vorhanden ist")}</Label>
                 <Select
                   value={fallbackMode}
                   onValueChange={(val) => setFallbackMode(val as typeof fallbackMode)}
@@ -178,14 +180,14 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="year_from_start">1 Jahr ab Eintrittsdatum</SelectItem>
-                    <SelectItem value="calendar_year_end">Bis 31.12. des laufenden Jahres</SelectItem>
-                    <SelectItem value="year_from_today">1 Jahr ab heute</SelectItem>
-                    <SelectItem value="infinite">Unbegrenzt</SelectItem>
+                    <SelectItem value="year_from_start">{t("admin_import.fallback_start", "1 Jahr ab Eintrittsdatum")}</SelectItem>
+                    <SelectItem value="calendar_year_end">{t("admin_import.fallback_year_end", "Bis 31.12. des laufenden Jahres")}</SelectItem>
+                    <SelectItem value="year_from_today">{t("admin_import.fallback_today", "1 Jahr ab heute")}</SelectItem>
+                    <SelectItem value="infinite">{t("admin_import.fallback_infinite", "Unbegrenzt")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-slate-500">
-                  Avaimo berechnet automatisch das Ablaufdatum.
+                  {t("admin_import.fallback_hint", "Avaimo berechnet automatisch das Ablaufdatum.")}
                 </p>
               </div>
             )}
@@ -198,7 +200,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
                   disabled={importing}
                   className="rounded-full"
                 >
-                  Nur importieren (still)
+                  {t("admin_import.import_only", "Nur importieren (still)")}
                 </Button>
                 <Button
                   onClick={() => runImport(true)}
@@ -209,7 +211,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      Importieren & Einladen <ArrowRight className="ml-2 h-4 w-4" />
+                      {t("admin_import.import_invite", "Importieren & Einladen")} <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}
                 </Button>
@@ -226,7 +228,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
         {step === 3 && (
           <div className="py-10 text-center space-y-4">
             <Loader2 className="h-10 w-10 animate-spin mx-auto text-slate-500" />
-            <p className="text-slate-600">Import lÃ¤uftâ€¦ bitte warten.</p>
+            <p className="text-slate-600">{t("admin_import.loading", "Import läuft… bitte warten.")}</p>
           </div>
         )}
 
@@ -235,12 +237,12 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <CheckCircle className="h-6 w-6" />
             </div>
-            <h3 className="text-xl font-semibold">Import abgeschlossen</h3>
+            <h3 className="text-xl font-semibold">{t("admin_import.done", "Import abgeschlossen")}</h3>
             <p className="text-sm text-slate-500">
-              {importStats?.imported || 0} importiert, {importStats?.failed || 0} Fehler.
+              {importStats?.imported || 0} {t("admin_import.imported", "importiert")}, {importStats?.failed || 0} {t("admin_import.failed", "Fehler")}.
             </p>
             <Button variant="outline" className="rounded-full" onClick={() => setStep(1)}>
-              Neuen Import starten
+              {t("admin_import.restart", "Neuen Import starten")}
             </Button>
           </div>
         )}

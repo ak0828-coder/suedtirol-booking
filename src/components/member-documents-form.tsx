@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { getMemberDocumentSignedUrl, uploadMemberDocument } from "@/app/actions"
+import { useI18n } from "@/components/i18n/locale-provider"
+import { useParams } from "next/navigation"
 
 type MemberDocument = {
   id: string
@@ -25,6 +27,11 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
   const [uploading, setUploading] = useState(false)
   const [openingId, setOpeningId] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const { t } = useI18n()
+  const params = useParams()
+  const langRaw = params?.lang
+  const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
+  const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -35,11 +42,11 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
     formData.set("clubSlug", clubSlug)
     const res = await uploadMemberDocument(formData)
     if (res?.success) {
-      setMessage("Upload erfolgreich. PrÃ¼fung lÃ¤uft.")
+      setMessage(t("member_docs.upload_success", "Upload erfolgreich. Prüfung läuft."))
       form.reset()
       window.location.reload()
     } else {
-      setMessage(res?.error || "Upload fehlgeschlagen.")
+      setMessage(res?.error || t("member_docs.upload_error", "Upload fehlgeschlagen."))
     }
     setUploading(false)
   }
@@ -52,18 +59,18 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
         className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm space-y-4"
       >
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Dokument hochladen</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{t("member_docs.title", "Dokument hochladen")}</h2>
           <p className="text-sm text-slate-500">
-            Lade dein Ã¤rztliches Zeugnis oder deinen Vertrag hoch.
+            {t("member_docs.subtitle", "Lade dein ärztliches Zeugnis oder deinen Vertrag hoch.")}
           </p>
         </div>
         <div className="grid gap-3">
-          <label className="text-sm text-slate-600">Dokumenttyp</label>
+          <label className="text-sm text-slate-600">{t("member_docs.type", "Dokumenttyp")}</label>
           <select name="docType" className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm">
-            <option value="medical_certificate">Ã„rztliches Zeugnis</option>
-            <option value="contract">Mitgliedsvertrag</option>
+            <option value="medical_certificate">{t("member_docs.medical", "Ärztliches Zeugnis")}</option>
+            <option value="contract">{t("member_docs.contract", "Mitgliedsvertrag")}</option>
           </select>
-          <label className="text-sm text-slate-600">Datei</label>
+          <label className="text-sm text-slate-600">{t("member_docs.file", "Datei")}</label>
           <input
             type="file"
             name="file"
@@ -73,7 +80,7 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
           />
         </div>
         <Button type="submit" className="rounded-full" disabled={uploading}>
-          {uploading ? "Lade hoch..." : "Upload"}
+          {uploading ? t("member_docs.uploading", "Lade hoch...") : t("member_docs.upload", "Upload")}
         </Button>
         {message && <div className="text-xs text-slate-500">{message}</div>}
       </form>
@@ -82,9 +89,9 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
         id="tour-documents-list"
         className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm"
       >
-        <h3 className="text-sm font-semibold text-slate-800">Deine Dokumente</h3>
+        <h3 className="text-sm font-semibold text-slate-800">{t("member_docs.list_title", "Deine Dokumente")}</h3>
         {documents.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Noch keine Dokumente hochgeladen.</p>
+          <p className="mt-3 text-sm text-slate-500">{t("member_docs.empty", "Noch keine Dokumente hochgeladen.")}</p>
         ) : (
           <div className="mt-3 space-y-2">
             {documents.map((doc) => (
@@ -95,34 +102,34 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                 <div>
                   <div className="font-medium text-slate-800">{doc.file_name}</div>
                   <div className="text-xs text-slate-500">
-                    KI: {doc.ai_status} Â· Review: {doc.review_status}
+                    {t("member_docs.ai", "KI")}: {doc.ai_status} · {t("member_docs.review", "Review")}: {doc.review_status}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
-                    <span>Upload</span>
-                    <span>â†’</span>
+                    <span>{t("member_docs.upload_label", "Upload")}</span>
+                    <span>?</span>
                     <span>
                       {doc.ai_status === "ok"
-                        ? "KI ok"
+                        ? t("member_docs.ai_ok", "KI ok")
                         : doc.ai_status === "reject"
-                        ? "KI abgelehnt"
-                        : "KI prÃ¼ft"}
+                        ? t("member_docs.ai_reject", "KI abgelehnt")
+                        : t("member_docs.ai_check", "KI prüft")}
                     </span>
-                    <span>â†’</span>
+                    <span>?</span>
                     <span>
                       {doc.review_status === "approved"
-                        ? "BestÃ¤tigt"
+                        ? t("member_docs.approved", "Bestätigt")
                         : doc.review_status === "rejected"
-                        ? "Abgelehnt"
-                        : "Wartet"}
+                        ? t("member_docs.rejected", "Abgelehnt")
+                        : t("member_docs.pending", "Wartet")}
                     </span>
                   </div>
                 </div>
                 <div className="text-xs text-slate-500">
                   {doc.valid_until
-                    ? `GÃ¼ltig bis ${new Date(doc.valid_until).toLocaleDateString("de-DE")}`
+                    ? t("member_docs.valid_until", "Gültig bis {date}").replace("{date}", new Date(doc.valid_until).toLocaleDateString(locale))
                     : doc.temp_valid_until
-                    ? `VorlÃ¤ufig bis ${new Date(doc.temp_valid_until).toLocaleDateString("de-DE")}`
-                    : "Nicht gÃ¼ltig"}
+                    ? t("member_docs.temp_until", "Vorläufig bis {date}").replace("{date}", new Date(doc.temp_valid_until).toLocaleDateString(locale))
+                    : t("member_docs.invalid", "Nicht gültig")}
                 </div>
                 <Button
                   variant="outline"
@@ -134,12 +141,12 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                     if (res?.success && res.url) {
                       setPreviewUrl(res.url)
                     } else {
-                      setMessage(res?.error || "Dokument konnte nicht geÃ¶ffnet werden.")
+                      setMessage(res?.error || t("member_docs.open_error", "Dokument konnte nicht geöffnet werden."))
                     }
                     setOpeningId(null)
                   }}
                 >
-                  Ã–ffnen
+                  {t("member_docs.open", "Öffnen")}
                 </Button>
                 <Button
                   variant="outline"
@@ -154,12 +161,12 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                       link.download = doc.file_name
                       link.click()
                     } else {
-                      setMessage(res?.error || "Download fehlgeschlagen.")
+                      setMessage(res?.error || t("member_docs.download_error", "Download fehlgeschlagen."))
                     }
                     setOpeningId(null)
                   }}
                 >
-                  Download
+                  {t("member_docs.download", "Download")}
                 </Button>
               </div>
             ))}
@@ -167,7 +174,7 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
         )}
         {previewUrl && (
           <div className="mt-4 rounded-xl border border-slate-200/60 bg-white/90 p-3">
-            <div className="mb-2 text-xs text-slate-500">Vorschau</div>
+            <div className="mb-2 text-xs text-slate-500">{t("member_docs.preview", "Vorschau")}</div>
             <iframe src={previewUrl} className="h-80 w-full rounded-lg border border-slate-200/60" />
           </div>
         )}

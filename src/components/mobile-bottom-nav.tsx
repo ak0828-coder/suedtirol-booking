@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useI18n } from "@/components/i18n/locale-provider"
 import { Home, LayoutDashboard, FileText, Trophy } from "lucide-react"
 
 type MobileBottomNavProps = {
@@ -9,11 +11,14 @@ type MobileBottomNavProps = {
 }
 
 export function MobileBottomNav({ slug, active }: MobileBottomNavProps) {
+  const params = useParams()
+  const lang = typeof params?.lang === "string" ? params.lang : "de"
+  const { t } = useI18n()
   const items = [
-    { id: "home", label: "Club", href: `/club/${slug}`, icon: Home },
-    { id: "dashboard", label: "Dashboard", href: `/club/${slug}/dashboard`, icon: LayoutDashboard },
-    { id: "documents", label: "Dokumente", href: `/club/${slug}/dashboard/documents`, icon: FileText },
-    { id: "leaderboard", label: "Ranking", href: `/club/${slug}/dashboard/leaderboard`, icon: Trophy },
+    { id: "home", label: t("club.nav.club", "Club"), href: `/${lang}/club/${slug}`, icon: Home },
+    { id: "dashboard", label: t("club.nav.dashboard", "Dashboard"), href: `/${lang}/club/${slug}/dashboard`, icon: LayoutDashboard },
+    { id: "documents", label: t("club.nav.documents", "Dokumente"), href: `/${lang}/club/${slug}/dashboard/documents`, icon: FileText },
+    { id: "leaderboard", label: t("club.nav.leaderboard", "Ranking"), href: `/${lang}/club/${slug}/dashboard/leaderboard`, icon: Trophy },
   ] as const
 
   return (

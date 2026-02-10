@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import React, { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { updateMembershipContract } from "@/app/actions"
+import { useI18n } from "@/components/i18n/locale-provider"
+import { useParams } from "next/navigation"
 
 type ContractField = {
   key: string
@@ -47,7 +49,6 @@ export function ContractEditor({
   const [pricingValue, setPricingValue] = useState(String(memberPricingValue || 0))
   const [fields, setFields] = useState<ContractField[]>(Array.isArray(contractFields) ? contractFields : [])
   const [saving, setSaving] = useState(false)
-  const lastUpdated = updatedAt ? new Date(updatedAt).toLocaleDateString("de-DE") : "-"
   const [previewTitle, setPreviewTitle] = useState(initialTitle)
   const [previewBody, setPreviewBody] = useState(initialBody)
   const [isClient, setIsClient] = useState(false)
@@ -56,17 +57,23 @@ export function ContractEditor({
   const [previewLoading, setPreviewLoading] = useState(false)
   const previewAbortRef = useRef<AbortController | null>(null)
   const previewUrlRef = useRef<string | null>(null)
+  const { t } = useI18n()
+  const params = useParams()
+  const langRaw = params?.lang
+  const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
+  const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
+  const lastUpdated = updatedAt ? new Date(updatedAt).toLocaleDateString(locale) : "-"
 
   useEffect(() => {
     setIsClient(true)
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const tmr = setTimeout(() => {
       setPreviewTitle(title)
       setPreviewBody(body)
     }, 180)
-    return () => clearTimeout(t)
+    return () => clearTimeout(tmr)
   }, [title, body])
 
   useEffect(() => {
@@ -104,8 +111,8 @@ export function ContractEditor({
         setPreviewUrl(nextUrl)
       } catch (err) {
         if ((err as Error)?.name === "AbortError") return
-        const message = err instanceof Error ? err.message : "PDF Vorschau nicht VerfÃ¼gbar."
-        setPreviewError(message || "PDF Vorschau nicht VerfÃ¼gbar.")
+        const message = err instanceof Error ? err.message : t("admin_contract.preview_unavailable", "PDF Vorschau nicht Verfügbar.")
+        setPreviewError(message || t("admin_contract.preview_unavailable", "PDF Vorschau nicht Verfügbar."))
       } finally {
         setPreviewLoading(false)
       }
@@ -116,7 +123,7 @@ export function ContractEditor({
     return () => {
       controller.abort()
     }
-  }, [clubSlug, isClient, lastUpdated, previewBody, previewTitle, version, fields])
+  }, [clubSlug, isClient, lastUpdated, previewBody, previewTitle, version, fields, t])
 
   useEffect(() => {
     return () => {
@@ -146,8 +153,8 @@ export function ContractEditor({
     setFields((prev) => [
       ...(Array.isArray(prev) ? prev : []),
       {
-        key: `feld_${Date.now()}`,
-        label: "Neues Feld",
+        key: `field_${Date.now()}`,
+        label: t("admin_contract.new_field", "Neues Feld"),
         type: "text",
         required: false,
         placeholder: "",
@@ -182,55 +189,54 @@ export function ContractEditor({
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
         <CardHeader>
-          <CardTitle>Mitgliedsvertrag (Digital)</CardTitle>
+          <CardTitle>{t("admin_contract.title", "Mitgliedsvertrag (Digital)")}</CardTitle>
           <p className="text-sm text-slate-500">
-            Version {version} - Letztes Update: {lastUpdated}
+            {t("admin_contract.version", "Version")} {version} - {t("admin_contract.last_update", "Letztes Update")}: {lastUpdated}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Titel</label>
+            <label className="text-sm font-medium">{t("admin_contract.field_title", "Titel")}</label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Vertragstext</label>
+            <label className="text-sm font-medium">{t("admin_contract.body", "Vertragstext")}</label>
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={10}
-              placeholder="Schreibe hier die Mitgliedsbeitrag-Erklaerung / Vertrag..."
+              placeholder={t("admin_contract.body_placeholder", "Schreibe hier die Mitgliedsbeitrag-Erklärung / Vertrag...")}
             />
             <p className="text-xs text-slate-500">
-              Platzhalter: <code>{"{{name}}"}</code>, <code>{"{{email}}"}</code>, <code>{"{{address}}"}</code>,{" "}
-              <code>{"{{fee}}"}</code> und eigene Felder z.B. <code>{"{{mitgliedsnummer}}"}</code>.
+              {t("admin_contract.placeholders", "Platzhalter")}: <code>{"{{name}}"}</code>, <code>{"{{email}}"}</code>, <code>{"{{address}}"}</code>, <code>{"{{fee}}"}</code> {t("admin_contract.custom_fields", "und eigene Felder z.B.")} <code>{"{{mitgliedsnummer}}"}</code>.
             </p>
           </div>
           <div className="rounded-xl border border-slate-200/70 bg-slate-50/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-semibold text-slate-900">Zusatzfelder</div>
-                <div className="text-xs text-slate-500">Diese Felder sehen Mitglieder im Formular.</div>
+                <div className="text-sm font-semibold text-slate-900">{t("admin_contract.extra_fields", "Zusatzfelder")}</div>
+                <div className="text-xs text-slate-500">{t("admin_contract.extra_fields_hint", "Diese Felder sehen Mitglieder im Formular.")}</div>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={addField}>
-                Feld hinzufuegen
+                {t("admin_contract.add_field", "Feld hinzufügen")}
               </Button>
             </div>
             {fields.length === 0 ? (
-              <div className="text-xs text-slate-500">Keine Zusatzfelder definiert.</div>
+              <div className="text-xs text-slate-500">{t("admin_contract.no_fields", "Keine Zusatzfelder definiert.")}</div>
             ) : (
               <div className="space-y-3">
                 {fields.map((field, idx) => (
                   <div key={`${field.key}-${idx}`} className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium">Label</label>
+                        <label className="text-xs font-medium">{t("admin_contract.label", "Label")}</label>
                         <Input
                           value={field.label}
                           onChange={(e) => updateField(idx, { label: e.target.value })}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium">Key</label>
+                        <label className="text-xs font-medium">{t("admin_contract.key", "Key")}</label>
                         <Input
                           value={field.key}
                           onChange={(e) => updateField(idx, { key: normalizeKey(e.target.value) })}
@@ -239,19 +245,19 @@ export function ContractEditor({
                     </div>
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium">Typ</label>
+                        <label className="text-xs font-medium">{t("admin_contract.type", "Typ")}</label>
                         <select
                           className="h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-xs"
                           value={field.type || "text"}
                           onChange={(e) => updateField(idx, { type: e.target.value as ContractField["type"] })}
                         >
-                          <option value="text">Text</option>
-                          <option value="textarea">Textfeld</option>
-                          <option value="checkbox">Checkbox</option>
+                          <option value="text">{t("admin_contract.type_text", "Text")}</option>
+                          <option value="textarea">{t("admin_contract.type_textarea", "Textfeld")}</option>
+                          <option value="checkbox">{t("admin_contract.type_checkbox", "Checkbox")}</option>
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium">Placeholder</label>
+                        <label className="text-xs font-medium">{t("admin_contract.placeholder", "Placeholder")}</label>
                         <Input
                           value={field.placeholder || ""}
                           onChange={(e) => updateField(idx, { placeholder: e.target.value })}
@@ -263,15 +269,16 @@ export function ContractEditor({
                           checked={!!field.required}
                           onChange={(e) => updateField(idx, { required: e.target.checked })}
                         />
-                        <span className="text-xs">Pflichtfeld</span>
+                        <span className="text-xs">{t("admin_contract.required", "Pflichtfeld")}</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-xs text-slate-500">
                       <div>
-                        Platzhalter: <code>{`{{${field.key || "feld"}}}`}</code>
+                        {t("admin_contract.placeholder_label", "Platzhalter")}:
+                        <code>{`{{${field.key || "field"}}}`}</code>
                       </div>
                       <Button type="button" variant="ghost" size="sm" onClick={() => removeField(idx)}>
-                        Entfernen
+                        {t("admin_contract.remove", "Entfernen")}
                       </Button>
                     </div>
                   </div>
@@ -281,28 +288,28 @@ export function ContractEditor({
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Mitgliedsbeitrag (Abo, EUR)</label>
+              <label className="text-sm font-medium">{t("admin_contract.fee", "Mitgliedsbeitrag (Abo, EUR)")}</label>
               <Input value={fee} onChange={(e) => setFee(e.target.value)} type="number" min="0" step="0.01" />
             </div>
             <div className="text-xs text-slate-500 pt-6">
-              Mitgliedschaften laufen ausschlieÃŸlich als Abo.
+              {t("admin_contract.subscription_only", "Mitgliedschaften laufen ausschließlich als Abo.")}
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Mitgliederpreis pro Platz</label>
+              <label className="text-sm font-medium">{t("admin_contract.member_price", "Mitgliederpreis pro Platz")}</label>
               <select
                 className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
                 value={pricingMode}
                 onChange={(e) => setPricingMode(e.target.value)}
               >
-                <option value="full_price">Kein Vorteil</option>
-                <option value="discount_percent">Rabatt in %</option>
-                <option value="member_price">Fixpreis (Mitgliederpreis)</option>
+                <option value="full_price">{t("admin_contract.member_price_none", "Kein Vorteil")}</option>
+                <option value="discount_percent">{t("admin_contract.member_price_discount", "Rabatt in %")}</option>
+                <option value="member_price">{t("admin_contract.member_price_fixed", "Fixpreis (Mitgliederpreis)")}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Wert</label>
+              <label className="text-sm font-medium">{t("admin_contract.value", "Wert")}</label>
               <Input
                 value={pricingValue}
                 onChange={(e) => setPricingValue(e.target.value)}
@@ -313,34 +320,34 @@ export function ContractEditor({
             </div>
           </div>
           <Button className="rounded-full" onClick={handleSave} disabled={saving}>
-            {saving ? "Speichere..." : "Vertrag speichern"}
+            {saving ? t("admin_contract.saving", "Speichere...") : t("admin_contract.save", "Vertrag speichern")}
           </Button>
         </CardContent>
       </Card>
 
       <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
         <CardHeader>
-          <CardTitle>PDF Vorschau</CardTitle>
-          <p className="text-sm text-slate-500">So sieht der Vertrag fÃ¼r Mitglieder aus.</p>
+          <CardTitle>{t("admin_contract.preview", "PDF Vorschau")}</CardTitle>
+          <p className="text-sm text-slate-500">{t("admin_contract.preview_hint", "So sieht der Vertrag für Mitglieder aus.")}</p>
         </CardHeader>
         <CardContent>
           <div className="aspect-[3/4] w-full rounded-xl border border-slate-200 bg-white overflow-hidden">
             {!isClient && (
               <div className="h-full flex items-center justify-center text-sm text-slate-400">
-                PDF Vorschau wird geladen...
+                {t("admin_contract.preview_loading", "PDF Vorschau wird geladen...")}
               </div>
             )}
             {isClient && previewError && (
               <div className="h-full w-full flex flex-col items-center justify-center text-center text-sm text-slate-500 px-4">
                 <div className="font-medium text-slate-700">{previewError}</div>
-                <div className="mt-1">Bitte oeffne die PDF in einem neuen Tab.</div>
+                <div className="mt-1">{t("admin_contract.preview_open", "Bitte öffne die PDF in einem neuen Tab.")}</div>
                 <a
                   href={`/api/contract-pdf/${clubSlug}`}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
                 >
-                  PDF Ã¶ffnen
+                  {t("admin_contract.open_pdf", "PDF öffnen")}
                 </a>
               </div>
             )}
@@ -349,14 +356,13 @@ export function ContractEditor({
             )}
             {isClient && !previewError && !previewUrl && (
               <div className="h-full flex items-center justify-center text-sm text-slate-400">
-                {previewLoading ? "PDF Vorschau wird geladen..." : "PDF Vorschau wird vorbereitet..."}
+                {previewLoading ? t("admin_contract.preview_loading", "PDF Vorschau wird geladen...") : t("admin_contract.preview_preparing", "PDF Vorschau wird vorbereitet...")}
               </div>
             )}
           </div>
-          <div className="mt-3 text-xs text-slate-500">Live-Preview waehrend du tippst.</div>
+          <div className="mt-3 text-xs text-slate-500">{t("admin_contract.live_preview", "Live-Preview während du tippst.")}</div>
         </CardContent>
       </Card>
     </div>
   )
 }
-

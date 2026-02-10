@@ -1,20 +1,27 @@
-﻿import Link from "next/link"
+"use client"
 
-const footerLinks = [
-  { href: "/features", label: "Funktionen" },
-  { href: "/pricing", label: "Preise" },
-  { href: "/security", label: "Sicherheit" },
-  { href: "/contact", label: "Kontakt" },
-]
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export function SiteFooter() {
+  const params = useParams()
+  const lang = typeof params?.lang === "string" ? params.lang : "de"
+  const { t } = useI18n()
+  const footerLinks = [
+    { href: `/${lang}/features`, label: t("nav.features") },
+    { href: `/${lang}/pricing`, label: t("nav.pricing") },
+    { href: `/${lang}/security`, label: t("nav.security", "Sicherheit") },
+    { href: `/${lang}/contact`, label: t("nav.contact") },
+  ]
+
   return (
     <footer className="border-t border-[#0E1A14]/10 bg-[#1F3D2B]">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 py-10 md:flex-row">
         <div className="space-y-2">
-          <div className="text-sm font-semibold text-[#F9F8F4]">Avaimo</div>
+          <div className="text-sm font-semibold text-[#F9F8F4]">{t("app.name", "Avaimo")}</div>
           <div className="text-xs text-[#F9F8F4]/70">
-            Vereinsplattform für Buchung, Mitglieder und Finanzen.
+            {t("footer.tagline_short", "Vereinsplattform f�r Buchung, Mitglieder und Finanzen.")}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-xs text-[#F9F8F4]/70">
@@ -23,15 +30,14 @@ export function SiteFooter() {
               {item.label}
             </Link>
           ))}
-          <Link href="/impressum" className="hover:text-[#F9F8F4]">
-            Impressum
+          <Link href={`/${lang}/impressum`} className="hover:text-[#F9F8F4]">
+            {t("footer.impressum", "Impressum")}
           </Link>
-          <Link href="/datenschutz" className="hover:text-[#F9F8F4]">
-            Datenschutz
+          <Link href={`/${lang}/datenschutz`} className="hover:text-[#F9F8F4]">
+            {t("footer.privacy", "Datenschutz")}
           </Link>
         </div>
       </div>
     </footer>
   )
 }
-

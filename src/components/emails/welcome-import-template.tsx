@@ -1,88 +1,95 @@
-import * as React from "react"
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Section,
-  Text,
-  Button,
-} from "@react-email/components"
+﻿import * as React from "react"
+import { Preview } from "@react-email/preview"
+import { Text } from "@react-email/text"
+import { Button } from "@react-email/button"
+import { Hr } from "@react-email/hr"
 
-type WelcomeImportEmailProps = {
-  firstName: string
-  clubName: string
-  tempPassword: string
-  loginUrl: string
-  email: string
+const label = {
+  fontSize: "12px",
+  color: "#64748b",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.1em",
+  marginBottom: "4px",
+}
+
+const card = {
+  backgroundColor: "#f8fafc",
+  borderRadius: "12px",
+  padding: "16px",
+  marginBottom: "16px",
 }
 
 export function WelcomeImportEmailTemplate({
-  firstName,
   clubName,
-  tempPassword,
-  loginUrl,
   email,
-}: WelcomeImportEmailProps) {
+  password,
+  loginUrl,
+  lang = "de",
+}: {
+  clubName: string
+  email: string
+  password: string
+  loginUrl: string
+  lang?: string
+}) {
+  const copy = {
+    de: {
+      preview: `Dein Avaimo Zugang für ${clubName}`,
+      title: `Willkommen bei ${clubName}!`,
+      intro: "Du wurdest vom Verein importiert. Bitte logge dich ein und ändere dein Passwort.",
+      email: "E-Mail",
+      password: "Vorläufiges Passwort",
+      cta: "Jetzt einloggen & Passwort ändern",
+      hint: "Bitte ändere dein Passwort direkt nach dem ersten Login.",
+    },
+    en: {
+      preview: `Your Avaimo access for ${clubName}`,
+      title: `Welcome to ${clubName}!`,
+      intro: "You were imported by the club. Please sign in and change your password.",
+      email: "Email",
+      password: "Temporary password",
+      cta: "Log in & change password",
+      hint: "Please change your password after the first login.",
+    },
+    it: {
+      preview: `Accesso Avaimo per ${clubName}`,
+      title: `Benvenuto in ${clubName}!`,
+      intro: "Sei stato importato dal club. Accedi e modifica la password.",
+      email: "Email",
+      password: "Password temporanea",
+      cta: "Accedi & cambia password",
+      hint: "Cambia la password dopo il primo accesso.",
+    },
+  }
+  const dict = copy[lang as "de" | "en" | "it"] || copy.de
+
   return (
-    <Html>
-      <Head />
-      <Preview>Dein Avaimo Zugang für {clubName}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>Willkommen bei Avaimo</Heading>
-          <Text style={text}>Hallo {firstName || "Mitglied"},</Text>
-          <Text style={text}>
-            Der Verein <strong>{clubName}</strong> ist ab sofort auf Avaimo.
-            Dein Account wurde bereits vorbereitet – du musst dich nur einmal einloggen
-            und dein Passwort ändern.
-          </Text>
-
-          <Section style={box}>
-            <Text style={label}>Deine E-Mail</Text>
-            <Text style={value}>{email}</Text>
-            <Text style={label}>Vorläufiges Passwort</Text>
-            <Text style={code}>{tempPassword}</Text>
-          </Section>
-
-          <Button style={button} href={loginUrl}>
-            Jetzt einloggen & Passwort ändern
-          </Button>
-
-          <Text style={footer}>
-            Bitte ändere dein Passwort direkt nach dem ersten Login.
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+    <div style={{ fontFamily: "Arial, sans-serif", color: "#0f172a" }}>
+      <Preview>{dict.preview}</Preview>
+      <h1 style={{ fontSize: 24, marginBottom: 8 }}>{dict.title}</h1>
+      <Text style={{ fontSize: 14, marginBottom: 12 }}>{dict.intro}</Text>
+      <div style={card}>
+        <Text style={label}>{dict.email}</Text>
+        <Text style={{ marginTop: 0 }}>{email}</Text>
+        <Text style={{ ...label, marginTop: 12 }}>{dict.password}</Text>
+        <Text style={{ marginTop: 0 }}>{password}</Text>
+      </div>
+      <Button
+        href={loginUrl}
+        style={{
+          display: "inline-block",
+          padding: "10px 16px",
+          background: "#0f172a",
+          color: "white",
+          borderRadius: 999,
+          textDecoration: "none",
+          fontSize: 14,
+        }}
+      >
+        {dict.cta}
+      </Button>
+      <Hr style={{ margin: "20px 0", borderColor: "#e2e8f0" }} />
+      <Text style={{ fontSize: 12, color: "#64748b" }}>{dict.hint}</Text>
+    </div>
   )
 }
-
-const main = { backgroundColor: "#ffffff", fontFamily: "Arial, sans-serif" }
-const container = { margin: "0 auto", padding: "24px 0 48px", maxWidth: "560px" }
-const h1 = { fontSize: "24px", fontWeight: "700", color: "#0f172a" }
-const text = { fontSize: "16px", lineHeight: "26px", color: "#334155" }
-const box = {
-  padding: "20px",
-  backgroundColor: "#f8fafc",
-  borderRadius: "12px",
-  border: "1px solid #e2e8f0",
-  margin: "20px 0",
-}
-const label = { fontSize: "12px", textTransform: "uppercase" as const, color: "#64748b", marginBottom: "6px" }
-const value = { fontSize: "16px", fontWeight: "600", color: "#0f172a", marginBottom: "12px" }
-const code = { fontSize: "22px", fontWeight: "700", letterSpacing: "2px", color: "#0f172a" }
-const button = {
-  display: "block",
-  backgroundColor: "#0f172a",
-  color: "#ffffff",
-  textDecoration: "none",
-  padding: "12px 20px",
-  borderRadius: "10px",
-  textAlign: "center" as const,
-  fontWeight: "600",
-  marginTop: "24px",
-}
-const footer = { fontSize: "12px", color: "#94a3b8", marginTop: "24px" }

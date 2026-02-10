@@ -8,33 +8,71 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", { apiVersion: "20
 
 export const runtime = "nodejs"
 
+const normalizeLang = (lang?: string | null) => (lang === "it" || lang === "en" ? lang : "de")
+
+const copy = {
+  de: {
+    invalid: "Ungültiger Link",
+    missing: "Anfrage nicht gefunden",
+    expired: "Link ist abgelaufen",
+    inactive: "Anfrage ist nicht mehr aktiv",
+    confirmed: "Trainerstunde bestätigt",
+    confirmedBody: "Der Trainer hat die Stunde bestätigt. Die Zahlung wurde abgeschlossen.",
+    rejected: "Trainerstunde abgelehnt",
+    rejectedBody: "Der Trainer konnte die Stunde leider nicht annehmen. Es wurde nichts belastet.",
+  },
+  en: {
+    invalid: "Invalid link",
+    missing: "Request not found",
+    expired: "Link has expired",
+    inactive: "Request is no longer active",
+    confirmed: "Training session confirmed",
+    confirmedBody: "The trainer confirmed the session. The payment was captured.",
+    rejected: "Training session declined",
+    rejectedBody: "The trainer declined the session. No charge was made.",
+  },
+  it: {
+    invalid: "Link non valido",
+    missing: "Richiesta non trovata",
+    expired: "Link scaduto",
+    inactive: "Richiesta non più attiva",
+    confirmed: "Lezione confermata",
+    confirmedBody: "Il trainer ha confermato la lezione. Il pagamento è stato completato.",
+    rejected: "Lezione rifiutata",
+    rejectedBody: "Il trainer non ha potuto accettare la lezione. Nessun addebito effettuato.",
+  },
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const token = searchParams.get("token") || ""
   const action = searchParams.get("action") || ""
 
   if (!token || !["accept", "reject"].includes(action)) {
-    return NextResponse.json({ error: "Ungültiger Link" }, { status: 400 })
+    return NextResponse.json({ error: copy.de.invalid }, { status: 400 })
   }
 
   const supabaseAdmin = getAdminClient()
   const { data: booking } = await supabaseAdmin
     .from("bookings")
-    .select("id, club_id, payment_intent_id, payment_status, guest_email, status, trainer_action_expires_at, clubs(slug, name)")
+    .select("id, club_id, payment_intent_id, guest_email, status, trainer_action_expires_at, clubs(slug, name, default_language)")
     .eq("trainer_action_token", token)
     .single()
 
   if (!booking) {
-    return NextResponse.json({ error: "Anfrage nicht gefunden" }, { status: 404 })
+    return NextResponse.json({ error: copy.de.missing }, { status: 404 })
   }
+
+  const lang = normalizeLang(booking.clubs?.[0]?.default_language)
+  const dict = copy[lang]
 
   const expiresAt = booking.trainer_action_expires_at
   if (expiresAt && new Date(expiresAt).getTime() < Date.now()) {
-    return NextResponse.json({ error: "Link ist abgelaufen" }, { status: 410 })
+    return NextResponse.json({ error: dict.expired }, { status: 410 })
   }
 
   if (booking.status !== "pending_trainer") {
-    return NextResponse.json({ error: "Anfrage ist nicht mehr aktiv" }, { status: 409 })
+    return NextResponse.json({ error: dict.inactive }, { status: 409 })
   }
 
   if (action === "accept") {
@@ -46,7 +84,7 @@ export async function GET(req: Request) {
       .from("bookings")
       .update({
         status: "confirmed",
-        payment_status: booking.payment_intent_id ? "paid_stripe" : (booking.payment_status || "paid_member"),
+        payment_status: "paid_stripe",
         trainer_action_token: null,
         trainer_action_expires_at: null,
       })
@@ -56,19 +94,16 @@ export async function GET(req: Request) {
       await resend.emails.send({
         from: "Avaimo <onboarding@resend.dev>",
         to: [booking.guest_email],
-        subject: "Trainerstunde Bestätigt",
+        subject: dict.confirmed,
         html: `
-          <h2>Deine Trainerstunde ist Bestätigt</h2>
-          <p>Der Trainer hat die Stunde Bestätigt. Die Zahlung wurde abgeschlossen.</p>
-          <p>Verein: ${booking.clubs?.[0]?.name || ""}</p>
+          <h2>${dict.confirmed}</h2>
+          <p>${dict.confirmedBody}</p>
+          <p>${booking.clubs?.[0]?.name || ""}</p>
         `,
       })
     }
 
-    return new NextResponse(
-      "<html><body><h2>Trainerstunde Bestätigt</h2><p>Die Buchung wurde angenommen.</p></body></html>",
-      { headers: { "Content-Type": "text/html" } }
-    )
+    return NextResponse.json({ ok: true })
   }
 
   if (booking.payment_intent_id) {
@@ -78,31 +113,25 @@ export async function GET(req: Request) {
   await supabaseAdmin
     .from("bookings")
     .update({
-      status: "cancelled",
-      payment_status: "unpaid",
+      status: "rejected",
+      payment_status: "refunded",
       trainer_action_token: null,
       trainer_action_expires_at: null,
     })
     .eq("id", booking.id)
 
-  await supabaseAdmin.from("trainer_payouts").delete().eq("booking_id", booking.id)
-
   if (booking.guest_email) {
     await resend.emails.send({
       from: "Avaimo <onboarding@resend.dev>",
       to: [booking.guest_email],
-      subject: "Trainerstunde abgelehnt",
+      subject: dict.rejected,
       html: `
-        <h2>Trainerstunde abgelehnt</h2>
-        <p>Der Trainer konnte die Stunde leider nicht annehmen. Es wurde nichts belastet.</p>
-        <p>Verein: ${booking.clubs?.[0]?.name || ""}</p>
+        <h2>${dict.rejected}</h2>
+        <p>${dict.rejectedBody}</p>
+        <p>${booking.clubs?.[0]?.name || ""}</p>
       `,
     })
   }
 
-  return new NextResponse(
-    "<html><body><h2>Trainerstunde abgelehnt</h2><p>Die Buchung wurde abgelehnt.</p></body></html>",
-    { headers: { "Content-Type": "text/html" } }
-  )
+  return NextResponse.json({ ok: true })
 }
-

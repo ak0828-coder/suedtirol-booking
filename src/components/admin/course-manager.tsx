@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import { useState, useTransition } from "react"
 import { createCourseWithSessions, deleteCourse, updateCourseWithSessions, updateCourseParticipantStatus, exportCourseParticipantsCsv } from "@/app/actions"
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 type SessionRow = { date: string; start: string; end: string; courtId: string }
 
@@ -49,6 +50,7 @@ export function CourseManager({
     end: "19:00",
     courtId: courts[0]?.id || "",
   })
+  const { t } = useI18n()
 
   const courseSessions = (courseId: string) =>
     (sessionRows || [])
@@ -93,7 +95,7 @@ export function CourseManager({
 
   const generateWeeklySessions = () => {
     if (!recurrence.startDate || !isValidDate(recurrence.startDate)) {
-      setError("Bitte ein gÃ¼ltiges Startdatum wÃ¤hlen.")
+      setError(t("admin_courses.error_start_date", "Bitte ein gültiges Startdatum wählen."))
       return
     }
     const startDate = new Date(recurrence.startDate)
@@ -119,9 +121,9 @@ export function CourseManager({
   }
 
   const statusLabels: Record<string, string> = {
-    confirmed: "BestÃ¤tigt",
-    cancelled: "Storniert",
-    waitlist: "Warteliste",
+    confirmed: t("admin_courses.status.confirmed", "Bestätigt"),
+    cancelled: t("admin_courses.status.cancelled", "Storniert"),
+    waitlist: t("admin_courses.status.waitlist", "Warteliste"),
   }
 
   const toDate = (dateStr: string) => {
@@ -137,14 +139,24 @@ export function CourseManager({
     return d
   }
 
-  const dayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+  const dayNames = [
+    t("days.short.1", "Mo"),
+    t("days.short.2", "Di"),
+    t("days.short.3", "Mi"),
+    t("days.short.4", "Do"),
+    t("days.short.5", "Fr"),
+    t("days.short.6", "Sa"),
+    t("days.short.0", "So"),
+  ]
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 id="tour-courses-header" className="text-lg font-semibold text-slate-900">Kurse & Camps</h3>
+        <h3 id="tour-courses-header" className="text-lg font-semibold text-slate-900">
+          {t("admin_courses.title", "Kurse & Camps")}
+        </h3>
         <Button id="tour-courses-create" className="rounded-full" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "SchlieÃŸen" : "Kurs anlegen"}
+          {showForm ? t("admin_courses.close", "Schließen") : t("admin_courses.create", "Kurs anlegen")}
         </Button>
       </div>
 
@@ -158,7 +170,7 @@ export function CourseManager({
               const formData = new FormData(e.currentTarget)
               if (editingId) formData.set("courseId", editingId)
               if (hasIncompleteSessions) {
-                setError("Bitte alle Termine mit Datum, Uhrzeit und Platz vollstÃ¤ndig ausfÃ¼llen.")
+                setError(t("admin_courses.error_sessions", "Bitte alle Termine mit Datum, Uhrzeit und Platz vollständig ausfüllen."))
                 return
               }
               startTransition(async () => {
@@ -181,7 +193,7 @@ export function CourseManager({
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Titel</Label>
+                <Label>{t("admin_courses.fields.title", "Titel")}</Label>
                 <Input
                   name="title"
                   required
@@ -190,14 +202,14 @@ export function CourseManager({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Trainer</Label>
+                <Label>{t("admin_courses.fields.trainer", "Trainer")}</Label>
                 <select
                   name="trainerId"
                   className="w-full border rounded-md px-3 py-2 text-sm"
                   value={formValues.trainerId}
                   onChange={(e) => setFormValues((v) => ({ ...v, trainerId: e.target.value }))}
                 >
-                  <option value="">Ohne Trainer</option>
+                  <option value="">{t("admin_courses.trainer_none", "Ohne Trainer")}</option>
                   {trainers.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.first_name} {t.last_name}
@@ -206,7 +218,7 @@ export function CourseManager({
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Preis (EUR)</Label>
+                <Label>{t("admin_courses.fields.price", "Preis (EUR)")}</Label>
                 <Input
                   name="price"
                   type="number"
@@ -216,24 +228,24 @@ export function CourseManager({
                 />
                 <div className="text-xs text-slate-500">
                   {formValues.pricingMode === "per_session"
-                    ? "Preis pro Termin (Mehrfach-Auswahl multipliziert den Preis)"
-                    : "Preis fÃ¼r den gesamten Kurs"}
+                    ? t("admin_courses.price_per_session", "Preis pro Termin (Mehrfach-Auswahl multipliziert den Preis)")
+                    : t("admin_courses.price_full", "Preis für den gesamten Kurs")}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Abrechnung</Label>
+                <Label>{t("admin_courses.fields.pricing", "Abrechnung")}</Label>
                 <select
                   name="pricingMode"
                   className="w-full border rounded-md px-3 py-2 text-sm"
                   value={formValues.pricingMode}
                   onChange={(e) => setFormValues((v) => ({ ...v, pricingMode: e.target.value }))}
                 >
-                  <option value="full_course">Gesamter Kurs (alle Termine)</option>
-                  <option value="per_session">Einzeltermine (Auswahl & pro Termin)</option>
+                  <option value="full_course">{t("admin_courses.pricing.full", "Gesamter Kurs (alle Termine)")}</option>
+                  <option value="per_session">{t("admin_courses.pricing.per_session", "Einzeltermine (Auswahl & pro Termin)")}</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Max. Teilnehmer</Label>
+                <Label>{t("admin_courses.fields.max", "Max. Teilnehmer")}</Label>
                 <Input
                   name="maxParticipants"
                   type="number"
@@ -242,7 +254,7 @@ export function CourseManager({
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Beschreibung</Label>
+                <Label>{t("admin_courses.fields.description", "Beschreibung")}</Label>
                 <Input
                   name="description"
                   value={formValues.description}
@@ -250,7 +262,7 @@ export function CourseManager({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Startdatum</Label>
+                <Label>{t("admin_courses.fields.start", "Startdatum")}</Label>
                 <Input
                   name="startDate"
                   type="date"
@@ -259,7 +271,7 @@ export function CourseManager({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Enddatum</Label>
+                <Label>{t("admin_courses.fields.end", "Enddatum")}</Label>
                 <Input
                   name="endDate"
                   type="date"
@@ -271,13 +283,13 @@ export function CourseManager({
 
             <div id="tour-courses-sessions" className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Termine</Label>
+                <Label>{t("admin_courses.sessions.title", "Termine")}</Label>
                 <Button type="button" variant="outline" className="rounded-full" onClick={addSession}>
-                  Termin hinzufuegen
+                  {t("admin_courses.sessions.add", "Termin hinzufügen")}
                 </Button>
               </div>
               <div id="tour-courses-series" className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                <div className="text-xs font-semibold text-slate-600 mb-2">Serien-Termine</div>
+                <div className="text-xs font-semibold text-slate-600 mb-2">{t("admin_courses.sessions.series", "Serien-Termine")}</div>
                 <div className="grid md:grid-cols-6 gap-2">
                   <Input
                     type="date"
@@ -288,20 +300,20 @@ export function CourseManager({
                     type="number"
                     value={recurrence.weeks}
                     onChange={(e) => setRecurrence((r) => ({ ...r, weeks: e.target.value }))}
-                    placeholder="Wochen"
+                    placeholder={t("admin_courses.sessions.weeks", "Wochen")}
                   />
                   <select
                     className="border rounded-md px-3 py-2 text-sm"
                     value={recurrence.weekday}
                     onChange={(e) => setRecurrence((r) => ({ ...r, weekday: e.target.value }))}
                   >
-                    <option value="1">Montag</option>
-                    <option value="2">Dienstag</option>
-                    <option value="3">Mittwoch</option>
-                    <option value="4">Donnerstag</option>
-                    <option value="5">Freitag</option>
-                    <option value="6">Samstag</option>
-                    <option value="0">Sonntag</option>
+                    <option value="1">{t("days.long.1", "Montag")}</option>
+                    <option value="2">{t("days.long.2", "Dienstag")}</option>
+                    <option value="3">{t("days.long.3", "Mittwoch")}</option>
+                    <option value="4">{t("days.long.4", "Donnerstag")}</option>
+                    <option value="5">{t("days.long.5", "Freitag")}</option>
+                    <option value="6">{t("days.long.6", "Samstag")}</option>
+                    <option value="0">{t("days.long.0", "Sonntag")}</option>
                   </select>
                   <Input
                     type="time"
@@ -326,7 +338,7 @@ export function CourseManager({
                   </select>
                 </div>
                 <Button type="button" variant="outline" className="rounded-full mt-3" onClick={generateWeeklySessions}>
-                  Serien-Termine erzeugen
+                  {t("admin_courses.sessions.generate", "Serien-Termine erzeugen")}
                 </Button>
               </div>
               <div className="space-y-3">
@@ -347,19 +359,19 @@ export function CourseManager({
                       ))}
                     </select>
                     <Button type="button" variant="outline" onClick={() => removeSession(idx)}>
-                      Entfernen
+                      {t("admin_courses.sessions.remove", "Entfernen")}
                     </Button>
                   </div>
                 ))}
                 {sessions.length === 0 ? (
-                  <div className="text-sm text-slate-500">Noch keine Termine hinzugefuegt.</div>
+                  <div className="text-sm text-slate-500">{t("admin_courses.sessions.empty", "Noch keine Termine hinzugefügt.")}</div>
                 ) : null}
               </div>
             </div>
 
             {validSessions.length > 0 ? (
               <div id="tour-courses-preview" className="rounded-xl border border-slate-200/60 bg-white p-3">
-                <div className="text-xs font-semibold text-slate-600 mb-2">Kalender-Vorschau</div>
+                <div className="text-xs font-semibold text-slate-600 mb-2">{t("admin_courses.sessions.preview", "Kalender-Vorschau")}</div>
                 <div className="grid grid-cols-7 gap-2 text-[11px]">
                   {dayNames.map((d) => (
                     <div key={d} className="text-center font-semibold text-slate-500">{d}</div>
@@ -384,7 +396,7 @@ export function CourseManager({
                               </div>
                             ))}
                             {daySessions.length > 3 ? (
-                              <div className="text-[10px] text-slate-400">+{daySessions.length - 3} mehr</div>
+                              <div className="text-[10px] text-slate-400">+{daySessions.length - 3} {t("admin_courses.more", "mehr")}</div>
                             ) : null}
                           </div>
                         </div>
@@ -410,7 +422,7 @@ export function CourseManager({
 
             {hasIncompleteSessions ? (
               <div className="text-xs text-rose-600">
-                Bitte alle Termine vollstÃ¤ndig ausfÃ¼llen, sonst werden sie nicht gespeichert.
+                {t("admin_courses.sessions.incomplete", "Bitte alle Termine vollständig ausfüllen, sonst werden sie nicht gespeichert.")}
               </div>
             ) : null}
             <label className="text-sm text-slate-600 flex items-center gap-2">
@@ -420,11 +432,11 @@ export function CourseManager({
                 checked={formValues.isPublished}
                 onChange={(e) => setFormValues((v) => ({ ...v, isPublished: e.target.checked }))}
               />
-              Kurs verÃ¶ffentlichen
+              {t("admin_courses.publish", "Kurs veröffentlichen")}
             </label>
 
             {error ? <div className="text-sm text-red-600">{error}</div> : null}
-            <Button type="submit" className="rounded-full">Speichern</Button>
+            <Button type="submit" className="rounded-full">{t("admin_courses.save", "Speichern")}</Button>
           </form>
         </Card>
       ) : null}
@@ -457,7 +469,7 @@ export function CourseManager({
                     setSessions(courseSessions(c.id))
                   }}
                 >
-                  Bearbeiten
+                  {t("admin_courses.edit", "Bearbeiten")}
                 </Button>
                 <Button
                   variant="outline"
@@ -470,26 +482,26 @@ export function CourseManager({
                     })
                   }
                 >
-                  LÃ¶schen
+                  {t("admin_courses.delete", "Löschen")}
                 </Button>
               </div>
             </div>
             <div className="text-sm text-slate-600">
-              {c.price ? `${c.price} EUR` : "Kostenlos"} Ã‚Â· {c.max_participants} Teilnehmende
+              {c.price ? `${c.price} EUR` : t("admin_courses.free", "Kostenlos")} · {c.max_participants} {t("admin_courses.participants", "Teilnehmende")}
             </div>
             <div className="text-xs text-slate-500">
-              Trainer: {c.trainers ? `${c.trainers.first_name} ${c.trainers.last_name}` : "Ã¢â‚¬â€"}
+              {t("admin_courses.trainer", "Trainer")}: {c.trainers ? `${c.trainers.first_name} ${c.trainers.last_name}` : "—"}
             </div>
 
             <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 space-y-2">
-              <div className="text-xs font-semibold text-slate-600">Termine</div>
+              <div className="text-xs font-semibold text-slate-600">{t("admin_courses.sessions.title", "Termine")}</div>
               <div className="text-xs text-slate-500">
-                {courseSessions(c.id).length} Termine
+                {courseSessions(c.id).length} {t("admin_courses.sessions.label", "Termine")}
               </div>
             </div>
 
             <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3 space-y-2">
-              <div className="text-xs font-semibold text-slate-600">Teilnehmer</div>
+              <div className="text-xs font-semibold text-slate-600">{t("admin_courses.participants_title", "Teilnehmer")}</div>
               {(() => {
                 const list = (participants || []).filter((p: any) => p.course_id === c.id)
                 const capacity = Number(c.max_participants || 0)
@@ -498,7 +510,7 @@ export function CourseManager({
                 return (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span>{confirmed}/{capacity} belegt</span>
+                      <span>{confirmed}/{capacity} {t("admin_courses.occupied", "belegt")}</span>
                       <span>{percent}%</span>
                     </div>
                     <div className="h-2 rounded-full bg-white border border-slate-200/60 overflow-hidden">
@@ -524,7 +536,7 @@ export function CourseManager({
                           })
                         }
                       >
-                        CSV Export
+                        {t("admin_courses.export", "CSV Export")}
                       </Button>
                     </div>
                   </div>
@@ -538,7 +550,7 @@ export function CourseManager({
                     return (
                       <div key={p.id} className="flex items-center justify-between text-xs">
                         <div>
-                          {profile?.first_name || "Mitglied"} {profile?.last_name || ""}
+                          {profile?.first_name || t("admin_courses.member", "Mitglied")} {profile?.last_name || ""}
                         </div>
                         <div className="flex items-center gap-2">
                           <select
@@ -566,24 +578,23 @@ export function CourseManager({
                               })
                             }
                           >
-                            Entfernen
+                            {t("admin_courses.remove", "Entfernen")}
                           </Button>
                         </div>
                       </div>
                     )
                   })}
                 {(participants || []).filter((p: any) => p.course_id === c.id).length === 0 ? (
-                  <div className="text-xs text-slate-500">Noch keine Teilnehmer.</div>
+                  <div className="text-xs text-slate-500">{t("admin_courses.no_participants", "Noch keine Teilnehmer.")}</div>
                 ) : null}
               </div>
             </div>
           </Card>
         ))}
         {courses.length === 0 ? (
-          <div className="text-sm text-slate-500">Noch keine Kurse angelegt.</div>
+          <div className="text-sm text-slate-500">{t("admin_courses.empty", "Noch keine Kurse angelegt.")}</div>
         ) : null}
       </div>
     </div>
   )
 }
-

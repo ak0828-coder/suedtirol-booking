@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Check, Loader2 } from "lucide-react"
 import { createMembershipCheckout } from "@/app/actions"
 import { useState } from "react"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export function MembershipPlans({
   plans,
   clubSlug,
-  title = "Werde Mitglied",
-  subtitle = "",
-  ctaLabel = "Jetzt wählen",
+  title,
+  subtitle,
+  ctaLabel,
 }: {
   plans: any[]
   clubSlug: string
@@ -20,19 +21,23 @@ export function MembershipPlans({
   ctaLabel?: string
 }) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
-  const defaultFeatures = ["Kostenlos spielen", "Bevorzugte Buchung"]
+  const { t } = useI18n()
+  const defaultTitle = t("membership.title", "Werde Mitglied")
+  const defaultCta = t("membership.cta", "Jetzt w�hlen")
+  const defaultFeatures = [
+    t("membership.feature.free_play", "Kostenlos spielen"),
+    t("membership.feature.priority", "Bevorzugte Buchung"),
+  ]
 
   const handleSubscribe = async (planId: string, priceId: string) => {
     setLoadingId(planId)
     const res = await createMembershipCheckout(clubSlug, planId, priceId)
 
     if (res?.url) {
-      // Wenn Login nötig ist, leitet die Action zur Login-Page.
-      // Stripe Checkout URL kommt zurück.
       window.location.href = res.url
     } else {
       setLoadingId(null)
-      alert("Fehler beim Checkout")
+      alert(t("membership.error", "Fehler beim Checkout"))
     }
   }
 
@@ -40,7 +45,9 @@ export function MembershipPlans({
 
   return (
     <div className="mt-12 max-w-4xl mx-auto px-4">
-      <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white">{title}</h2>
+      <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white">
+        {title || defaultTitle}
+      </h2>
       {subtitle && (
         <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
       )}
@@ -52,42 +59,43 @@ export function MembershipPlans({
               ? plan.features.split(/\r?\n/).map((f: string) => f.trim()).filter(Boolean)
               : []
           const features = featuresRaw.length > 0 ? featuresRaw : defaultFeatures
-          const ctaText = plan.cta_label || ctaLabel
+          const ctaText = plan.cta_label || ctaLabel || defaultCta
           return (
-          <Card
-            key={plan.id}
-            className="border-2 transition-colors relative flex flex-col hover:shadow-md"
-            style={{ borderColor: "color-mix(in srgb, var(--club-primary, #0f172a) 20%, transparent)" }}
-          >
-            <CardHeader>
-              <CardTitle>{plan.name}</CardTitle>
-              <CardDescription>{plan.description || "Jahresbeitrag"}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="text-3xl font-bold mb-4">
-                {plan.price}€ <span className="text-sm font-normal text-slate-500">/ Jahr</span>
-              </div>
+            <Card
+              key={plan.id}
+              className="border-2 transition-colors relative flex flex-col hover:shadow-md"
+              style={{ borderColor: "color-mix(in srgb, var(--club-primary, #0f172a) 20%, transparent)" }}
+            >
+              <CardHeader>
+                <CardTitle>{plan.name}</CardTitle>
+                <CardDescription>{plan.description || t("membership.plan_fallback", "Jahresbeitrag")}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <div className="text-3xl font-bold mb-4">
+                  {plan.price}� <span className="text-sm font-normal text-slate-500">/ {t("membership.year", "Jahr")}</span>
+                </div>
 
-              {features.length > 0 && (
-                <ul className="space-y-2 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
-                  {features.map((item: string, idx: number) => (
-                    <li key={`${plan.id}-feature-${idx}`} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 club-primary-text" /> {item}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                {features.length > 0 && (
+                  <ul className="space-y-2 mb-6 flex-1 text-sm text-slate-600 dark:text-slate-400">
+                    {features.map((item: string, idx: number) => (
+                      <li key={`${plan.id}-feature-${idx}`} className="flex items-center gap-2">
+                        <Check className="w-4 h-4 club-primary-text" /> {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-              <Button
-                className="w-full club-primary-bg btn-press touch-44"
-                onClick={() => handleSubscribe(plan.id, plan.stripe_price_id)}
-                disabled={!!loadingId}
-              >
-                {loadingId === plan.id ? <Loader2 className="animate-spin" /> : ctaText}
-              </Button>
-            </CardContent>
-          </Card>
-        )})}
+                <Button
+                  className="w-full club-primary-bg btn-press touch-44"
+                  onClick={() => handleSubscribe(plan.id, plan.stripe_price_id)}
+                  disabled={!!loadingId}
+                >
+                  {loadingId === plan.id ? <Loader2 className="animate-spin" /> : ctaText}
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )

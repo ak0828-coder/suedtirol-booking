@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { CourseEnrollCard } from "@/components/training/course-enroll-card"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export function CourseGrid({
   clubSlug,
@@ -12,6 +13,7 @@ export function CourseGrid({
   courses: any[]
 }) {
   const [onlyAvailable, setOnlyAvailable] = useState(false)
+  const { t } = useI18n()
 
   const filtered = useMemo(() => {
     if (!onlyAvailable) return courses
@@ -34,14 +36,14 @@ export function CourseGrid({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm text-slate-500">
-          {onlyAvailable ? "Nur Kurse mit freien Plätzen" : "Alle Kurse"}
+          {onlyAvailable ? t("training.filter.available", "Nur Kurse mit freien Plätzen") : t("training.filter.all", "Alle Kurse")}
         </div>
         <Button
           variant={onlyAvailable ? "default" : "outline"}
           className="rounded-full"
           onClick={() => setOnlyAvailable((v) => !v)}
         >
-          {onlyAvailable ? "Alle anzeigen" : "Nur freie Plätze"}
+          {onlyAvailable ? t("training.filter.show_all", "Alle anzeigen") : t("training.filter.show_available", "Nur freie Plätze")}
         </Button>
       </div>
 
@@ -55,7 +57,7 @@ export function CourseGrid({
           />
         ))}
         {filtered.length === 0 ? (
-          <div className="text-sm text-slate-500">Keine passenden Kurse gefunden.</div>
+          <div className="text-sm text-slate-500">{t("training.filter.empty", "Keine passenden Kurse gefunden.")}</div>
         ) : null}
       </div>
     </div>

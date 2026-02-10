@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import SignatureCanvas from "react-signature-canvas"
@@ -11,6 +11,8 @@ import { ContractPreview } from "@/components/contract/contract-preview"
 import { ContractData } from "@/components/contract/contract-pdf"
 import { createMembershipCheckout, submitMembershipSignature, updateProfile } from "@/app/actions"
 import { Eraser, Loader2, PenLine } from "lucide-react"
+import { useI18n } from "@/components/i18n/locale-provider"
+import { useParams } from "next/navigation"
 
 type Plan = {
   id: string
@@ -63,6 +65,12 @@ export function MemberOnboardingForm({
   plans: Plan[]
   initialMember: InitialMember
 }) {
+  const { t } = useI18n()
+  const params = useParams()
+  const langRaw = params?.lang
+  const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
+  const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
+
   const sigPad = useRef<SignatureCanvas>(null)
   const signatureInterval = useRef<ReturnType<typeof setInterval> | null>(null)
   const [signature, setSignature] = useState<string | null>(null)
@@ -83,12 +91,15 @@ export function MemberOnboardingForm({
     }
   }, [])
 
-  const formattedDate = useMemo(() => new Date().toLocaleDateString("de-DE"), [])
+  const formatPrice = (value: number) =>
+    Number(value || 0).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const formattedDate = useMemo(() => new Date().toLocaleDateString(locale), [locale])
 
   const replaceTokens = (text: string) => {
     const selectedPlan = plans.find((p) => p.id === selectedPlanId)
     const feeValue = selectedPlan?.price ?? (feeEnabled ? feeAmount : 0)
-    const fee = `${Number(feeValue || 0).toFixed(2).replace(".", ",")} EUR`
+    const fee = `${formatPrice(feeValue || 0)} EUR`
     let result = text
       .replace(/{{\s*name\s*}}/gi, `${formData.firstName} ${formData.lastName}`.trim())
       .replace(/{{\s*first_name\s*}}/gi, formData.firstName)
@@ -103,7 +114,7 @@ export function MemberOnboardingForm({
 
     for (const field of contractFields) {
       const value = customValues[field.key]
-      const asText = typeof value === "boolean" ? (value ? "Ja" : "Nein") : value || ""
+      const asText = typeof value === "boolean" ? (value ? t("member_onboarding.yes", "Ja") : t("member_onboarding.no", "Nein")) : value || ""
       if (!field.key) continue
       const pattern = new RegExp(`{{\\s*${field.key}\\s*}}`, "gi")
       result = result.replace(pattern, asText)
@@ -139,13 +150,14 @@ export function MemberOnboardingForm({
         const value = customValues[field.key]
         return {
           label: field.label,
-          value: typeof value === "boolean" ? (value ? "Ja" : "Nein") : value || "",
+          value: typeof value === "boolean" ? (value ? t("member_onboarding.yes", "Ja") : t("member_onboarding.no", "Nein")) : value || "",
         }
       }),
     contractText,
     signatureUrl: signature || undefined,
     signedAt: formattedDate,
-    signedCity: formData.city || "Ort",
+    signedCity: formData.city || t("member_onboarding.city_fallback", "Ort"),
+    lang,
   }
 
   const setField = (key: keyof InitialMember, value: string) => {
@@ -182,11 +194,11 @@ export function MemberOnboardingForm({
   const handleSubmit = async () => {
     setError(null)
     if (!accepted) {
-      setError("Bitte akzeptiere den Vertrag, um fortzufahren.")
+      setError(t("member_onboarding.error_accept", "Bitte akzeptiere den Vertrag, um fortzufahren."))
       return
     }
     if (!signature || sigPad.current?.isEmpty()) {
-      setError("Bitte unterschreibe in das Feld.")
+      setError(t("member_onboarding.error_signature", "Bitte unterschreibe in das Feld."))
       return
     }
 
@@ -197,7 +209,8 @@ export function MemberOnboardingForm({
       return typeof value === "string" ? value.trim().length === 0 : true
     })
     if (missingRequired) {
-      setError(`Bitte fülle das Feld "${missingRequired.label}" aus.`)
+      const message = t("member_onboarding.error_missing", "Bitte fülle das Feld {field} aus.")
+      setError(message.replace("{field}", missingRequired.label))
       return
     }
     setSaving(true)
@@ -217,7 +230,7 @@ export function MemberOnboardingForm({
         memberAddress: formData.address,
         memberEmail: formData.email,
         memberPhone: formData.phone,
-        signedCity: formData.city || "Ort",
+        signedCity: formData.city || t("member_onboarding.city_fallback", "Ort"),
         signedAt: formattedDate,
         contractTitle,
         contractText,
@@ -232,21 +245,21 @@ export function MemberOnboardingForm({
     )
     if (!res?.success) {
       setSaving(false)
-      setError("Signatur konnte nicht gespeichert werden.")
+      setError(t("member_onboarding.error_save", "Signatur konnte nicht gespeichert werden."))
       return
     }
 
     const plan = plans.find((p) => p.id === selectedPlanId)
     if (!plan) {
       setSaving(false)
-      setError("Bitte wähle einen Tarif.")
+      setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
       return
     }
     const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
     if (result?.url) window.location.href = result.url
     else {
       setSaving(false)
-      setError("Zahlungslink konnte nicht erstellt werden.")
+      setError(t("member_onboarding.error_payment", "Zahlungslink konnte nicht erstellt werden."))
     }
   }
 
@@ -255,47 +268,47 @@ export function MemberOnboardingForm({
       <div className="w-full md:w-1/2 px-5 py-8 sm:px-8 lg:px-12">
         <div className="mx-auto flex w-full max-w-xl flex-col gap-8">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Avaimo Vertrag</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t("member_onboarding.kicker", "Avaimo Vertrag")}</p>
             <h1 className="text-3xl font-semibold text-slate-900">{contractTitle}</h1>
             <p className="text-slate-500">
-              Prüfe deine Angaben, unterschreibe und sieh live, wie dein Vertrag aussieht.
+              {t("member_onboarding.subhead", "Prüfe deine Angaben, unterschreibe und sieh live, wie dein Vertrag aussieht.")}
             </p>
           </div>
 
           <Card className="space-y-5 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Vorname</Label>
+                <Label>{t("member_onboarding.first", "Vorname")}</Label>
                 <Input value={formData.firstName} onChange={(e) => setField("firstName", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Nachname</Label>
+                <Label>{t("member_onboarding.last", "Nachname")}</Label>
                 <Input value={formData.lastName} onChange={(e) => setField("lastName", e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Adresse</Label>
+              <Label>{t("member_onboarding.address", "Adresse")}</Label>
               <Input value={formData.address} onChange={(e) => setField("address", e.target.value)} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Ort</Label>
+                <Label>{t("member_onboarding.city", "Ort")}</Label>
                 <Input value={formData.city} onChange={(e) => setField("city", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>E-Mail</Label>
+                <Label>{t("member_onboarding.email", "E-Mail")}</Label>
                 <Input type="email" value={formData.email} onChange={(e) => setField("email", e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Telefon</Label>
+              <Label>{t("member_onboarding.phone", "Telefon")}</Label>
               <Input value={formData.phone} onChange={(e) => setField("phone", e.target.value)} />
             </div>
           </Card>
 
           {contractFields.length > 0 ? (
             <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-              <div className="text-sm font-semibold text-slate-900">Weitere Angaben</div>
+              <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.more", "Weitere Angaben")}</div>
               {contractFields.map((field) => (
                 <div key={field.key} className="space-y-2">
                   <Label>
@@ -316,7 +329,7 @@ export function MemberOnboardingForm({
                         checked={customValues[field.key] === true}
                         onChange={(e) => setCustomValue(field.key, e.target.checked)}
                       />
-                      <span>{field.placeholder || "Ich stimme zu"}</span>
+                      <span>{field.placeholder || t("member_onboarding.checkbox", "Ich stimme zu")}</span>
                     </label>
                   ) : (
                     <Input
@@ -334,11 +347,11 @@ export function MemberOnboardingForm({
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2 text-sm">
                 <PenLine className="h-4 w-4" />
-                Deine Unterschrift
+                {t("member_onboarding.signature", "Deine Unterschrift")}
               </Label>
               <Button variant="ghost" size="sm" onClick={clearSignature} className="h-8 text-red-500">
                 <Eraser className="mr-1 h-3 w-3" />
-                Löschen
+                {t("member_onboarding.clear", "Löschen")}
               </Button>
             </div>
             <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-sm transition-colors hover:border-slate-400">
@@ -351,19 +364,19 @@ export function MemberOnboardingForm({
                 onEnd={endSignatureCapture}
               />
             </div>
-            <p className="text-xs text-slate-400">Bitte unterschreibe im Feld oben.</p>
+            <p className="text-xs text-slate-400">{t("member_onboarding.signature_hint", "Bitte unterschreibe im Feld oben.")}</p>
           </div>
 
           <div className="space-y-3">
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
-              <span>Ich habe den Vertrag gelesen und akzeptiere ihn.</span>
+              <span>{t("member_onboarding.accept", "Ich habe den Vertrag gelesen und akzeptiere ihn.")}</span>
             </label>
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
           </div>
 
           <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-900">Abo wählen</div>
+            <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wählen")}</div>
             {plans.length > 1 ? (
               <select
                 className="w-full rounded-md border px-3 py-2 text-sm"
@@ -372,13 +385,13 @@ export function MemberOnboardingForm({
               >
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} – {p.price}€
+                    {p.name} – {formatPrice(p.price)}€
                   </option>
                 ))}
               </select>
             ) : (
               <div className="text-sm text-slate-600">
-                {plans[0]?.name} – {plans[0]?.price}€ pro Jahr
+                {plans[0]?.name} – {formatPrice(plans[0]?.price || 0)}€ {t("member_onboarding.per_year", "pro Jahr")}
               </div>
             )}
           </Card>
@@ -389,7 +402,7 @@ export function MemberOnboardingForm({
             disabled={!accepted || saving}
             onClick={handleSubmit}
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Jetzt zahlungspflichtig beitreten"}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("member_onboarding.cta", "Jetzt zahlungspflichtig beitreten")}
           </Button>
         </div>
       </div>

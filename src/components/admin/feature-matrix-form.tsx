@@ -4,53 +4,13 @@ import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { defaultFeatures, type FeatureTree } from "@/lib/club-features"
 import { updateClubFeatureMatrix } from "@/app/actions"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export type FeatureSection = {
   title: string
   key: string
   items: { key: string; label: string }[]
 }
-
-const defaultSections: FeatureSection[] = [
-  {
-    title: "Navigation",
-    key: "admin",
-    items: [
-      { key: "overview", label: "Ãœbersicht" },
-      { key: "bookings", label: "Buchungen" },
-      { key: "courts", label: "PlÃ¤tze" },
-      { key: "blocks", label: "Sperrzeiten" },
-      { key: "plans", label: "Abos" },
-      { key: "members", label: "Mitglieder" },
-      { key: "trainers", label: "Trainer" },
-      { key: "courses", label: "Kurse" },
-      { key: "finance", label: "Finanzen" },
-      { key: "vouchers", label: "Gutscheine" },
-      { key: "settings", label: "Einstellungen" },
-      { key: "export", label: "Export" },
-    ],
-  },
-  {
-    title: "Mitglieder",
-    key: "members",
-    items: [
-      { key: "contract_editor", label: "Vertrags-Editor" },
-      { key: "import", label: "Import" },
-      { key: "invite", label: "Einladungen" },
-      { key: "documents", label: "Dokumente" },
-      { key: "payments", label: "Zahlungen" },
-    ],
-  },
-  {
-    title: "Einstellungen",
-    key: "settings",
-    items: [
-      { key: "club", label: "Vereinsdaten" },
-      { key: "ai", label: "Dokumenten-KI" },
-      { key: "cms", label: "Seiten-Inhalte" },
-    ],
-  },
-]
 
 export function FeatureMatrixForm({
   clubId,
@@ -63,8 +23,50 @@ export function FeatureMatrixForm({
   initialFeatures: FeatureTree
   sections?: FeatureSection[]
 }) {
+  const { t } = useI18n()
+  const defaultSections: FeatureSection[] = useMemo(() => [
+    {
+      title: t("admin_features.nav", "Navigation"),
+      key: "admin",
+      items: [
+        { key: "overview", label: t("admin_features.nav_overview", "Übersicht") },
+        { key: "bookings", label: t("admin_features.nav_bookings", "Buchungen") },
+        { key: "courts", label: t("admin_features.nav_courts", "Plätze") },
+        { key: "blocks", label: t("admin_features.nav_blocks", "Sperrzeiten") },
+        { key: "plans", label: t("admin_features.nav_plans", "Abos") },
+        { key: "members", label: t("admin_features.nav_members", "Mitglieder") },
+        { key: "trainers", label: t("admin_features.nav_trainers", "Trainer") },
+        { key: "courses", label: t("admin_features.nav_courses", "Kurse") },
+        { key: "finance", label: t("admin_features.nav_finance", "Finanzen") },
+        { key: "vouchers", label: t("admin_features.nav_vouchers", "Gutscheine") },
+        { key: "settings", label: t("admin_features.nav_settings", "Einstellungen") },
+        { key: "export", label: t("admin_features.nav_export", "Export") },
+      ],
+    },
+    {
+      title: t("admin_features.members", "Mitglieder"),
+      key: "members",
+      items: [
+        { key: "contract_editor", label: t("admin_features.member_contract", "Vertrags-Editor") },
+        { key: "import", label: t("admin_features.member_import", "Import") },
+        { key: "invite", label: t("admin_features.member_invite", "Einladungen") },
+        { key: "documents", label: t("admin_features.member_documents", "Dokumente") },
+        { key: "payments", label: t("admin_features.member_payments", "Zahlungen") },
+      ],
+    },
+    {
+      title: t("admin_features.settings", "Einstellungen"),
+      key: "settings",
+      items: [
+        { key: "club", label: t("admin_features.settings_club", "Vereinsdaten") },
+        { key: "ai", label: t("admin_features.settings_ai", "Dokumenten-KI") },
+        { key: "cms", label: t("admin_features.settings_cms", "Seiten-Inhalte") },
+      ],
+    },
+  ], [t])
+
   const [features, setFeatures] = useState<FeatureTree>(initialFeatures)
-  const allSections = useMemo(() => sections || defaultSections, [sections])
+  const allSections = useMemo(() => sections || defaultSections, [sections, defaultSections])
 
   return (
     <form action={updateClubFeatureMatrix} className="space-y-6">
@@ -78,7 +80,7 @@ export function FeatureMatrixForm({
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-slate-900">{section.title}</div>
-                <div className="text-xs text-slate-500">Schalte einzelne Bereiche frei.</div>
+                <div className="text-xs text-slate-500">{t("admin_features.hint", "Schalte einzelne Bereiche frei.")}</div>
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -106,14 +108,14 @@ export function FeatureMatrixForm({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button type="submit" className="rounded-full">Speichern</Button>
+        <Button type="submit" className="rounded-full">{t("admin_features.save", "Speichern")}</Button>
         <Button
           type="button"
           variant="outline"
           className="rounded-full"
           onClick={() => setFeatures(defaultFeatures)}
         >
-          Alle aktivieren
+          {t("admin_features.enable_all", "Alle aktivieren")}
         </Button>
       </div>
     </form>

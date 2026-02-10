@@ -1,0 +1,1234 @@
+﻿{
+    "app":  {
+                "name":  "Avaimo"
+            },
+    "nav":  {
+                "features":  "Funktionen",
+                "pricing":  "Preise",
+                "demo":  "Demo",
+                "security":  "Sicherheit",
+                "contact":  "Kontakt"
+            },
+    "cta":  {
+                "getStarted":  "Jetzt starten",
+                "demo":  "Demo ansehen",
+                "consulting":  "Beratung"
+            },
+    "footer":  {
+                   "tagline":  "Die Plattform für Clubs, die Buchungen, Mitglieder und Einnahmen in einem System vereint.",
+                   "tagline_short":  "Vereinsplattform für Buchung, Mitglieder und Finanzen.",
+                   "impressum":  "Impressum",
+                   "privacy":  "Datenschutz",
+                   "security":  "Sicherheit"
+               },
+    "home":  {
+                 "hero":  {
+                              "badge":  "Old Money Tennis · DSGVO-ready",
+                              "title":  "Vereinsführung mit Ruhe, Stil und absoluter Kontrolle.",
+                              "subtitle":  "Avaimo verbindet Buchung, Mitglieder, Zahlungen, Verträge und Trainer in einer Oberfläche, die sich anfühlt wie ein perfekt gepflegter Court: klar, elegant, sofort verständlich.",
+                              "cta_demo":  "Demo ansehen",
+                              "cta_consulting":  "Beratung anfragen"
+                          },
+                 "proof":  {
+                               "fast":  "48h Startklar",
+                               "onboarding":  "Onboarding + Datenimport",
+                               "gdpr":  "DSGVO Ready",
+                               "eu":  "Datenhaltung in der EU",
+                               "no_excel":  "No Excel",
+                               "one_platform":  "Alles in einer Plattform"
+                           },
+                 "overview":  {
+                                  "title":  "Executive Overview",
+                                  "booking_today":  "Buchung heute",
+                                  "court_time":  "Platz 3 · 19:00",
+                                  "member_paid":  "Mitglied · bezahlt",
+                                  "open_fees":  "Offene Beiträge",
+                                  "trainer_sessions":  "Trainerstunden",
+                                  "docs":  "Dokumente",
+                                  "docs_status":  "Attest geprüft · OK"
+                              },
+                 "pains":  {
+                               "title":  "So sieht es heute aus",
+                               "0":  "Telefonketten und WhatsApp-Chaos für freie Plätze",
+                               "1":  "Papierverträge, Scans, manuelle Ablage",
+                               "2":  "Offene Beiträge ohne klare Übersicht",
+                               "3":  "Trainer-Abrechnung per Hand und Excel"
+                           },
+                 "outcomes":  {
+                                  "title":  "So sieht es mit Avaimo aus",
+                                  "0":  "Buchung und Mitgliederverwaltung in einem System",
+                                  "1":  "Verträge digital und rechtssicher",
+                                  "2":  "Zahlungen sauber nachvollziehbar",
+                                  "3":  "Trainer und Kurse automatisiert abrechnen"
+                              },
+                 "modules":  {
+                                 "title":  "Module, die Vereine sofort spüren",
+                                 "cta":  "Alle Funktionen ansehen",
+                                 "bookings":  {
+                                                  "title":  "Buchungen \u0026 Plätze",
+                                                  "desc":  "Live-Kalender, Kollisionserkennung, Öffnungszeiten, Sperrzeiten."
+                                              },
+                                 "members":  {
+                                                 "title":  "Mitgliedschaften",
+                                                 "desc":  "Abos, Rabatte, Status, Einladungen und Vertrags-Onboarding."
+                                             },
+                                 "payments":  {
+                                                  "title":  "Zahlungen",
+                                                  "desc":  "Stripe, Barzahlung, Gutscheine, automatische Zahlungs-Status."
+                                              },
+                                 "contracts":  {
+                                                   "title":  "Verträge",
+                                                   "desc":  "Digitale Signatur, Pflichtfelder, PDF-Export, Revision."
+                                               },
+                                 "training":  {
+                                                  "title":  "Trainer \u0026 Kurse",
+                                                  "desc":  "Trainerstunden, Kurse, Sessions, Abrechnung und Payouts."
+                                              },
+                                 "reporting":  {
+                                                   "title":  "Reporting",
+                                                   "desc":  "Auslastung, Einnahmen, Export für Steuerberater."
+                                               }
+                             },
+                 "results":  {
+                                 "title":  "Ergebnisse",
+                                 "headline":  "Weniger Admin-Aufwand, mehr aktive Mitglieder.",
+                                 "subheadline":  "Avaimo reduziert Routinearbeit und sorgt für volle Plätze, transparente Finanzen und ein modernes Vereinsimage.",
+                                 "cta_demo":  "Demo ansehen",
+                                 "cta_pricing":  "Preise vergleichen",
+                                 "stats":  {
+                                               "0":  "weniger Admin-Aufwand nach 6 Wochen",
+                                               "1":  "mehr belegte Plätze im Schnitt",
+                                               "2":  "Trainer-Abrechnung im Monatsabschluss"
+                                           }
+                             },
+                 "final":  {
+                               "badge":  "Bereit für Avaimo?",
+                               "title":  "Sieh dein Vereins-Dashboard jetzt live.",
+                               "cta":  "Demo starten"
+                           }
+             },
+    "features":  {
+                     "hero":  {
+                                  "badge":  "Funktionen",
+                                  "title":  "Alles, was ein moderner Verein braucht.",
+                                  "subtitle":  "Avaimo verbindet Buchung, Mitglieder, Zahlungen, Verträge und Trainer in einer Plattform. Modulare Features sorgen dafür, dass jeder Verein nur das sieht, was er braucht."
+                              },
+                     "blocks":  {
+                                    "booking":  {
+                                                    "title":  "Buchung \u0026 Platzverwaltung",
+                                                    "bullets":  [
+                                                                    "Live Kalender mit Kollisionserkennung",
+                                                                    "Sperrzeiten, Öffnungszeiten und Sondertage",
+                                                                    "Gäste und Mitglieder in einem Flow"
+                                                                ]
+                                                },
+                                    "members":  {
+                                                    "title":  "Mitglieder \u0026 Abos",
+                                                    "bullets":  [
+                                                                    "Individuelle Mitgliedschaftspläne",
+                                                                    "Rabatte und kostenlose Zeiten pro Plan",
+                                                                    "Einladungen, Status und Historie"
+                                                                ]
+                                                },
+                                    "payments":  {
+                                                     "title":  "Zahlungen \u0026 Mahnwesen",
+                                                     "bullets":  [
+                                                                     "Stripe, Barzahlung, Gutscheine",
+                                                                     "Automatische Zahlungsstatus",
+                                                                     "Übersicht für Kassierer und Vorstand"
+                                                                 ]
+                                                 },
+                                    "contracts":  {
+                                                      "title":  "Verträge \u0026 Dokumente",
+                                                      "bullets":  [
+                                                                      "Digitale Signatur und Pflichtfelder",
+                                                                      "PDF-Export und revisionssichere Ablage",
+                                                                      "Onboarding für neue Mitglieder"
+                                                                  ]
+                                                  },
+                                    "training":  {
+                                                     "title":  "Trainer \u0026 Kurse",
+                                                     "bullets":  [
+                                                                     "Trainerstunden mit Platz- und Trainerabgleich",
+                                                                     "Kurse, Camps, Serien-Termine",
+                                                                     "Trainer-Abrechnung mit Payouts"
+                                                                 ]
+                                                 },
+                                    "reporting":  {
+                                                      "title":  "Reporting \u0026 Exporte",
+                                                      "bullets":  [
+                                                                      "Auslastung, Einnahmen, Trends",
+                                                                      "CSV/DATEV Export für Steuerberater",
+                                                                      "Monatsreports für Vorstand"
+                                                                  ]
+                                                  }
+                                },
+                     "extra":  {
+                                   "security":  {
+                                                    "title":  "Sicherheit \u0026 Rollen",
+                                                    "desc":  "Rollenbasierter Zugriff, DSGVO-konforme Datenhaltung, revisionssichere Logs."
+                                                },
+                                   "notifications":  {
+                                                         "title":  "Benachrichtigungen",
+                                                         "desc":  "E-Mails, Erinnerungen, automatische Updates bei Ausfällen und Änderungen."
+                                                     },
+                                   "engagement":  {
+                                                      "title":  "Engagement",
+                                                      "desc":  "Ranglisten, Match-Recaps und Community-Features für aktive Mitglieder."
+                                                  }
+                               }
+                 },
+    "pricing":  {
+                    "hero":  {
+                                 "title":  "Transparente Pakete für jeden Verein.",
+                                 "badge":  "Preise",
+                                 "subtitle":  "Unsere Pakete sind modular. Du kannst jederzeit upgraden oder Module hinzubuchen."
+                             },
+                    "tiers":  {
+                                  "pro":  {
+                                              "price":  "299 EUR / Monat",
+                                              "features":  [
+                                                               "Alles aus Starter",
+                                                               "Online-Zahlungen \u0026 Gutscheine",
+                                                               "Trainer \u0026 Kurse",
+                                                               "Automatisierte Mails"
+                                                           ],
+                                              "name":  "Pro",
+                                              "desc":  "Der Standard für wachsende Clubs mit Zahlungen \u0026 Trainer."
+                                          },
+                                  "enterprise":  {
+                                                     "price":  "Individuell",
+                                                     "features":  [
+                                                                      "Custom Workflows",
+                                                                      "SLA \u0026 Support",
+                                                                      "Reporting \u0026 Export",
+                                                                      "Onboarding durch Avaimo"
+                                                                  ],
+                                                     "name":  "Enterprise",
+                                                     "desc":  "für größere Anlagen mit mehreren Standorten."
+                                                 },
+                                  "starter":  {
+                                                  "price":  "149 EUR / Monat",
+                                                  "features":  [
+                                                                   "Buchungssystem",
+                                                                   "Mitgliederverwaltung",
+                                                                   "Verträge \u0026 Dokumente",
+                                                                   "E-Mail-Support"
+                                                               ],
+                                                  "name":  "Starter",
+                                                  "desc":  "für kleine Vereine mit Fokus auf Buchung und Mitglieder."
+                                              }
+                              },
+                    "cta":  "Angebot anfragen",
+                    "addons_title":  "Optionale Module",
+                    "addons_subtitle":  "Du kannst jedes Paket mit zusätzlichen Modulen erweitern.",
+                    "addons":  [
+                                   "KI Dokumenten-Check",
+                                   "Erweitertes Reporting",
+                                   "Individuelle Integrationen"
+                               ]
+                },
+    "auth":  {
+                 "login":  {
+                               "profile_error":  "Fehler beim Laden des Profils.",
+                               "cta":  "Anmelden",
+                               "subtitle":  "Südtirol Booking",
+                               "no_club":  "Keine Vereine gefunden. Bitte registriere dich erst.",
+                               "password":  "Passwort",
+                               "forgot":  "Vergessen?",
+                               "generic_error":  "Login-Fehler.",
+                               "title":  "Login",
+                               "error":  "Falsche E-Mail oder Passwort.",
+                               "email":  "E-Mail"
+                           },
+                 "portal":  {
+                                "admin":  "Administrator",
+                                "title":  "Willkommen zurück",
+                                "member":  "Mitglied",
+                                "subtitle":  "Wähle, wohin du möchtest:"
+                            },
+                 "forgot":  {
+                                "subtitle":  "Gib deine E-Mail ein. Wir senden dir einen Link, um ein neues Passwort zu setzen.",
+                                "placeholder":  "deine@email.com",
+                                "sent_title":  "E-Mail gesendet!",
+                                "title":  "Passwort vergessen?",
+                                "cta":  "Link senden",
+                                "sent_subtitle":  "Bitte prüfe deinen Posteingang (und Spam-Ordner).",
+                                "error":  "Ein Fehler ist aufgetreten.",
+                                "back":  "Zurück zum Login"
+                            }
+             },
+    "contact":  {
+                    "cards":  {
+                                  "live":  {
+                                               "cta":  "Demo ansehen",
+                                               "title":  "Oder starte direkt die Demo",
+                                               "desc":  "Sieh dir die Admin- und Mitgliederansicht an, ohne Login."
+                                           },
+                                  "demo":  {
+                                               "desc":  "Schick uns eine Mail mit Vereinsname, Anzahl Plätze und aktuellem Ablauf.",
+                                               "title":  "Demo anfragen"
+                                           }
+                              },
+                    "hero":  {
+                                 "title":  "Lass uns deinen Verein automatisieren.",
+                                 "badge":  "Kontakt",
+                                 "subtitle":  "Sag uns kurz, wie dein Verein organisiert ist. Wir zeigen dir eine Demo, die genau zu euch passt."
+                             }
+                },
+    "demo":  {
+                 "hero":  {
+                              "badge":  "Demo",
+                              "title":  "Avaimo Live Demo",
+                              "subtitle":  "Wechsel zwischen Admin-Ansicht und Mitglieder-Ansicht. Keine Anmeldung nötig.",
+                              "admin":  "Admin Ansicht",
+                              "member":  "Mitglieder Ansicht",
+                              "back":  "Zurück zur Website"
+                          },
+                 "nav":  {
+                             "overview":  "Übersicht",
+                             "bookings":  "Buchungen",
+                             "courts":  "Plätze",
+                             "blocks":  "Sperrzeiten",
+                             "plans":  "Abos",
+                             "members":  "Mitglieder",
+                             "trainers":  "Trainer",
+                             "courses":  "Kurse",
+                             "finance":  "Finanzen",
+                             "vouchers":  "Gutscheine",
+                             "settings":  "Einstellungen",
+                             "export":  "Export"
+                         },
+                 "admin":  {
+                               "nav":  "Navigation",
+                               "title":  "Admin Dashboard",
+                               "subtitle":  "Verwaltung für",
+                               "preview":  "Vorschau",
+                               "logout":  "Abmelden",
+                               "recent":  "Letzte Aktivitäten",
+                               "entries":  "Einträge",
+                               "unknown_court":  "Unbekannter Platz",
+                               "clock":  "Uhr",
+                               "details":  "Details",
+                               "status":  {
+                                              "pending":  "Ausstehend",
+                                              "cash":  "Vor Ort",
+                                              "membership":  "Abo",
+                                              "online":  "Online"
+                                          },
+                               "quick":  "Schnellzugriff",
+                               "quick_items":  {
+                                                   "settings":  "Einstellungen",
+                                                   "vouchers":  "Gutscheine",
+                                                   "courts":  "Plätze",
+                                                   "blocks":  "Sperrzeiten",
+                                                   "plans":  "Abos",
+                                                   "members":  "Mitglieder",
+                                                   "trainers":  "Trainer",
+                                                   "courses":  "Kurse",
+                                                   "finance":  "Finanzen",
+                                                   "export":  "CSV Export"
+                                               }
+                           },
+                 "member":  {
+                                "active":  "Mitglied aktiv",
+                                "hello":  "Hallo Erna!",
+                                "welcome":  "Willkommen bei",
+                                "plan":  "Premium Aktiv",
+                                "settings":  "Einstellungen",
+                                "documents":  "Dokumente",
+                                "booking":  "Zur Buchung",
+                                "status":  "Dein Status",
+                                "active_state":  "Aktiv",
+                                "valid_until":  "gültig bis: 31.12.2026",
+                                "stats":  {
+                                              "wins":  "Siege",
+                                              "losses":  "Niederl.",
+                                              "streak":  "Streak"
+                                          },
+                                "next":  "Nächster Termin",
+                                "clock":  "Uhr",
+                                "court":  "Platz 2",
+                                "profile":  "Profil",
+                                "profile_desc":  "Kontaktdaten und Angaben.",
+                                "upcoming":  "Deine nächsten Spiele",
+                                "cancel":  "Stornieren"
+                            }
+             },
+    "security":  {
+                     "items":  {
+                                   "contracts":  {
+                                                     "text":  "Digitale Signaturen, PDFs, Nachvollziehbarkeit und Exportmöglichkeit.",
+                                                     "title":  "Verträge \u0026 Nachweise"
+                                                 },
+                                   "gdpr":  {
+                                                "text":  "Datenhaltung in der EU, klare Rollen und Audit-Trails für jedes Dokument.",
+                                                "title":  "DSGVO \u0026 Hosting"
+                                            },
+                                   "infrastructure":  {
+                                                          "text":  "Skalierbare Architektur mit getrennten Rollen und sicherer Speicherung.",
+                                                          "title":  "Infrastruktur"
+                                                      },
+                                   "access":  {
+                                                  "text":  "Feingranulare Rechte für Vorstand, Admin, Trainer und Mitglieder.",
+                                                  "title":  "Zugriffsrechte"
+                                              }
+                               },
+                     "hero":  {
+                                  "title":  "Sicher, nachvollziehbar, DSGVO-konform.",
+                                  "badge":  "Sicherheit",
+                                  "subtitle":  "Avaimo ist für Vereine gebaut, die mit sensiblen Mitgliedsdaten arbeiten. Sicherheit ist nicht optional, sondern Standard."
+                              }
+                 },
+    "legal":  {
+                  "imprint":  {
+                                  "placeholder":  "Placeholder. Bitte Firmenadresse, UID und Kontaktangaben eintragen.",
+                                  "title":  "Impressum",
+                                  "badge":  "Impressum"
+                              },
+                  "privacy":  {
+                                  "placeholder":  "Placeholder. Bitte Datenschutzerklärung und Verantwortliche eintragen.",
+                                  "title":  "Datenschutz",
+                                  "badge":  "Datenschutz"
+                              }
+              },
+    "club":  {
+                 "cta":  {
+                             "book_now":  "Jetzt buchen"
+                         },
+                 "courts":  {
+                                "sport_default":  "Tennis",
+                                "minutes":  "Min",
+                                "empty":  "Noch keine Plätze verfügbar."
+                            },
+                 "nav":  {
+                             "my_area":  "Mein Bereich",
+                             "training":  "Training",
+                             "login":  "Login",
+                             "dashboard":  "Dashboard",
+                             "leaderboard":  "Ranking",
+                             "club":  "Club",
+                             "documents":  "Dokumente"
+                         }
+             },
+    "training":  {
+                     "trainers":  {
+                                      "login_required":  "Login nötig, um zu buchen.",
+                                      "title":  "Trainer",
+                                      "empty":  "Aktuell sind keine Trainer verfügbar."
+                                  },
+                     "hero":  {
+                                  "guide":  "Guide",
+                                  "title":  "Training",
+                                  "back":  "Zur Startseite",
+                                  "subtitle":  "Trainerstunden buchen und Kurse auswählen."
+                              },
+                     "courses":  {
+                                     "empty":  "Aktuell sind keine Kurse veröffentlicht.",
+                                     "title":  "Kurse \u0026 Camps"
+                                 },
+                     "filter":  {
+                                    "all":  "Alle Kurse",
+                                    "available":  "Nur Kurse mit freien Plätzen",
+                                    "show_all":  "Alle anzeigen",
+                                    "show_available":  "Nur freie Plätze",
+                                    "empty":  "Keine passenden Kurse gefunden."
+                                },
+                     "course":  {
+                                    "sold_out":  "Ausgebucht",
+                                    "description_fallback":  "Kursbeschreibung",
+                                    "price":  "Preis",
+                                    "free":  "Kostenlos",
+                                    "per_session":  "pro Termin",
+                                    "weekly":  "Wöchentlich",
+                                    "next":  "Nächster Termin",
+                                    "upcoming":  "Nächste Termine",
+                                    "more":  "weitere",
+                                    "upcoming_empty":  "Termine folgen",
+                                    "calendar_week":  "Kalender (Woche)",
+                                    "cta":  "Details \u0026 anmelden",
+                                    "selection":  "Auswahl",
+                                    "of":  "von",
+                                    "sessions":  "Terminen",
+                                    "close":  "Schließen",
+                                    "seats":  "Plätze",
+                                    "seats_left":  "Noch",
+                                    "seats_free":  "frei",
+                                    "session":  "Termin",
+                                    "lead":  "Leitung",
+                                    "club_fallback":  "Verein",
+                                    "period":  "Zeitraum",
+                                    "to":  "bis",
+                                    "all_sessions":  "Alle Termine",
+                                    "court":  "Platz",
+                                    "selection_title":  "Deine Auswahl",
+                                    "selection_hint":  "Wähle die Termine, an denen du teilnehmen möchtest.",
+                                    "selection_full":  "Dieser Kurs wird als Gesamtpaket gebucht.",
+                                    "selected":  "Terminen ausgewählt",
+                                    "select_available":  "Alle freien",
+                                    "clear_selection":  "Auswahl leeren",
+                                    "no_limit":  "Keine Begrenzung",
+                                    "included":  "Im Paket",
+                                    "selected_label":  "ausgewählt",
+                                    "sessions_short":  "Termin(e)",
+                                    "sessions_label":  "Termine",
+                                    "total":  "Gesamt",
+                                    "select_min":  "Bitte mindestens einen Termin wählen.",
+                                    "cancel":  "Abbrechen",
+                                    "loading":  "Weiter...",
+                                    "book_sessions":  "Termine buchen",
+                                    "book_course":  "Kurs buchen"
+                                }
+                 },
+    "dashboard":  {
+                      "no_upcoming":  "Keine anstehenden Termine.",
+                      "profile_desc":  "Pflege deine Kontaktdaten und Angaben.",
+                      "clock":  "Uhr",
+                      "guest":  "Mitglied",
+                      "cards":  {
+                                    "upcoming":  "Deine nächsten Spiele",
+                                    "profile_data":  "Meine Daten",
+                                    "profile":  "Profil",
+                                    "past":  "Letzte Spiele",
+                                    "leaderboard":  "Club Rangliste",
+                                    "status":  "Dein Status",
+                                    "badges":  "Badges \u0026 Erfolge",
+                                    "next":  "Nächster Termin"
+                                },
+                      "welcome":  "Willkommen bei",
+                      "recap_pending":  "Wird vorbereitet…",
+                      "leaderboard_empty":  "Noch keine Ranglistenpunkte vorhanden.",
+                      "guide":  "Guide",
+                      "actions":  {
+                                      "documents":  "Dokumente",
+                                      "booking":  "Zur Buchung",
+                                      "settings":  "Einstellungen"
+                                  },
+                      "leaderboard_cta":  "Top 50 ansehen",
+                      "badge":  {
+                                    "active":  "Mitglied aktiv"
+                                },
+                      "recap":  "Ergebnis eintragen",
+                      "badges_empty":  "Spiele dein erstes Match, um Badges zu sammeln.",
+                      "valid_until":  "Gültig bis:",
+                      "no_past":  "Noch keine Spiele in den letzten 7 Tagen.",
+                      "stats":  {
+                                    "wins":  "Siege",
+                                    "streak":  "Streak",
+                                    "losses":  "Niederl."
+                                },
+                      "no_open":  "Keine offenen Buchungen.",
+                      "status":  {
+                                     "active":  "Aktiv"
+                                 },
+                      "book_now":  "Jetzt buchen",
+                      "unlimited":  "Unbegrenzt",
+                      "points":  "Punkte",
+                      "greeting":  "Hallo"
+                  },
+    "member_settings":  {
+                            "title":  "Mitglied-Einstellungen",
+                            "back":  "Zurück",
+                            "subtitle":  "Dein Bereich bei"
+                        },
+    "documents":  {
+                      "guide":  "Guide",
+                      "title":  "Meine Dokumente",
+                      "back":  "Zurück",
+                      "club":  "Club:"
+                  },
+    "leaderboard":  {
+                        "heading":  "Rangliste",
+                        "club":  "Club:",
+                        "back":  "Zurück",
+                        "empty":  "Noch keine Ranglistenpunkte vorhanden.",
+                        "points":  "Punkte",
+                        "title":  "Top 50 Rangliste"
+                    },
+    "club_impressum":  {
+                           "empty":  "Impressum Text ist noch leer. Bitte im Admin-CMS ausfüllen.",
+                           "back":  "Zurück zur Club-Seite"
+                       },
+    "days":  {
+                 "short":  {
+                               "0":  "So",
+                               "1":  "Mo",
+                               "2":  "Di",
+                               "3":  "Mi",
+                               "4":  "Do",
+                               "5":  "Fr",
+                               "6":  "Sa"
+                           },
+                 "long":  {
+                              "0":  "Sonntag",
+                              "1":  "Montag",
+                              "2":  "Dienstag",
+                              "3":  "Mittwoch",
+                              "4":  "Donnerstag",
+                              "5":  "Freitag",
+                              "6":  "Samstag"
+                          }
+             },
+    "trainer":  {
+                    "booking":  {
+                                    "error_missing":  "Bitte Datum und Zeit wählen.",
+                                    "success":  "Traineranfrage gesendet. Du bekommst eine Bestätigung per E-Mail."
+                                },
+                    "card":  {
+                                 "cta":  "Trainer buchen",
+                                 "profile":  "Trainerprofil"
+                             },
+                    "modal":  {
+                                  "title":  "Trainerstunde buchen",
+                                  "subtitle":  "Wähle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainerbestätigung fix.",
+                                  "available":  "Verfügbar:",
+                                  "date":  "Datum",
+                                  "time":  "Uhrzeit",
+                                  "duration":  "Dauer (Min)",
+                                  "step":  "Schritte à 30 Min",
+                                  "loading":  "Weiter...",
+                                  "cta":  "Training buchen"
+                              }
+                },
+    "booking":  {
+                    "voucher":  {
+                                    "title":  "Gutschein / Guthaben",
+                                    "placeholder":  "Code eingeben...",
+                                    "apply":  "Einlösen",
+                                    "remove":  "Entfernen",
+                                    "applied":  "Gutschein über {amount}€ angewendet."
+                                },
+                    "member":  {
+                                   "active":  "Mitgliedervorteil aktiv",
+                                   "discount":  "{value}% Rabatt",
+                                   "member_price":  "Mitgliederpreis {value}€",
+                                   "status":  "Mitgliedsstatus"
+                               },
+                    "message":  {
+                                    "saved":  "Buchung erfolgreich gespeichert.",
+                                    "error":  "Fehler bei der Buchung.",
+                                    "checkout_error":  "Fehler beim Checkout.",
+                                    "name_email_required":  "Bitte Name und E-Mail eingeben.",
+                                    "invalid_code":  "Ungültiger Code"
+                                },
+                    "cta":  "Platz buchen",
+                    "title":  "{court} buchen",
+                    "duration":  "Min",
+                    "subtitle":  "Wähle Datum und Uhrzeit. Öffnungszeiten: {start}:00 bis {end}:00 Uhr.",
+                    "date":  "Datum",
+                    "time":  "Uhrzeit",
+                    "time_empty":  "Keine Spielzeiten verfügbar.",
+                    "blocked":  "Keine Buchung möglich",
+                    "blocked_reason":  "Grund",
+                    "details":  "Deine Angaben",
+                    "name":  "Dein Name",
+                    "email":  "E-Mail für Bestätigung",
+                    "summary":  "Zusammenfassung",
+                    "at":  "um",
+                    "oclock":  "Uhr",
+                    "payable":  "Zu zahlen",
+                    "free":  "Jetzt kostenlos buchen",
+                    "pay_online":  "Online zahlen ({amount}€)",
+                    "pay_onsite":  "Vor Ort bezahlen",
+                    "cancel":  {
+                                   "confirm":  "Möchtest du diesen Termin wirklich stornieren?",
+                                   "label":  "Stornieren"
+                               }
+                },
+    "checkout":  {
+                     "success":  {
+                                     "missing":  "Fehler: Keine Session ID",
+                                     "pending":  "Zahlung noch nicht bestätigt.",
+                                     "title":  "Zahlung erfolgreich!",
+                                     "body":  "Danke! Deine Zahlung ist eingegangen. Deine Buchung wird gerade finalisiert und ist gleich im System sichtbar.",
+                                     "amount":  "Summe",
+                                     "status_label":  "Status",
+                                     "status":  "Bezahlt via Stripe",
+                                     "back":  "Zurück zum Club"
+                                 }
+                 },
+    "membership":  {
+                       "title":  "Werde Mitglied",
+                       "cta":  "Jetzt wählen",
+                       "plan_fallback":  "Jahresbeitrag",
+                       "year":  "Jahr",
+                       "error":  "Fehler beim Checkout",
+                       "feature":  {
+                                       "free_play":  "Kostenlos spielen",
+                                       "priority":  "Bevorzugte Buchung"
+                                   }
+                   },
+    "member_docs":  {
+                        "title":  "Dokument hochladen",
+                        "subtitle":  "Lade dein ärztliches Zeugnis oder deinen Vertrag hoch.",
+                        "type":  "Dokumenttyp",
+                        "medical":  "Ärztliches Zeugnis",
+                        "contract":  "Mitgliedsvertrag",
+                        "file":  "Datei",
+                        "upload":  "Upload",
+                        "uploading":  "Lade hoch...",
+                        "upload_success":  "Upload erfolgreich. Prüfung läuft.",
+                        "upload_error":  "Upload fehlgeschlagen.",
+                        "list_title":  "Deine Dokumente",
+                        "empty":  "Noch keine Dokumente hochgeladen.",
+                        "ai":  "KI",
+                        "review":  "Review",
+                        "upload_label":  "Upload",
+                        "ai_ok":  "KI ok",
+                        "ai_reject":  "KI abgelehnt",
+                        "ai_check":  "KI prüft",
+                        "approved":  "Bestätigt",
+                        "rejected":  "Abgelehnt",
+                        "pending":  "Wartet",
+                        "valid_until":  "Gültig bis {date}",
+                        "temp_until":  "Vorläufig bis {date}",
+                        "invalid":  "Nicht gültig",
+                        "open":  "Öffnen",
+                        "download":  "Download",
+                        "open_error":  "Dokument konnte nicht geöffnet werden.",
+                        "download_error":  "Download fehlgeschlagen.",
+                        "preview":  "Vorschau"
+                    },
+    "admin_docs":  {
+                       "title":  "Dokumente prüfen",
+                       "subtitle":  "Prüfe und bestätige medizinische Nachweise.",
+                       "member_fallback":  "Mitglied",
+                       "valid_until":  "Gültig bis {date}",
+                       "temp_until":  "Vorläufig bis {date}",
+                       "invalid":  "Nicht gültig",
+                       "open":  "Öffnen",
+                       "open_error":  "Dokument konnte nicht geöffnet werden.",
+                       "approve":  "Bestätigen",
+                       "reject":  "Ablehnen",
+                       "approved":  "Dokument bestätigt.",
+                       "rejected":  "Dokument abgelehnt.",
+                       "action_error":  "Aktion fehlgeschlagen."
+                   },
+    "match_recap":  {
+                        "member":  "Mitglied wählen",
+                        "select":  "Bitte auswählen",
+                        "score":  "Spielstand",
+                        "highlight":  "Highlight",
+                        "highlight_ph":  "z.B. 8 Winner im zweiten Satz",
+                        "notes":  "Notizen",
+                        "notes_ph":  "Optional",
+                        "save":  "Recap speichern",
+                        "saved":  "Recap gespeichert.",
+                        "error":  "Fehler beim Speichern.",
+                        "loading":  "Speichere...",
+                        "share":  "Teilen",
+                        "download":  "Download für Insta",
+                        "share_title":  "Match Recap",
+                        "share_text":  "Schau dir mein Match Recap an!",
+                        "share_opened":  "Teilen geöffnet.",
+                        "share_error":  "Teilen nicht unterstützt. Bitte Download nutzen.",
+                        "share_no":  "Teilen nicht unterstützt. Bitte Download nutzen.",
+                        "tip":  "Tipp: Für Instagram einfach \u0027Download\u0027 wählen und dann in der Story posten."
+                    },
+    "profile":  {
+                    "first_name":  "Vorname",
+                    "last_name":  "Nachname",
+                    "phone":  "Telefonnummer (für Rückfragen)",
+                    "save":  "Speichern",
+                    "saving":  "Speichern...",
+                    "saved":  "Profil aktualisiert.",
+                    "error":  "Profil konnte nicht gespeichert werden."
+                },
+    "admin_courses":  {
+                          "title":  "Kurse \u0026 Camps",
+                          "close":  "Schließen",
+                          "create":  "Kurs anlegen",
+                          "error_start_date":  "Bitte ein gültiges Startdatum wählen.",
+                          "error_sessions":  "Bitte alle Termine mit Datum, Uhrzeit und Platz vollständig ausfüllen.",
+                          "fields":  {
+                                         "title":  "Titel",
+                                         "trainer":  "Trainer",
+                                         "price":  "Preis (EUR)",
+                                         "pricing":  "Abrechnung",
+                                         "max":  "Max. Teilnehmer",
+                                         "description":  "Beschreibung",
+                                         "start":  "Startdatum",
+                                         "end":  "Enddatum"
+                                     },
+                          "trainer_none":  "Ohne Trainer",
+                          "price_per_session":  "Preis pro Termin (Mehrfach-Auswahl multipliziert den Preis)",
+                          "price_full":  "Preis für den gesamten Kurs",
+                          "pricing":  {
+                                          "full":  "Gesamter Kurs (alle Termine)",
+                                          "per_session":  "Einzeltermine (Auswahl \u0026 pro Termin)"
+                                      },
+                          "sessions":  {
+                                           "title":  "Termine",
+                                           "add":  "Termin hinzufügen",
+                                           "series":  "Serien-Termine",
+                                           "weeks":  "Wochen",
+                                           "generate":  "Serien-Termine erzeugen",
+                                           "remove":  "Entfernen",
+                                           "empty":  "Noch keine Termine hinzugefügt.",
+                                           "preview":  "Kalender-Vorschau",
+                                           "label":  "Termine",
+                                           "incomplete":  "Bitte alle Termine vollständig ausfüllen, sonst werden sie nicht gespeichert."
+                                       },
+                          "more":  "mehr",
+                          "publish":  "Kurs veröffentlichen",
+                          "save":  "Speichern",
+                          "edit":  "Bearbeiten",
+                          "delete":  "Löschen",
+                          "free":  "Kostenlos",
+                          "participants":  "Teilnehmende",
+                          "trainer":  "Trainer",
+                          "participants_title":  "Teilnehmer",
+                          "occupied":  "belegt",
+                          "export":  "CSV Export",
+                          "member":  "Mitglied",
+                          "remove":  "Entfernen",
+                          "no_participants":  "Noch keine Teilnehmer.",
+                          "empty":  "Noch keine Kurse angelegt.",
+                          "status":  {
+                                         "confirmed":  "Bestätigt",
+                                         "cancelled":  "Storniert",
+                                         "waitlist":  "Warteliste"
+                                     }
+                      },
+    "admin_trainer":  {
+                          "title":  "Trainer",
+                          "close":  "Schließen",
+                          "add":  "Trainer hinzufügen",
+                          "first_name":  "Vorname",
+                          "last_name":  "Nachname",
+                          "email":  "E-Mail",
+                          "phone":  "Telefon",
+                          "photo":  "Trainer Foto",
+                          "availability":  "Verfügbarkeit (Woche)",
+                          "to":  "bis",
+                          "hourly":  "Stundensatz (EUR)",
+                          "salary_type":  "Vergütungstyp",
+                          "salary":  {
+                                         "hourly":  "Stundenlohn",
+                                         "commission":  "Provision (%)",
+                                         "free":  "Ehrenamtlich (0)"
+                                     },
+                          "default_rate":  "Standardrate (EUR oder %)",
+                          "payout":  "Auszahlung",
+                          "payout_manual":  "Manuell",
+                          "payout_iban":  "IBAN",
+                          "payout_stripe":  "Stripe Connect",
+                          "payout_cash":  "Bar",
+                          "iban":  "IBAN",
+                          "stripe_account":  "Stripe Account ID",
+                          "include_court":  "Platzgebühr einrechnen",
+                          "active":  "Aktiv",
+                          "update":  "Aktualisieren",
+                          "save":  "Speichern",
+                          "edit":  "Bearbeiten",
+                          "delete":  "Löschen",
+                          "rate_fallback":  "Preis nach Vereinbarung",
+                          "payout_label":  "Auszahlung",
+                          "empty":  "Noch keine Trainer angelegt."
+                      },
+    "admin_courts":  {
+                         "title":  "Platzverwaltung",
+                         "error":  "Fehler",
+                         "unknown":  "Unbekannter Fehler",
+                         "confirm_delete":  "Platz wirklich löschen?",
+                         "per_play":  "Spiel",
+                         "minutes":  "Min",
+                         "to":  "bis",
+                         "clock":  "Uhr",
+                         "empty":  "Keine Plätze angelegt.",
+                         "name":  "Name",
+                         "name_placeholder":  "Platz Name",
+                         "price":  "Preis (€)",
+                         "duration":  "Dauer"
+                     },
+    "admin_club":  {
+                       "title":  "Vereinseinstellungen",
+                       "name":  "Vereinsname",
+                       "primary":  "Primärfarbe (Hex)",
+                       "cancellation":  "Stornierungsfrist (für Mitglieder)",
+                       "cancellation_placeholder":  "Wähle eine Frist",
+                       "cancellation_none":  "Keine Frist (Jederzeit)",
+                       "hour_before":  "Stunde vorher",
+                       "hours_before":  "Stunden vorher",
+                       "cancellation_help":  "Wie viele Stunden vor Spielbeginn darf noch kostenlos storniert werden?",
+                       "logo":  "Logo ändern (Optional)",
+                       "languages":  "Sprachen auf der Club-Seite",
+                       "languages_help":  "Wähle, welche Sprachen für Mitglieder verfügbar sind. Nicht erlaubte Sprachen leiten automatisch weiter.",
+                       "lang_de":  "Deutsch",
+                       "lang_it":  "Italienisch",
+                       "lang_en":  "Englisch",
+                       "default_language":  "Standard-Sprache",
+                       "fee_label":  "Avaimo Provision pro Buchung (Cent)",
+                       "fee_help":  "0 = keine Provision. 100 = 1,00 EUR.",
+                       "save":  "Speichern",
+                       "saved":  "Gespeichert!"
+                   },
+    "admin_ai":  {
+                     "title":  "KI-Prüfung",
+                     "subtitle":  "Steuere, ob die KI Dokumente vorprüft und wie die Gültigkeit gesetzt wird.",
+                     "active_label":  "KI aktiv",
+                     "active_hint":  "Wenn deaktiviert, nur manuelle Bestätigung.",
+                     "active":  "Aktiv",
+                     "inactive":  "Inaktiv",
+                     "mode":  "Modus",
+                     "mode_hint":  "30 Tage = KI-Vorprüfung + manuelle Bestätigung. Unendlich = KI-only (365 Tage).",
+                     "mode_30":  "30 Tage",
+                     "mode_unlimited":  "Unendlich",
+                     "saved":  "Einstellungen gespeichert.",
+                     "error":  "Speichern fehlgeschlagen."
+                 },
+    "admin_blocks":  {
+                         "title":  "Sperrzeiten \u0026 Events",
+                         "fill":  "Bitte alle Felder ausfüllen",
+                         "error":  "Fehler",
+                         "confirm":  "Sperre aufheben?",
+                         "all_courts":  "Alle Plätze",
+                         "single_court":  "Einzelplatz",
+                         "empty":  "Keine Sperrzeiten eingetragen.",
+                         "reason":  "Grund",
+                         "reason_ph":  "z.B. Winterpause",
+                         "from":  "Von",
+                         "to":  "Bis",
+                         "scope":  "Betrifft",
+                         "club":  "Ganzer Verein",
+                         "saving":  "Speichere...",
+                         "save":  "Sperrzeit eintragen"
+                     },
+    "admin_member_action":  {
+                                "title":  "Manuelle Erfassung",
+                                "status":  "Status",
+                                "status_active":  "Aktiv",
+                                "status_expired":  "Abgelaufen",
+                                "status_paused":  "Pausiert",
+                                "valid_until":  "Mitglied gültig bis",
+                                "medical_until":  "Ärztliches Zeugnis gültig bis",
+                                "payment_status":  "Zahlungsstatus",
+                                "paid":  "Bezahlt",
+                                "paid_cash":  "Bar bezahlt",
+                                "paid_bank":  "Überwiesen",
+                                "unpaid":  "Offen",
+                                "overdue":  "Überfällig",
+                                "next_payment":  "Nächster Beitragseinzug",
+                                "next_payment_hint":  "Falls bereits bezahlt, hier das nächste Einzugsdatum setzen.",
+                                "notes":  "Interne Notiz",
+                                "notes_ph":  "z.B. Bar bezahlt am 12.02., Vertrag liegt im Büro.",
+                                "saving":  "Speichere...",
+                                "save":  "Manuell speichern"
+                            },
+    "admin_delete":  {
+                         "confirm":  "ACHTUNG: Willst du diesen Verein wirklich löschen? \\nAlle Daten (Buchungen, Plätze, Admin-Account) werden unwiderruflich gelöscht!",
+                         "error":  "Fehler beim Löschen: ",
+                         "title":  "Verein löschen"
+                     },
+    "admin_plans":  {
+                        "title":  "Abo-Preise",
+                        "year":  "Jahr",
+                        "edit":  "Bearbeiten",
+                        "name":  "Name",
+                        "cta":  "Button-Text (z.B. Jetzt Mitglied werden)",
+                        "description":  "Kurzbeschreibung",
+                        "features":  "Features (eine pro Zeile)",
+                        "save":  "Speichern",
+                        "cancel":  "Abbrechen",
+                        "empty":  "Keine Mitgliedschaften definiert.",
+                        "new_name":  "Name (z.B. Erwachsene)",
+                        "new_price":  "Preis in €",
+                        "cta2":  "Button-Text (z.B. Jetzt beitreten)",
+                        "add":  "Plan hinzufügen",
+                        "confirm_delete":  "Plan löschen?"
+                    },
+    "admin_cms":  {
+                      "title":  "Seiten Editor (CMS)",
+                      "saved":  "Gespeichert.",
+                      "error":  "Fehler beim Speichern.",
+                      "reset":  "Auf Standard zurückgesetzt.",
+                      "revert":  "Letzte gespeicherte Version geladen.",
+                      "auto":  "Auto-Speicher: gespeichert.",
+                      "unsaved":  "Ungespeichert",
+                      "undo":  "Rückgängig",
+                      "default":  "Standard",
+                      "save":  "Speichern",
+                      "saving":  "Speichern...",
+                      "tabs":  {
+                                   "hero":  "Hero",
+                                   "overview":  "Badges \u0026 Überblick",
+                                   "sections":  "Sektionen",
+                                   "impressum":  "Impressum",
+                                   "footer":  "Footer"
+                               },
+                      "hero":  "Hero",
+                      "title_label":  "Titel",
+                      "subtitle":  "Untertitel",
+                      "primary":  "Primärer Button",
+                      "secondary":  "Sekundärer Button",
+                      "member_badge":  "Member Badge Text",
+                      "overview":  "Badges \u0026 Überblick",
+                      "location":  "Standort Text",
+                      "status":  "Status Text",
+                      "overview_title":  "Überblick Titel",
+                      "label_courts":  "Label Plätze",
+                      "label_price":  "Label Ab Preis",
+                      "label_status":  "Label Status",
+                      "section_courts":  "Abschnitt: Plätze",
+                      "section_membership":  "Abschnitt: Mitgliedschaft",
+                      "cta":  "CTA Button Text",
+                      "impressum":  "Impressum",
+                      "impressum_title":  "Impressum Titel",
+                      "impressum_body":  "Impressum Inhalt",
+                      "footer":  "Footer",
+                      "footer_text":  "Footer Text",
+                      "footer_link":  "Footer Link Text",
+                      "seo_desc":  "SEO Description",
+                      "preview":  "Live Preview",
+                      "no_content":  "Kein Inhalt",
+                      "hero_title_tip":  "Hauptüberschrift der Club-Seite",
+                      "hero_subtitle_tip":  "Kurzer Teaser unter dem Titel",
+                      "hero_primary_tip":  "Haupt-Call-to-Action",
+                      "hero_secondary_tip":  "Sekundärer Call-to-Action",
+                      "hero_member_badge_tip":  "Badge für eingeloggte Mitglieder",
+                      "location_tip":  "Ort/Region des Clubs",
+                      "status_tip":  "Zustand/Statusanzeige",
+                      "overview_title_tip":  "Titel der Overview-Karte",
+                      "label_courts_tip":  "Label für Court-Anzahl",
+                      "label_price_tip":  "Label für niedrigsten Preis",
+                      "label_status_tip":  "Label für Statuszeile",
+                      "section_courts_title_tip":  "Sektionstitel für Courts",
+                      "section_membership_title_tip":  "Sektionstitel für Mitgliedschaft",
+                      "section_subtitle_tip":  "Kurzbeschreibung unter dem Titel",
+                      "section_cta_tip":  "Text des Membership-Buttons",
+                      "impressum_title_tip":  "Überschrift der Impressum-Seite",
+                      "impressum_body_tip":  "Text der Impressum-Seite",
+                      "footer_link_tip":  "Text des Impressum-Links im Footer",
+                      "footer_text_tip":  "Kleiner Text im Footer",
+                      "seo_tip":  "Kurzbeschreibung für Suchmaschinen",
+                      "seo_hint":  "Erscheint in Suchergebnissen. Ideal sind 120–160 Zeichen."
+                  },
+    "admin_contract":  {
+                           "title":  "Mitgliedsvertrag (Digital)",
+                           "version":  "Version",
+                           "last_update":  "Letztes Update",
+                           "field_title":  "Titel",
+                           "body":  "Vertragstext",
+                           "body_placeholder":  "Schreibe hier die Mitgliedsbeitrag-Erklärung / Vertrag...",
+                           "placeholders":  "Platzhalter",
+                           "custom_fields":  "und eigene Felder z.B.",
+                           "extra_fields":  "Zusatzfelder",
+                           "extra_fields_hint":  "Diese Felder sehen Mitglieder im Formular.",
+                           "add_field":  "Feld hinzufügen",
+                           "no_fields":  "Keine Zusatzfelder definiert.",
+                           "label":  "Label",
+                           "key":  "Key",
+                           "type":  "Typ",
+                           "type_text":  "Text",
+                           "type_textarea":  "Textfeld",
+                           "type_checkbox":  "Checkbox",
+                           "placeholder":  "Placeholder",
+                           "required":  "Pflichtfeld",
+                           "placeholder_label":  "Platzhalter",
+                           "remove":  "Entfernen",
+                           "fee":  "Mitgliedsbeitrag (Abo, EUR)",
+                           "subscription_only":  "Mitgliedschaften laufen ausschließlich als Abo.",
+                           "member_price":  "Mitgliederpreis pro Platz",
+                           "member_price_none":  "Kein Vorteil",
+                           "member_price_discount":  "Rabatt in %",
+                           "member_price_fixed":  "Fixpreis (Mitgliederpreis)",
+                           "value":  "Wert",
+                           "save":  "Vertrag speichern",
+                           "saving":  "Speichere...",
+                           "preview":  "PDF Vorschau",
+                           "preview_hint":  "So sieht der Vertrag für Mitglieder aus.",
+                           "preview_loading":  "PDF Vorschau wird geladen...",
+                           "preview_preparing":  "PDF Vorschau wird vorbereitet...",
+                           "preview_open":  "Bitte öffne die PDF in einem neuen Tab.",
+                           "open_pdf":  "PDF öffnen",
+                           "live_preview":  "Live-Preview während du tippst.",
+                           "preview_unavailable":  "PDF Vorschau nicht Verfügbar.",
+                           "new_field":  "Neues Feld"
+                       },
+    "admin_dashboard":  {
+                            "revenue":  "Gesamtumsatz",
+                            "revenue_hint":  "+20.1% zum Vormonat (Demo)",
+                            "bookings":  "Buchungen",
+                            "bookings_hint":  "Aktuell im System",
+                            "top_court":  "Top Platz",
+                            "top_court_hint":  "Am häufigsten gebucht",
+                            "revenue_overview":  "Umsatz Übersicht",
+                            "distribution":  "Platzverteilung",
+                            "no_data":  "Keine Daten vorhanden",
+                            "unknown":  "Unbekannt"
+                        },
+    "admin_edit":  {
+                       "title":  "Verein bearbeiten",
+                       "name":  "Name des Vereins",
+                       "brand":  "Branding Farbe",
+                       "logo":  "Logo hochladen",
+                       "current_logo":  "Aktuelles Logo",
+                       "modules":  "Aktivierte Module",
+                       "module_ai":  "KI Dokumenten-Check",
+                       "module_contract":  "Digitaler Vertrag \u0026 Unterschrift",
+                       "module_gamification":  "Gamification (Leaderboard)",
+                       "module_vouchers":  "Gutscheine",
+                       "feature_matrix":  "Feature-Matrix",
+                       "enable_all":  "Alle aktivieren",
+                       "cancel":  "Abbrechen",
+                       "save":  "Speichern",
+                       "error":  "Fehler",
+                       "features_nav":  "Navigation",
+                       "features_member":  "Mitgliederbereich",
+                       "features_settings":  "Einstellungen",
+                       "nav":  {
+                                   "overview":  "Übersicht",
+                                   "bookings":  "Buchungen",
+                                   "courts":  "Plätze",
+                                   "blocks":  "Sperrzeiten",
+                                   "plans":  "Abos",
+                                   "members":  "Mitglieder",
+                                   "vouchers":  "Gutscheine",
+                                   "settings":  "Einstellungen",
+                                   "export":  "Export"
+                               },
+                       "member":  {
+                                      "contract":  "Vertrags-Editor",
+                                      "import":  "Import",
+                                      "invite":  "Einladungen",
+                                      "documents":  "Dokumente",
+                                      "payments":  "Zahlungen"
+                                  },
+                       "settings":  {
+                                        "club":  "Vereinsdaten",
+                                        "ai":  "Dokumenten-KI",
+                                        "cms":  "Seiten-Inhalte"
+                                    }
+                   },
+    "admin_invite":  {
+                         "sent":  "Einladung wurde gesendet!",
+                         "error":  "Fehler",
+                         "cta":  "Mitglied einladen",
+                         "title":  "Mitglied einladen",
+                         "desc":  "Das neue Mitglied erhält eine E-Mail mit Zugangsdaten und wird sofort als Aktiv freigeschaltet.",
+                         "email":  "E-Mail Adresse",
+                         "email_ph":  "max@mustermann.de",
+                         "first":  "Vorname",
+                         "first_ph":  "Max",
+                         "last":  "Nachname",
+                         "last_ph":  "Mustermann",
+                         "send":  "Einladung senden"
+                     },
+    "admin_features":  {
+                           "nav":  "Navigation",
+                           "nav_overview":  "Übersicht",
+                           "nav_bookings":  "Buchungen",
+                           "nav_courts":  "Plätze",
+                           "nav_blocks":  "Sperrzeiten",
+                           "nav_plans":  "Abos",
+                           "nav_members":  "Mitglieder",
+                           "nav_trainers":  "Trainer",
+                           "nav_courses":  "Kurse",
+                           "nav_finance":  "Finanzen",
+                           "nav_vouchers":  "Gutscheine",
+                           "nav_settings":  "Einstellungen",
+                           "nav_export":  "Export",
+                           "members":  "Mitglieder",
+                           "member_contract":  "Vertrags-Editor",
+                           "member_import":  "Import",
+                           "member_invite":  "Einladungen",
+                           "member_documents":  "Dokumente",
+                           "member_payments":  "Zahlungen",
+                           "settings":  "Einstellungen",
+                           "settings_club":  "Vereinsdaten",
+                           "settings_ai":  "Dokumenten-KI",
+                           "settings_cms":  "Seiten-Inhalte",
+                           "hint":  "Schalte einzelne Bereiche frei.",
+                           "save":  "Speichern",
+                           "enable_all":  "Alle aktivieren"
+                       },
+    "admin_member_bookings":  {
+                                  "title":  "Buchungsübersicht",
+                                  "all":  "Alle",
+                                  "upcoming":  "Zukünftig",
+                                  "past":  "Vergangen",
+                                  "export":  "CSV Export",
+                                  "exporting":  "Export...",
+                                  "more":  "Mehr anzeigen",
+                                  "empty":  "Keine Buchungen vorhanden.",
+                                  "court":  "Platz",
+                                  "status":  "Status",
+                                  "payment":  "Zahlung",
+                                  "filename":  "mitglied-buchungen.csv"
+                              }
+,
+    "admin_import": {
+      "title": "Switch-Kit: Mitglieder importieren",
+      "subtitle": "CSV/Excel hochladen, KI ordnet Spalten zu, optional sofort einladen.",
+      "first": "Vorname",
+      "last": "Nachname",
+      "email": "E-Mail (Pflicht)",
+      "phone": "Telefon",
+      "balance": "Guthaben",
+      "start": "Eintrittsdatum (Start)",
+      "end": "Gültig bis (Ende)",
+      "upload": "CSV Datei hochladen",
+      "upload_hint": "Wansport/eTennis Export auswählen – wir kümmern uns um den Rest.",
+      "map": "Spalten zuordnen",
+      "ai_hint": "KI-Vorschlag bitte kurz prüfen.",
+      "rows": "Zeilen",
+      "skip": "Nicht importieren",
+      "fallback": "Falls kein Enddatum vorhanden ist",
+      "fallback_start": "1 Jahr ab Eintrittsdatum",
+      "fallback_year_end": "Bis 31.12. des laufenden Jahres",
+      "fallback_today": "1 Jahr ab heute",
+      "fallback_infinite": "Unbegrenzt",
+      "fallback_hint": "Avaimo berechnet automatisch das Ablaufdatum.",
+      "import_only": "Nur importieren (still)",
+      "import_invite": "Importieren & Einladen",
+      "error_email": "Bitte ordne eine E-Mail-Spalte zu (Pflichtfeld).",
+      "error_empty": "Keine Datensätze gefunden.",
+      "loading": "Import läuft… bitte warten.",
+      "done": "Import abgeschlossen",
+      "imported": "importiert",
+      "failed": "Fehler",
+      "restart": "Neuen Import starten"
+    },
+    "admin_members": {
+      "title": "Mitgliederliste",
+      "unknown": "Unbekannt",
+      "valid_until": "Gültig bis",
+      "active": "AKTIV",
+      "inactive": "INAKTIV",
+      "empty": "Noch keine Mitglieder."
+    },
+    "admin_quick": {
+      "add": "+10€",
+      "remove": "-10€",
+      "done": "Aktion ausgeführt.",
+      "error": "Aktion fehlgeschlagen."
+    },
+    "member_onboarding": {
+      "kicker": "Avaimo Vertrag",
+      "subhead": "Prüfe deine Angaben, unterschreibe und sieh live, wie dein Vertrag aussieht.",
+      "first": "Vorname",
+      "last": "Nachname",
+      "address": "Adresse",
+      "city": "Ort",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "more": "Weitere Angaben",
+      "checkbox": "Ich stimme zu",
+      "signature": "Deine Unterschrift",
+      "clear": "Löschen",
+      "signature_hint": "Bitte unterschreibe im Feld oben.",
+      "accept": "Ich habe den Vertrag gelesen und akzeptiere ihn.",
+      "plan_title": "Abo wählen",
+      "per_year": "pro Jahr",
+      "cta": "Jetzt zahlungspflichtig beitreten",
+      "error_accept": "Bitte akzeptiere den Vertrag, um fortzufahren.",
+      "error_signature": "Bitte unterschreibe in das Feld.",
+      "error_missing": "Bitte fülle das Feld {field} aus.",
+      "error_save": "Signatur konnte nicht gespeichert werden.",
+      "error_plan": "Bitte wähle einen Tarif.",
+      "error_payment": "Zahlungslink konnte nicht erstellt werden.",
+      "yes": "Ja",
+      "no": "Nein",
+      "city_fallback": "Ort"
+    }
+}

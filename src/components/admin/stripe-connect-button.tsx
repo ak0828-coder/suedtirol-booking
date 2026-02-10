@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { createStripeConnectAccount, checkStripeStatus } from "@/app/actions"
 import { Loader2, CheckCircle, CreditCard, AlertCircle } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export function StripeConnectButton({
   clubSlug,
@@ -17,6 +18,7 @@ export function StripeConnectButton({
   const [connected, setConnected] = useState(initialConnected)
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { t } = useI18n()
 
   useEffect(() => {
     if (searchParams.get("stripe_connected") === "true") {
@@ -41,7 +43,7 @@ export function StripeConnectButton({
       return
     }
     setLoading(false)
-    alert(`Fehler: ${res?.error || "Unbekannter Fehler"}`)
+    alert(`${t("admin_stripe.error", "Fehler")}: ${res?.error || t("admin_stripe.unknown", "Unbekannter Fehler")}`)
   }
 
   if (connected) {
@@ -51,10 +53,9 @@ export function StripeConnectButton({
           <CheckCircle className="w-6 h-6" />
         </div>
         <div>
-          <h4 className="font-semibold text-emerald-800 text-lg">Auszahlungen aktiv</h4>
+          <h4 className="font-semibold text-emerald-800 text-lg">{t("admin_stripe.active", "Auszahlungen aktiv")}</h4>
           <p className="text-emerald-700">
-            Der Verein ist erfolgreich mit Stripe verbunden. Zahlungen werden automatisch
-            weitergeleitet.
+            {t("admin_stripe.active_text", "Der Verein ist erfolgreich mit Stripe verbunden. Zahlungen werden automatisch weitergeleitet.")}
           </p>
         </div>
       </div>
@@ -68,16 +69,16 @@ export function StripeConnectButton({
           <CreditCard className="w-8 h-8" />
         </div>
         <div>
-          <h3 className="font-semibold text-xl text-slate-900">Online-Zahlungen aktivieren</h3>
+          <h3 className="font-semibold text-xl text-slate-900">{t("admin_stripe.title", "Online-Zahlungen aktivieren")}</h3>
           <p className="text-slate-500">
-            Verbinde das Bankkonto des Vereins, um Zahlungen zu empfangen.
+            {t("admin_stripe.subtitle", "Verbinde das Bankkonto des Vereins, um Zahlungen zu empfangen.")}
           </p>
         </div>
       </div>
 
       <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-md mb-6 flex gap-2">
         <AlertCircle className="w-5 h-5 shrink-0" />
-        <p>Du wirst zu Stripe weitergeleitet, um die Identit√§t des Vereins zu best√§tigen.</p>
+        <p>{t("admin_stripe.note", "Du wirst zu Stripe weitergeleitet, um die Identit‰t des Vereins zu best‰tigen.")}</p>
       </div>
 
       <Button
@@ -86,7 +87,7 @@ export function StripeConnectButton({
         className="w-full py-6 text-lg bg-[#635BFF] hover:bg-[#534be0] text-white transition-all shadow-md hover:shadow-lg"
       >
         {loading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : null}
-        Jetzt mit Stripe verbinden
+        {t("admin_stripe.cta", "Jetzt mit Stripe verbinden")}
       </Button>
     </div>
   )

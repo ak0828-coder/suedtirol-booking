@@ -1,72 +1,35 @@
 "use client"
 
 import { useState } from "react"
+import { addMemberCredit, removeMemberCredit } from "@/app/actions"
 import { Button } from "@/components/ui/button"
-import { markMemberPaymentPaid, resendMembershipContract, setMemberStatusQuick } from "@/app/actions"
+import { useI18n } from "@/components/i18n/locale-provider"
 
-export function AdminMemberQuickActions({
-  clubSlug,
-  memberId,
-  memberEmail,
-  contractAvailable,
-}: {
-  clubSlug: string
-  memberId: string
-  memberEmail: string
-  contractAvailable: boolean
-}) {
-  const [loading, setLoading] = useState<string | null>(null)
+export function MemberQuickActions({ clubSlug, memberId }: { clubSlug: string; memberId: string }) {
   const [message, setMessage] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const { t } = useI18n()
 
-  const run = async (key: string, fn: () => Promise<any>) => {
-    setLoading(key)
+  const handleAction = async (action: "add" | "remove") => {
+    setLoading(true)
     setMessage(null)
-    const res = await fn()
-    if (res?.success) setMessage("Aktion ausgefÃ¼hrt.")
-    else setMessage(res?.error || "Aktion fehlgeschlagen.")
-    setLoading(null)
+    const res = action === "add"
+      ? await addMemberCredit(clubSlug, memberId)
+      : await removeMemberCredit(clubSlug, memberId)
+    setLoading(false)
+    if (res?.success) setMessage(t("admin_quick.done", "Aktion ausgeführt."))
+    else setMessage(res?.error || t("admin_quick.error", "Aktion fehlgeschlagen."))
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-3">
-      <h3 className="text-sm font-semibold text-slate-800">Quick Actions</h3>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          className="rounded-full"
-          disabled={loading === "activate"}
-          onClick={() => run("activate", () => setMemberStatusQuick(clubSlug, memberId, "active"))}
-        >
-          Aktivieren
-        </Button>
-        <Button
-          variant="outline"
-          className="rounded-full"
-          disabled={loading === "deactivate"}
-          onClick={() => run("deactivate", () => setMemberStatusQuick(clubSlug, memberId, "inactive"))}
-        >
-          Deaktivieren
-        </Button>
-        <Button
-          variant="outline"
-          className="rounded-full"
-          disabled={loading === "paid"}
-          onClick={() => run("paid", () => markMemberPaymentPaid(clubSlug, memberId))}
-        >
-          Zahlung als bezahlt
-        </Button>
-        <Button
-          variant="outline"
-          className="rounded-full"
-          disabled={loading === "contract" || !contractAvailable}
-          onClick={() => run("contract", () => resendMembershipContract(clubSlug, memberId))}
-        >
-          Vertrag erneut senden
-        </Button>
-        <Button variant="ghost" className="rounded-full" disabled>
-          {memberEmail}
-        </Button>
-      </div>
-      {message && <div className="text-xs text-slate-500">{message}</div>}
+    <div className="flex flex-wrap items-center gap-2">
+      <Button variant="outline" size="sm" onClick={() => handleAction("add")} disabled={loading}>
+        {t("admin_quick.add", "+10€")}
+      </Button>
+      <Button variant="outline" size="sm" onClick={() => handleAction("remove")} disabled={loading}>
+        {t("admin_quick.remove", "-10€")}
+      </Button>
+      {message && <span className="text-xs text-slate-500">{message}</span>}
     </div>
   )
 }

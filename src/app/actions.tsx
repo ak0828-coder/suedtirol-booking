@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
+import { defaultLocale, locales } from "@/lib/i18n"
 import { Resend } from 'resend'
 import React from "react"
 import { BookingEmailTemplate } from '@/components/emails/booking-template'
@@ -18,11 +19,19 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase() || ""
 
-if (!SUPER_ADMIN_EMAIL) console.warn("âš ï¸ ACHTUNG: SUPER_ADMIN_EMAIL ist nicht in .env gesetzt!")
+if (!SUPER_ADMIN_EMAIL) console.warn("⚠️ ACHTUNG: SUPER_ADMIN_EMAIL ist nicht in .env gesetzt!")
 
 const MEMBER_DOC_BUCKET = "member-documents"
 
 type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'unpaid' | 'internal' | 'authorized'
+
+function revalidatePathAllLocales(path: string) {
+  revalidatePath(path)
+  for (const locale of locales) {
+    const normalized = path.startsWith("/") ? path : `/${path}`
+    revalidatePath(`/${locale}${normalized}`)
+  }
+}
 
 function logAction(action: string, details: Record<string, any>) {
   try {
@@ -60,7 +69,7 @@ function parseDateIsoLocal(dateIso: string) {
 }
 
 // --- HELPER: ADMIN CLIENT ---
-// Wird benÃ¶tigt, um Gutscheine zu validieren (fÃ¼r GÃ¤ste ohne Account) 
+// Wird benötigt, um Gutscheine zu validieren (für Gäste ohne Account) 
 // oder Updates zu machen, die RLS verbietet.
 function getAdminClient() {
   return createSupabaseClient(
@@ -74,10 +83,10 @@ function getAdminClient() {
 // --- GUTSCHEIN / VOUCHER SYSTEM ---
 // ==========================================
 
-// 1. UPDATE: Validierung mit Admin Client (damit auch GÃ¤ste checken kÃ¶nnen)
+// 1. UPDATE: Validierung mit Admin Client (damit auch Gäste checken können)
 export async function validateCreditCode(clubSlug: string, code: string) {
-  // Wir nutzen hier den Admin Client, damit auch normale Mitglieder/GÃ¤ste
-  // prÃ¼fen kÃ¶nnen, ob ein Code existiert (bypassed RLS).
+  // Wir nutzen hier den Admin Client, damit auch normale Mitglieder/Gäste
+  // prüfen können, ob ein Code existiert (bypassed RLS).
   const supabaseAdmin = getAdminClient()
 
   // Club ID holen
@@ -96,12 +105,12 @@ export async function validateCreditCode(clubSlug: string, code: string) {
     return { success: false, error: "Code existiert nicht." }
   }
 
-  // Check 1: Wurde er bereits final als "vollstÃ¤ndig eingelÃ¶st" markiert?
+  // Check 1: Wurde er bereits final als "vollständig eingelöst" markiert?
   if (credit.is_redeemed) {
-    return { success: false, error: "Code wurde bereits vollstÃ¤ndig eingelÃ¶st." }
+    return { success: false, error: "Code wurde bereits vollständig eingelöst." }
   }
 
-  // Check 2: Ist das Ablaufdatum Ã¼berschritten?
+  // Check 2: Ist das Ablaufdatum überschritten?
   if (credit.expires_at && new Date(credit.expires_at) < new Date()) {
     return { success: false, error: "Code ist abgelaufen." }
   }
@@ -119,7 +128,7 @@ export async function validateCreditCode(clubSlug: string, code: string) {
 
 // 2. UPDATE: Gutschein erstellen (Admin Logic)
 export async function createVoucher(formData: FormData) {
-    const supabase = await createClient() // Normaler Client fÃ¼r Auth Check
+    const supabase = await createClient() // Normaler Client für Auth Check
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) return { success: false, error: "Nicht eingeloggt" }
@@ -134,7 +143,7 @@ export async function createVoucher(formData: FormData) {
 
     const supabaseAdmin = getAdminClient()
 
-    // 1. Club laden & Berechtigung prÃ¼fen (Ist der User der Owner?)
+    // 1. Club laden & Berechtigung prüfen (Ist der User der Owner?)
     const { data: club } = await supabaseAdmin
         .from('clubs')
         .select('id, owner_id')
@@ -168,11 +177,11 @@ export async function createVoucher(formData: FormData) {
         return { success: false, error: error.message }
     }
 
-    revalidatePath(`/club/${clubSlug}/admin`)
+    revalidatePathAllLocales(`/club/${clubSlug}/admin`)
     return { success: true }
 }
 
-// 3. UPDATE: Gutschein lÃ¶schen (Admin Logic)
+// 3. UPDATE: Gutschein löschen (Admin Logic)
 export async function deleteVoucher(id: string, clubSlug: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -190,7 +199,7 @@ export async function deleteVoucher(id: string, clubSlug: string) {
 
     await supabaseAdmin.from('credit_codes').delete().eq('id', id)
     
-    revalidatePath(`/club/${clubSlug}/admin`)
+    revalidatePathAllLocales(`/club/${clubSlug}/admin`)
     return { success: true }
 }
 
@@ -224,7 +233,7 @@ export async function getClubVouchers(clubSlug: string) {
     return data || []
 }
 
-// --- PASSWORT Ã„NDERN (FÃ¼r den 1. Login) ---
+// --- PASSWORT ÄNDERN (Für den 1. Login) ---
 export async function updateUserPassword(newPassword: string) {
   const supabase = await createClient()
 
@@ -238,7 +247,7 @@ export async function updateUserPassword(newPassword: string) {
   return { success: true }
 }
 
-// --- HELPER: FINDE DEN SLUG FÃœR DEN EINGELOGGTEN USER ---
+// --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
 export async function getMyClubSlug() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -258,7 +267,7 @@ export async function getMyClubSlug() {
   return club?.slug || null
 }
 
-// --- HELPER FÃœR DAS LOGIN SYSTEM (MULTI-ROLE) ---
+// --- HELPER FÜR DAS LOGIN SYSTEM (MULTI-ROLE) ---
 export async function getUserRole() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -330,7 +339,7 @@ export async function updateProfile(formData: FormData) {
     data: { full_name: `${firstName} ${lastName}` }
   })
 
-  revalidatePath('/dashboard')
+  revalidatePathAllLocales('/dashboard')
   return { success: true, message: "Profil gespeichert!" }
 }
 
@@ -363,7 +372,7 @@ export async function updateMemberDetails(memberId: string, clubSlug: string, no
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
 }
 
@@ -510,8 +519,8 @@ export async function updateMemberStatusManual(memberId: string, clubSlug: strin
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath(`/club/${clubSlug}/admin/members`)
-  revalidatePath(`/club/${clubSlug}/admin/members/${memberId}`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members/${memberId}`)
   return { success: true }
 }
 
@@ -541,8 +550,8 @@ export async function setMemberStatusQuick(clubSlug: string, memberId: string, s
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath(`/club/${clubSlug}/admin/members/${memberId}`)
-  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members/${memberId}`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
 }
 
@@ -572,8 +581,8 @@ export async function markMemberPaymentPaid(clubSlug: string, memberId: string) 
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath(`/club/${clubSlug}/admin/members/${memberId}`)
-  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members/${memberId}`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
 }
 
@@ -585,7 +594,7 @@ export async function resendMembershipContract(clubSlug: string, memberId: strin
   const supabaseAdmin = getAdminClient()
   const { data: club } = await supabaseAdmin
     .from("clubs")
-    .select("id, owner_id, name")
+    .select("id, owner_id, name, default_language")
     .eq("slug", clubSlug)
     .single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
@@ -627,12 +636,12 @@ export async function resendMembershipContract(clubSlug: string, memberId: strin
   await resend.emails.send({
     from: "Avaimo <onboarding@resend.dev>",
     to: [email],
-    subject: `Dein Mitgliedsvertrag â€“ ${club.name}`,
+    subject: `Dein Mitgliedsvertrag – ${club.name}`,
     html: `
       <div style="font-family: Arial, sans-serif; color: #0f172a;">
         <h2>Dein Mitgliedsvertrag</h2>
         <p>Hier kannst du deinen Vertrag erneut herunterladen.</p>
-        ${signed?.signedUrl ? `<p><a href="${signed.signedUrl}">PDF Ã¶ffnen</a></p>` : ""}
+        ${signed?.signedUrl ? `<p><a href="${signed.signedUrl}">PDF öffnen</a></p>` : ""}
       </div>
     `,
   })
@@ -740,7 +749,7 @@ export async function createClub(formData: FormData) {
     return { success: false, error: "Datenbankfehler (Slug schon vergeben?): " + dbError.message }
   }
 
-  revalidatePath('/super-admin')
+  revalidatePathAllLocales('/super-admin')
   return { success: true, message: `Verein '${name}' erstellt!` }
 }
 
@@ -778,6 +787,21 @@ export async function updateClub(formData: FormData) {
   const applicationFeeCents = applicationFeeCentsRaw
     ? Math.max(0, parseInt(applicationFeeCentsRaw as string))
     : undefined
+
+  const supportedLanguagesRaw = formData.getAll("supported_languages")
+  const supportedLanguages = supportedLanguagesRaw
+    .map((v) => String(v))
+    .filter((v) => locales.includes(v as any))
+  const defaultLanguageRaw = String(formData.get("default_language") || "")
+  let defaultLanguage = locales.includes(defaultLanguageRaw as any)
+    ? defaultLanguageRaw
+    : defaultLocale
+  if (supportedLanguages.length === 0) {
+    supportedLanguages.push(defaultLanguage)
+  }
+  if (!supportedLanguages.includes(defaultLanguage)) {
+    defaultLanguage = supportedLanguages[0] || defaultLocale
+  }
 
   const supabaseAdmin = getAdminClient()
 
@@ -830,7 +854,9 @@ export async function updateClub(formData: FormData) {
     has_contract_signing: hasContractSigning,
     has_gamification: hasGamification,
     has_vouchers: hasVouchers,
-    feature_flags: featureFlags
+    feature_flags: featureFlags,
+    supported_languages: supportedLanguages,
+    default_language: defaultLanguage
   }
 
   if (isSuperAdmin && typeof applicationFeeCents === "number") {
@@ -848,8 +874,8 @@ export async function updateClub(formData: FormData) {
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath('/super-admin')
-  revalidatePath(`/club/${formData.get("slug")}`)
+  revalidatePathAllLocales('/super-admin')
+  revalidatePathAllLocales(`/club/${formData.get("slug")}`)
 
   return { success: true, message: "Verein aktualisiert!" }
 }
@@ -874,8 +900,8 @@ export async function deleteClub(clubId: string) {
     await supabaseAdmin.auth.admin.deleteUser(club.owner_id)
   }
 
-  revalidatePath('/super-admin')
-  return { success: true, message: "Verein gelÃ¶scht." }
+  revalidatePathAllLocales('/super-admin')
+  return { success: true, message: "Verein gelöscht." }
 }
 
 // --- MEMBERSHIP PLANS & ABO CHECKOUT ---
@@ -894,7 +920,7 @@ export async function createMembershipPlan(
 
   const supabaseAdmin = getAdminClient()
 
-  const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
+  const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name, default_language').eq('slug', clubSlug).single()
 
   if (!club) return { error: "Club nicht gefunden" }
 
@@ -927,8 +953,8 @@ export async function createMembershipPlan(
 
     if (error) return { error: "DB Fehler: " + error.message }
 
-    revalidatePath(`/club/${clubSlug}/admin`)
-    revalidatePath(`/club/${clubSlug}`)
+    revalidatePathAllLocales(`/club/${clubSlug}/admin`)
+    revalidatePathAllLocales(`/club/${clubSlug}`)
     return { success: true }
 
   } catch (err: any) {
@@ -984,10 +1010,10 @@ export async function updateClubFeatureMatrix(formData: FormData): Promise<void>
 
   if (error) return
 
-  revalidatePath("/super-admin")
+  revalidatePathAllLocales("/super-admin")
   if (slug) {
-    revalidatePath(`/super-admin/club/${slug}`)
-    revalidatePath(`/club/${slug}/admin`)
+    revalidatePathAllLocales(`/super-admin/club/${slug}`)
+    revalidatePathAllLocales(`/club/${slug}/admin`)
   }
 
   return
@@ -1031,11 +1057,11 @@ export async function updateClubFeaturePath(formData: FormData): Promise<void> {
     .update({ feature_flags: next })
     .eq("id", clubId)
 
-  revalidatePath("/super-admin")
+  revalidatePathAllLocales("/super-admin")
   if (slug) {
-    revalidatePath(`/super-admin/club/${slug}`)
-    revalidatePath(`/super-admin/club/${slug}/admin`)
-    revalidatePath(`/club/${slug}/admin`)
+    revalidatePathAllLocales(`/super-admin/club/${slug}`)
+    revalidatePathAllLocales(`/super-admin/club/${slug}/admin`)
+    revalidatePathAllLocales(`/club/${slug}/admin`)
   }
 }
 
@@ -1084,11 +1110,11 @@ export async function updateClubFeatureGate(formData: FormData): Promise<void> {
 
   await supabaseAdmin.from("clubs").update({ feature_flags: next }).eq("id", clubId)
 
-  revalidatePath("/super-admin")
+  revalidatePathAllLocales("/super-admin")
   if (slug) {
-    revalidatePath(`/super-admin/club/${slug}`)
-    revalidatePath(`/super-admin/club/${slug}/admin`)
-    revalidatePath(`/club/${slug}/admin`)
+    revalidatePathAllLocales(`/super-admin/club/${slug}`)
+    revalidatePathAllLocales(`/super-admin/club/${slug}/admin`)
+    revalidatePathAllLocales(`/club/${slug}/admin`)
   }
 }
 
@@ -1138,8 +1164,8 @@ export async function updateMembershipPlanText(
 
   if (error) return { error: error.message }
 
-  revalidatePath(`/club/${club.slug}`)
-  revalidatePath(`/club/${club.slug}/admin/plans`)
+  revalidatePathAllLocales(`/club/${club.slug}`)
+  revalidatePathAllLocales(`/club/${club.slug}/admin/plans`)
   return { success: true }
 }
 
@@ -1233,7 +1259,7 @@ export async function createTrainer(formData: FormData): Promise<{ success?: boo
   })
 
   if (insertError) return { error: insertError.message }
-  revalidatePath(`/club/${clubSlug}/admin/trainers`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/trainers`)
   return { success: true }
 }
 
@@ -1300,7 +1326,7 @@ export async function updateTrainer(formData: FormData) {
     .eq("club_id", club!.id)
 
   if (updateError) return { error: updateError.message }
-  revalidatePath(`/club/${clubSlug}/admin/trainers`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/trainers`)
   return { success: true }
 }
 
@@ -1317,7 +1343,7 @@ export async function deleteTrainer(clubSlug: string, trainerId: string) {
     .eq("id", trainerId)
     .eq("club_id", club!.id)
   if (deleteError) return { error: deleteError.message }
-  revalidatePath(`/club/${clubSlug}/admin/trainers`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/trainers`)
   return { success: true }
 }
 
@@ -1416,7 +1442,7 @@ export async function createCourseWithSessions(formData: FormData): Promise<{ su
     })
   }
 
-  revalidatePath(`/club/${clubSlug}/admin/courses`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/courses`)
   return { success: true }
 }
 
@@ -1433,7 +1459,7 @@ export async function deleteCourse(clubSlug: string, courseId: string) {
     .eq("id", courseId)
     .eq("club_id", club!.id)
   if (del) return { error: del.message }
-  revalidatePath(`/club/${clubSlug}/admin/courses`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/courses`)
   return { success: true }
 }
 
@@ -1524,7 +1550,7 @@ export async function updateCourseWithSessions(formData: FormData): Promise<{ su
     })
   }
 
-  revalidatePath(`/club/${clubSlug}/admin/courses`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/courses`)
   return { success: true }
 }
 export async function getTrainerPayoutSummary(clubSlug: string) {
@@ -1658,7 +1684,7 @@ export async function markTrainerPayoutsPaid(clubSlug: string, trainerId: string
     .update({ status: "paid", payout_date: new Date().toISOString() })
     .eq("trainer_id", trainerId)
   if (update) return { error: update.message }
-  revalidatePath(`/club/${clubSlug}/admin/finance`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/finance`)
   return { success: true }
 }
 
@@ -1753,7 +1779,7 @@ export async function updateCourseParticipantStatus(
     .eq("course_id", courseId)
 
   if (error) return { error: error.message }
-  revalidatePath(`/club/${club.slug}/admin/courses`)
+  revalidatePathAllLocales(`/club/${club.slug}/admin/courses`)
   return { success: true }
 }
 
@@ -1822,10 +1848,12 @@ export async function exportCourseParticipantsCsv(courseId: string) {
 
   const { data: club } = await supabase
       .from("clubs")
-      .select("id, name, stripe_account_id, application_fee_cents")
+      .select("id, name, stripe_account_id, application_fee_cents, default_language")
       .eq("slug", clubSlug)
       .single()
   if (!club) return { error: "Club nicht gefunden" }
+
+  const lang = (club as any)?.default_language || defaultLocale
 
   const { data: trainer } = await supabase
     .from("trainers")
@@ -1855,7 +1883,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
         return slotStart >= rangeStart && slotEnd <= rangeEnd
       })
       if (!ok) {
-        return { error: "Trainer ist zu dieser Zeit nicht Verfügbar." }
+        return { error: "Trainer ist zu dieser Zeit nicht Verf�gbar." }
       }
     }
 
@@ -1867,7 +1895,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
     .lt("start_time", endTime.toISOString())
     .gt("end_time", startTime.toISOString())
   if (trainerConflicts && trainerConflicts.length > 0) {
-    return { error: "Trainer ist zu dieser Zeit nicht Verfügbar." }
+    return { error: "Trainer ist zu dieser Zeit nicht Verf�gbar." }
   }
 
   const { data: courts } = await supabase
@@ -1875,7 +1903,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
     .select("id, name, price_per_hour")
     .eq("club_id", club.id)
     .order("name")
-  if (!courts || courts.length === 0) return { error: "Keine Plätze vorhanden." }
+  if (!courts || courts.length === 0) return { error: "Keine Pl�tze vorhanden." }
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -1886,7 +1914,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
 
   const bookedCourtIds = new Set((bookings || []).map((b: any) => b.court_id))
   const freeCourt = courts.find((c: any) => !bookedCourtIds.has(c.id))
-  if (!freeCourt) return { error: "Kein freier Platz Verfügbar." }
+  if (!freeCourt) return { error: "Kein freier Platz Verf�gbar." }
 
     const baseCourtFee = trainer.include_court_fee ? Number(freeCourt.price_per_hour || 0) : 0
     let courtFee = baseCourtFee
@@ -1962,12 +1990,12 @@ export async function exportCourseParticipantsCsv(courseId: string) {
               <h2>Neue Traineranfrage</h2>
               <p>Ein Mitglied moechte eine Trainerstunde buchen.</p>
               <p><strong>Termin:</strong> ${startText} (${courtName})</p>
-              <p>Bitte Bestätigen oder ablehnen:</p>
+              <p>Bitte Best�tigen oder ablehnen:</p>
               <p>
                 <a href="${acceptUrl}" style="display:inline-block;margin-right:8px;padding:10px 16px;background:#0f172a;color:#fff;border-radius:20px;text-decoration:none;">Annehmen</a>
                 <a href="${rejectUrl}" style="display:inline-block;padding:10px 16px;background:#e2e8f0;color:#0f172a;border-radius:20px;text-decoration:none;">Ablehnen</a>
               </p>
-              <p>Der Link ist 48 Stunden gültig.</p>
+              <p>Der Link ist 48 Stunden g�ltig.</p>
             `,
           })
         } catch (emailError) {
@@ -1983,8 +2011,8 @@ export async function exportCourseParticipantsCsv(courseId: string) {
             subject: "Traineranfrage erhalten",
             html: `
               <h2>Deine Traineranfrage ist eingegangen</h2>
-              <p>Die Stunde wird erst nach Bestätigung durch den Trainer final.</p>
-              <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu Bestätigen.</p>
+              <p>Die Stunde wird erst nach Best�tigung durch den Trainer final.</p>
+              <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu Best�tigen.</p>
               <p>Bei Ablehnung wird nichts belastet.</p>
             `,
           })
@@ -1996,8 +2024,8 @@ export async function exportCourseParticipantsCsv(courseId: string) {
       return { success: true }
     }
 
-  if (finalPrice > 0 && !club?.stripe_account_id) {
-    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  if (finalPrice > 0 && !(club as any)?.stripe_account_id) {
+    return { error: "Verein ist noch nicht f�r Stripe eingerichtet." }
   }
 
   const paymentIntentData = buildClubPaymentIntentData(club, { captureManual: true })
@@ -2027,8 +2055,8 @@ export async function exportCourseParticipantsCsv(courseId: string) {
       guestName: guestName || "",
       userId: user?.id || "",
     },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
     customer_email: user?.email || guestEmail,
     expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
   })
@@ -2047,10 +2075,12 @@ export async function createCourseCheckoutSession(
 
   const { data: club } = await supabase
       .from("clubs")
-      .select("id, name, stripe_account_id, application_fee_cents")
+      .select("id, name, stripe_account_id, application_fee_cents, default_language")
       .eq("slug", clubSlug)
       .single()
   if (!club) return { error: "Club nicht gefunden" }
+
+  const lang = (club as any)?.default_language || defaultLocale
 
   const { data: course } = await supabase
     .from("courses")
@@ -2074,7 +2104,7 @@ export async function createCourseCheckoutSession(
       .eq("course_id", courseId)
 
     if (!sessionRows || sessionRows.length !== selected.length) {
-      return { error: "Ausgewaehlte Termine sind Ungültig." }
+      return { error: "Ausgewaehlte Termine sind Ung�ltig." }
     }
 
     const { data: existingParticipants } = await supabase
@@ -2084,7 +2114,7 @@ export async function createCourseCheckoutSession(
       .in("course_session_id", selected)
       .neq("status", "cancelled")
     if (existingParticipants && existingParticipants.length > 0) {
-      return { error: "Du bist bereits für einen der Termine angemeldet." }
+      return { error: "Du bist bereits f�r einen der Termine angemeldet." }
     }
 
     const { data: sessionParticipants } = await supabase
@@ -2150,10 +2180,10 @@ export async function createCourseCheckoutSession(
           await resend.emails.send({
             from: "Avaimo <onboarding@resend.dev>",
             to: [user.email],
-            subject: `Kurs Bestätigt - ${course.title}`,
+            subject: `Kurs Best�tigt - ${course.title}`,
             html: `
-              <h2>Deine Kursanmeldung ist Bestätigt</h2>
-              <p>Du bist für den Kurs <strong>${course.title}</strong> angemeldet.</p>
+              <h2>Deine Kursanmeldung ist Best�tigt</h2>
+              <p>Du bist f�r den Kurs <strong>${course.title}</strong> angemeldet.</p>
               <p><strong>Termine:</strong><br/>${list}</p>
               <p>Verein: ${club.name}</p>
             `,
@@ -2165,8 +2195,8 @@ export async function createCourseCheckoutSession(
       return { success: true }
     }
 
-  if (totalPrice > 0 && !club?.stripe_account_id) {
-    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  if (totalPrice > 0 && !(club as any)?.stripe_account_id) {
+    return { error: "Verein ist noch nicht f�r Stripe eingerichtet." }
   }
 
   let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
@@ -2193,8 +2223,8 @@ export async function createCourseCheckoutSession(
         pricingMode: "per_session",
         sessionIds: selected.join(","),
       },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
       customer_email: user.email || undefined,
       expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
     })
@@ -2236,10 +2266,10 @@ export async function createCourseCheckoutSession(
         await resend.emails.send({
           from: "Avaimo <onboarding@resend.dev>",
           to: [user.email],
-          subject: `Kurs Bestätigt - ${course.title}`,
+          subject: `Kurs Best�tigt - ${course.title}`,
           html: `
-            <h2>Deine Kursanmeldung ist Bestätigt</h2>
-            <p>Du bist für den Kurs <strong>${course.title}</strong> angemeldet.</p>
+            <h2>Deine Kursanmeldung ist Best�tigt</h2>
+            <p>Du bist f�r den Kurs <strong>${course.title}</strong> angemeldet.</p>
             <p>Verein: ${club.name}</p>
           `,
         })
@@ -2250,8 +2280,8 @@ export async function createCourseCheckoutSession(
     return { success: true }
   }
 
-  if (Number(course.price || 0) > 0 && !club?.stripe_account_id) {
-    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  if (Number(course.price || 0) > 0 && !(club as any)?.stripe_account_id) {
+    return { error: "Verein ist noch nicht f�r Stripe eingerichtet." }
   }
 
   let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
@@ -2278,8 +2308,8 @@ export async function createCourseCheckoutSession(
       userId: user.id,
       pricingMode: "full_course",
     },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
     customer_email: user.email || undefined,
     expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
   })
@@ -2324,7 +2354,7 @@ export async function confirmTrainerBooking(formData: FormData) {
     .update({ status: "confirmed", payment_status: "paid_stripe" })
     .eq("id", bookingId)
   
-  revalidatePath(`/club/${club.slug}/admin/trainers`)
+  revalidatePathAllLocales(`/club/${club.slug}/admin/trainers`)
   return
 }
 
@@ -2363,7 +2393,7 @@ export async function rejectTrainerBooking(formData: FormData) {
     .update({ status: "cancelled", payment_status: "unpaid" })
     .eq("id", bookingId)
   
-  revalidatePath(`/club/${club.slug}/admin/trainers`)
+  revalidatePathAllLocales(`/club/${club.slug}/admin/trainers`)
   return
 }
 
@@ -2373,10 +2403,12 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
 
   const { data: club } = await supabase
     .from('clubs')
-    .select('id, stripe_account_id, application_fee_cents')
+    .select('id, stripe_account_id, application_fee_cents, default_language')
     .eq('slug', clubSlug)
     .single()
   if (!club) return { url: "" }
+
+  const lang = (club as any)?.default_language || defaultLocale
 
   const metadata: any = {
     clubId: club.id,
@@ -2388,18 +2420,18 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     metadata.userId = user.id
   }
 
-  if (!club.stripe_account_id) {
-    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  if (!(club as any).stripe_account_id) {
+    return { error: "Verein ist noch nicht f�r Stripe eingerichtet." }
   }
 
   const paymentIntentData = buildClubPaymentIntentData(club)
 
-  if (!club.stripe_account_id) {
-    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+  if (!(club as any).stripe_account_id) {
+    return { error: "Verein ist noch nicht f�r Stripe eingerichtet." }
   }
 
   const subscriptionData: any = {
-    transfer_data: { destination: club.stripe_account_id }
+    transfer_data: { destination: (club as any).stripe_account_id }
   }
 
   if (club.application_fee_cents && club.application_fee_cents > 0) {
@@ -2417,8 +2449,8 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     line_items: [{ price: stripePriceId, quantity: 1 }],
     mode: 'subscription',
     subscription_data: subscriptionData,
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?membership_success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?membership_success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}`,
     customer_email: user?.email,
     metadata: metadata
   })
@@ -2453,8 +2485,8 @@ function buildClubPaymentIntentData(
 ) {
   const data: any = {}
   if (opts?.captureManual) data.capture_method = "manual"
-  if (club?.stripe_account_id) {
-    data.transfer_data = { destination: club.stripe_account_id }
+  if ((club as any)?.stripe_account_id) {
+    data.transfer_data = { destination: (club as any).stripe_account_id }
   }
   if (club?.application_fee_cents && club.application_fee_cents > 0) {
     data.application_fee_amount = club.application_fee_cents
@@ -2479,10 +2511,12 @@ export async function createBooking(
 
     const { data: club } = await supabase
       .from('clubs')
-      .select('id, admin_email, member_booking_pricing_mode, member_booking_pricing_value, stripe_account_id, application_fee_cents')
+      .select('id, admin_email, member_booking_pricing_mode, member_booking_pricing_value, stripe_account_id, application_fee_cents, default_language')
       .eq('slug', clubSlug)
       .single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const lang = (club as any)?.default_language || defaultLocale
 
   let finalPrice = price
   let finalPaymentStatus: PaymentStatus = paymentMethod
@@ -2512,7 +2546,7 @@ export async function createBooking(
       }
     }
 
-    // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlÃ¶sen)
+    // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlösen)
     const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
 
   const { data: existing } = await supabase
@@ -2526,7 +2560,7 @@ export async function createBooking(
     return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
   }
 
-  // 3. UPDATE: Gutschein einlÃ¶sen (Mit ZÃ¤hler Logik & Admin Client fÃ¼r RLS Bypass)
+  // 3. UPDATE: Gutschein einlösen (Mit Zähler Logik & Admin Client für RLS Bypass)
     if (finalPrice > 0 && creditCode) {
       const check = await validateCreditCode(clubSlug, creditCode)
       if (!check.success) return { success: false, error: check.error }
@@ -2543,7 +2577,7 @@ export async function createBooking(
     if(current) {
         const newCount = (current.usage_count || 0) + 1
         const limit = current.usage_limit || 1
-        // Wenn das Limit erreicht ist, wird der Code "vollstÃ¤ndig eingelÃ¶st"
+        // Wenn das Limit erreicht ist, wird der Code "vollständig eingelöst"
         const isFullyRedeemed = newCount >= limit
 
         await supabaseAdmin.from('credit_codes')
@@ -2606,7 +2640,7 @@ export async function createBooking(
       await resend.emails.send({
         from: 'Suedtirol Booking <onboarding@resend.dev>',
         to: [customerEmail],
-        subject: `Deine Buchung am ${format(date, 'dd.MM.yyyy')} um ${time}`,
+          subject: lang === "en" ? `Your booking on ${format(date, "dd.MM.yyyy")} at ${time}` : lang === "it" ? `La tua prenotazione del ${format(date, "dd.MM.yyyy")} alle ${time}` : `Deine Buchung am ${format(date, "dd.MM.yyyy")} um ${time}`,
         react: <BookingEmailTemplate
           guestName={guestLabel}
           courtName="Tennisplatz"
@@ -2614,6 +2648,7 @@ export async function createBooking(
           time={time}
           price={finalPrice}
           orderId={orderId}
+            lang={lang}
         />,
       })
     }
@@ -2622,7 +2657,7 @@ export async function createBooking(
       await resend.emails.send({
         from: 'Suedtirol Booking <onboarding@resend.dev>',
         to: [adminEmail],
-        subject: `Neue Buchung: ${format(date, 'dd.MM.yyyy')} um ${time}`,
+          subject: lang === "en" ? `New booking: ${format(date, "dd.MM.yyyy")} at ${time}` : lang === "it" ? `Nuova prenotazione: ${format(date, "dd.MM.yyyy")} alle ${time}` : `Neue Buchung: ${format(date, "dd.MM.yyyy")} um ${time}`,
         react: <BookingEmailTemplate
           guestName={guestLabel}
           courtName="Tennisplatz"
@@ -2630,6 +2665,7 @@ export async function createBooking(
           time={time}
           price={finalPrice}
           orderId={orderId}
+            lang={lang}
         />,
       })
     }
@@ -2637,11 +2673,11 @@ export async function createBooking(
     console.error("Mail Fehler:", err)
   }
 
-  revalidatePath(`/club/${clubSlug}`)
+  revalidatePathAllLocales(`/club/${clubSlug}`)
   return { success: true }
 }
 
-// UPDATE: Cancel Booking mit usage_limit: 1 fÃ¼r Refunds
+// UPDATE: Cancel Booking mit usage_limit: 1 für Refunds
 export async function cancelBooking(bookingId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -2669,7 +2705,7 @@ export async function cancelBooking(bookingId: string) {
   const limitHours = bookingWithClub.clubs?.cancellation_buffer_hours ?? 24
 
   if (diffInHours < limitHours) {
-    return { success: false, error: `Stornierung nur bis ${limitHours}h vor Termin mÃ¶glich.` }
+    return { success: false, error: `Stornierung nur bis ${limitHours}h vor Termin möglich.` }
   }
 
   const clubId = bookingWithClub.clubs?.id || null
@@ -2685,13 +2721,13 @@ export async function cancelBooking(bookingId: string) {
       code: code,
       amount: booking.price_paid,
       created_for_email: user.email,
-      // WICHTIG: Refund Codes sind nur 1x gÃ¼ltig
+      // WICHTIG: Refund Codes sind nur 1x gültig
       usage_limit: 1,
       usage_count: 0,
       is_redeemed: false
     })
 
-    message = `Storniert. Dein Gutschein-Code Ã¼ber ${booking.price_paid}â‚¬ lautet: ${code}`
+    message = `Storniert. Dein Gutschein-Code über ${booking.price_paid}€ lautet: ${code}`
 
     await supabase.from('bookings').delete().eq('id', bookingId)
   } else {
@@ -2700,7 +2736,7 @@ export async function cancelBooking(bookingId: string) {
 
   const bookingSlug = bookingWithClub.clubs?.slug
   if (bookingSlug) {
-    revalidatePath(`/club/${bookingSlug}/dashboard`)
+    revalidatePathAllLocales(`/club/${bookingSlug}/dashboard`)
   }
   return { success: true, message: message }
 }
@@ -2729,8 +2765,8 @@ export async function deleteBooking(bookingId: string) {
   }
 
   if (clubSlug) {
-    revalidatePath(`/club/${clubSlug}/admin`)
-    revalidatePath(`/club/${clubSlug}`)
+    revalidatePathAllLocales(`/club/${clubSlug}/admin`)
+    revalidatePathAllLocales(`/club/${clubSlug}`)
   }
 
   return { success: true }
@@ -2767,8 +2803,8 @@ export async function createCourt(
 
   if (error) return { error: error.message }
 
-  revalidatePath(`/club/${clubSlug}`)
-  revalidatePath(`/club/${clubSlug}/admin`)
+  revalidatePathAllLocales(`/club/${clubSlug}`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin`)
   return { success: true, court: data[0] }
 }
 
@@ -2807,7 +2843,7 @@ export async function createCheckoutSession(
   }
   let memberAdjusted = false
 
-  // Club & Member prÃ¼fen, um Mitgliedspreis anzuwenden
+  // Club & Member prüfen, um Mitgliedspreis anzuwenden
   const { data: club } = await supabaseAdmin
     .from('clubs')
     .select('id, member_booking_pricing_mode, member_booking_pricing_value, stripe_account_id, application_fee_cents')
@@ -2872,7 +2908,7 @@ export async function createCheckoutSession(
       hint: (bookingError as any).hint || null,
     })
     if (bookingError.code === '23505') {
-      return { error: "Dieser Termin wurde gerade gebucht. Bitte wÃ¤hle eine andere Zeit." }
+      return { error: "Dieser Termin wurde gerade gebucht. Bitte wähle eine andere Zeit." }
     }
     return { error: "Fehler beim Reservieren des Slots: " + bookingError.message }
   }
@@ -2897,7 +2933,7 @@ export async function createCheckoutSession(
     const clubApplicationFeeCents = (club as any)?.application_fee_cents ?? null
 
     if (finalPrice > 0 && !clubStripeAccountId) {
-      return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+      return { error: "Verein ist noch nicht f�r Stripe eingerichtet." }
     }
 
     const paymentIntentData = buildClubPaymentIntentData({
@@ -2923,8 +2959,8 @@ export async function createCheckoutSession(
           guestName,
           userId: user?.id || null
         },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
       customer_email: user?.email || guestEmail,
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
     })
@@ -3112,7 +3148,7 @@ export async function updateClubAiSettings(clubSlug: string, enabled: boolean, m
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath(`/club/${clubSlug}/admin/settings`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/settings`)
   return { success: true }
 }
 
@@ -3143,13 +3179,13 @@ async function analyzeMedicalCertificateImage(imageUrl: string): Promise<Medical
         {
           role: "system",
           content:
-            "Du bist eine strenge PrÃ¼f-KI fÃ¼r medizinische Sportatteste in Italien. " +
-            "Gib ausschlieÃŸlich ein JSON-Objekt mit den geforderten Feldern zurÃ¼ck.",
+            "Du bist eine strenge Prüf-KI für medizinische Sportatteste in Italien. " +
+            "Gib ausschließlich ein JSON-Objekt mit den geforderten Feldern zurück.",
         },
         {
           role: "user",
           content: [
-            { type: "input_text", text: "PrÃ¼fe dieses Dokument. Ist es ein italienisches sportmedizinisches Attest? FÃ¼lle das JSON aus." },
+            { type: "input_text", text: "Prüfe dieses Dokument. Ist es ein italienisches sportmedizinisches Attest? Fülle das JSON aus." },
             { type: "input_image", image_url: imageUrl },
           ],
         },
@@ -3244,7 +3280,7 @@ export async function uploadMemberDocument(formData: FormData) {
   }
 
   if (file.size > MAX_FILE_BYTES) {
-    return { success: false, error: `Datei zu groÃŸ (max. ${MAX_FILE_MB}MB).` }
+    return { success: false, error: `Datei zu groß (max. ${MAX_FILE_MB}MB).` }
   }
 
   const { data: club } = await supabase
@@ -3367,10 +3403,10 @@ export async function uploadMemberDocument(formData: FormData) {
         await resend.emails.send({
           from: "Suedtirol Booking <onboarding@resend.dev>",
           to: [adminEmail],
-          subject: `Neues Ã¤rztliches Zeugnis (${clubSlug})`,
+          subject: `Neues ärztliches Zeugnis (${clubSlug})`,
           react: (
             <div>
-              <p>Ein Mitglied hat ein neues Ã¤rztliches Zeugnis hochgeladen.</p>
+              <p>Ein Mitglied hat ein neues ärztliches Zeugnis hochgeladen.</p>
               <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
               <p><strong>Telefon:</strong> {profile?.phone || "-"}</p>
               <p><strong>Datei:</strong> {file.name}</p>
@@ -3383,7 +3419,7 @@ export async function uploadMemberDocument(formData: FormData) {
     }
   }
 
-  revalidatePath(`/club/${clubSlug}/dashboard/documents`)
+  revalidatePathAllLocales(`/club/${clubSlug}/dashboard/documents`)
   return { success: true }
 }
 
@@ -3523,15 +3559,15 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
           React.createElement(
             "p",
             null,
-            "Dein Ã¤rztliches Zeugnis wurde ",
-            React.createElement("strong", null, approve ? "bestÃ¤tigt" : "abgelehnt"),
+            "Dein ärztliches Zeugnis wurde ",
+            React.createElement("strong", null, approve ? "bestätigt" : "abgelehnt"),
             "."
           ),
           approve
             ? React.createElement(
                 "p",
                 null,
-                "GÃ¼ltig bis: ",
+                "Gültig bis: ",
                 new Date(finalValid).toLocaleDateString("de-DE")
               )
             : null
@@ -3540,7 +3576,7 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
         await resend.emails.send({
           from: "Suedtirol Booking <onboarding@resend.dev>",
           to: [memberEmail],
-          subject: approve ? "Ã„rztliches Zeugnis bestÃ¤tigt" : "Ã„rztliches Zeugnis abgelehnt",
+          subject: approve ? "Ärztliches Zeugnis bestätigt" : "Ärztliches Zeugnis abgelehnt",
           react: emailReact,
         })
     }
@@ -3548,7 +3584,7 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
     console.error("Member notification email failed:", err)
   }
 
-  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
 }
 
@@ -3628,7 +3664,7 @@ export async function submitMatchRecap(token: string, payload: {
     .eq('token', token)
     .single()
 
-  if (!recap) return { success: false, error: "UngÃ¼ltiger Link." }
+  if (!recap) return { success: false, error: "Ungültiger Link." }
 
   const { error } = await supabaseAdmin
     .from('match_recaps')
@@ -3883,8 +3919,8 @@ export async function createBlockedPeriod(
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath(`/club/${clubSlug}`)
-  revalidatePath(`/club/${clubSlug}/admin`)
+  revalidatePathAllLocales(`/club/${clubSlug}`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin`)
   return { success: true }
 }
 
@@ -3927,7 +3963,7 @@ export async function getBlockedDates(clubSlug: string, courtId: string) {
   return data || []
 }
 
-export async function requestPasswordReset(email: string) {
+export async function requestPasswordReset(email: string, lang: string) {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -4001,9 +4037,9 @@ export async function updateClubContent(clubSlug: string, content: any) {
 
     if (error) return { success: false, error: error.message }
 
-    revalidatePath(`/club/${clubSlug}`)
-    revalidatePath(`/club/${clubSlug}/impressum`)
-    revalidatePath(`/club/${clubSlug}/admin`)
+    revalidatePathAllLocales(`/club/${clubSlug}`)
+    revalidatePathAllLocales(`/club/${clubSlug}/impressum`)
+    revalidatePathAllLocales(`/club/${clubSlug}/admin`)
     return { success: true }
 }
 
@@ -4020,16 +4056,18 @@ export async function inviteMember(formData: FormData) {
   const lastName = formData.get("lastName") as string
 
   // E-Mail Format Check
-  if (!email || !email.includes('@')) return { success: false, error: "UngÃ¼ltige E-Mail" }
+  if (!email || !email.includes('@')) return { success: false, error: "Ungültige E-Mail" }
 
   const supabaseAdmin = getAdminClient()
 
   // 1. Club & Rechte Check
-  const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name').eq('slug', clubSlug).single()
+  const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id, name, default_language').eq('slug', clubSlug).single()
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
 
   if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
     return { success: false, error: "Keine Berechtigung" }
+
+    const lang = (club as any)?.default_language || defaultLocale
   }
 
   // 2. User Check / Create
@@ -4075,7 +4113,7 @@ export async function inviteMember(formData: FormData) {
 
   // 3. Member Status setzen (Active)
   const validUntil = new Date()
-  validUntil.setFullYear(validUntil.getFullYear() + 1) // Standard: 1 Jahr gÃ¼ltig
+  validUntil.setFullYear(validUntil.getFullYear() + 1) // Standard: 1 Jahr gültig
 
   const { error: memberError } = await supabaseAdmin.from('club_members').upsert({
     club_id: club.id,
@@ -4100,12 +4138,13 @@ export async function inviteMember(formData: FormData) {
       await resend.emails.send({
         from: 'Suedtirol Booking <onboarding@resend.dev>',
         to: [email],
-        subject: `Willkommen im ${club.name}!`,
+        subject: lang === "en" ? `Welcome to ${club.name}!` : lang === "it" ? `Benvenuto in ${club.name}!` : `Willkommen im ${club.name}!`,
         react: <WelcomeMemberEmailTemplate
           clubName={club.name}
           email={email}
           password={tempPassword}
-          loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/login`}
+          loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login`}
+          lang={lang}
         />
       })
     } else {
@@ -4113,12 +4152,12 @@ export async function inviteMember(formData: FormData) {
       await resend.emails.send({
         from: 'Suedtirol Booking <onboarding@resend.dev>',
         to: [email],
-        subject: `Du wurdest zu ${club.name} hinzugefÃ¼gt`,
+        subject: `Du wurdest zu ${club.name} hinzugefügt`,
         html: `
           <div style="font-family: sans-serif; color: #333;">
             <h1>Hallo ${firstName}!</h1>
-            <p>Du wurdest vom Administrator zum Verein <strong>${club.name}</strong> hinzugefÃ¼gt.</p>
-            <p>Da du bereits einen Account bei uns hast, kannst du dich einfach einloggen und sofort PlÃ¤tze buchen.</p>
+            <p>Du wurdest vom Administrator zum Verein <strong>${club.name}</strong> hinzugefügt.</p>
+            <p>Da du bereits einen Account bei uns hast, kannst du dich einfach einloggen und sofort Plätze buchen.</p>
             <br/>
             <a href="${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Zum Verein</a>
           </div>
@@ -4130,7 +4169,7 @@ export async function inviteMember(formData: FormData) {
     // Wir returnen trotzdem success, da der DB Eintrag geklappt hat
   }
 
-  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
 }
 
@@ -4214,8 +4253,8 @@ export async function analyzeCsvHeaders(headers: string[]) {
         {
           role: "system",
           content:
-            "Du bist ein Daten-Experte fÃ¼r eine Sport-SaaS. " +
-            "Mappe CSV-Spalten auf unsere Felder. Gib ausschlieÃŸlich JSON zurÃ¼ck.",
+            "Du bist ein Daten-Experte für eine Sport-SaaS. " +
+            "Mappe CSV-Spalten auf unsere Felder. Gib ausschließlich JSON zurück.",
         },
         {
           role: "user",
@@ -4223,7 +4262,7 @@ export async function analyzeCsvHeaders(headers: string[]) {
             "CSV-Header: " +
             JSON.stringify(headers) +
             "\n\nFelder: first_name, last_name, email, phone, credit_balance, membership_start_date, membership_end_date." +
-            "\nGib ein JSON-Objekt zurÃ¼ck, z.B. {\"first_name\":\"Vorname\",\"email\":\"E-Mail\"}.",
+            "\nGib ein JSON-Objekt zurück, z.B. {\"first_name\":\"Vorname\",\"email\":\"E-Mail\"}.",
         },
       ],
       response_format: {
@@ -4284,7 +4323,7 @@ export async function importMembersBatch(
   if (!user) return { success: false, error: "Nicht eingeloggt" }
 
   const supabaseAdmin = getAdminClient()
-  const { data: club } = await supabaseAdmin.from("clubs").select("id, owner_id, name").eq("slug", clubSlug).single()
+  const { data: club } = await supabaseAdmin.from("clubs").select("id, owner_id, name, default_language").eq("slug", clubSlug).single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
 
   const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
@@ -4373,113 +4412,63 @@ export async function importMembersBatch(
           await resend.emails.send({
             from: "Avaimo <onboarding@resend.dev>",
             to: [email],
-            subject: `Willkommen bei ${club.name}`,
+            subject: lang === "en" ? `Welcome to ${club.name}` : lang === "it" ? `Benvenuto in ${club.name}` : `Willkommen bei ${club.name}`,
             react: (
               <WelcomeImportEmailTemplate
-                firstName={firstName || "Mitglied"}
                 clubName={club.name}
-                tempPassword={tempPassword}
-                loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/login`}
                 email={email}
+                password={tempPassword}
+          loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login`}
+                lang={lang}
               />
             ),
           })
         } else {
+          const subject = lang === "en"
+            ? `Avaimo access for ${club.name}`
+            : lang === "it"
+            ? `Accesso Avaimo per ${club.name}`
+            : `Avaimo Zugang für ${club.name}`
+
+          const headline = lang === "en"
+            ? "Welcome to Avaimo"
+            : lang === "it"
+            ? "Benvenuto in Avaimo"
+            : "Willkommen bei Avaimo"
+
+          const intro = lang === "en"
+            ? `Your club <strong>${club.name}</strong> is now using Avaimo.`
+            : lang === "it"
+            ? `Il tuo club <strong>${club.name}</strong> utilizza ora Avaimo.`
+            : `Dein Verein <strong>${club.name}</strong> nutzt ab sofort Avaimo.`
+
+          const loginText = lang === "en"
+            ? "Log in to complete your profile."
+            : lang === "it"
+            ? "Accedi per completare il tuo profilo."
+            : "Bitte logge dich ein und setze dein Passwort."
+
+          const loginLabel = lang === "en" ? "Go to login" : lang === "it" ? "Vai al login" : "Zum Login"
+
           await resend.emails.send({
             from: "Avaimo <onboarding@resend.dev>",
             to: [email],
-            subject: `Avaimo Zugang fÃ¼r ${club.name}`,
+            subject,
             html: `
               <div style="font-family: Arial, sans-serif; color: #0f172a;">
-                <h2>Willkommen bei Avaimo</h2>
-                <p>Dein Verein <strong>${club.name}</strong> nutzt ab sofort Avaimo.</p>
-                <p>Bitte logge dich mit deinem bestehenden Passwort ein. Falls du es nicht mehr weiÃŸt, nutze "Passwort vergessen".</p>
-                <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/login">Zum Login</a></p>
+                <h2>${headline}</h2>
+                <p>${intro}</p>
+                <p>${loginText}</p>
+                <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login">${loginLabel}</a></p>
               </div>
             `,
           })
         }
+        sent += 1
       } catch (err) {
-        console.error("Import invite mail failed:", err)
+        console.error("Bulk invite mail failed:", err)
       }
     }
-  }
-
-  revalidatePath(`/club/${clubSlug}/admin/members`)
-  return { success: true, imported, failed }
-}
-
-export async function getImportedMembersCount(clubSlug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return 0
-
-  const { data: club } = await supabase
-    .from("clubs")
-    .select("id, owner_id")
-    .eq("slug", clubSlug)
-    .single()
-  if (!club) return 0
-
-  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
-  if (club.owner_id !== user.id && !isSuperAdmin) return 0
-
-  const supabaseAdmin = getAdminClient()
-  const { count } = await supabaseAdmin
-    .from("club_members")
-    .select("id", { count: "exact", head: true })
-    .eq("club_id", club.id)
-    .eq("invite_status", "imported")
-
-  return count || 0
-}
-
-export async function activateImportedMembers(clubSlug: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: "Nicht eingeloggt" }
-
-  const supabaseAdmin = getAdminClient()
-  const { data: club } = await supabaseAdmin
-    .from("clubs")
-    .select("id, owner_id, name")
-    .eq("slug", clubSlug)
-    .single()
-  if (!club) return { success: false, error: "Club nicht gefunden" }
-
-  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
-  if (club.owner_id !== user.id && !isSuperAdmin) return { success: false, error: "Keine Rechte" }
-
-  const { data: members } = await supabaseAdmin
-    .from("club_members")
-    .select("id, user_id, import_email")
-    .eq("club_id", club.id)
-    .eq("invite_status", "imported")
-
-  let sent = 0
-  for (const m of members || []) {
-    const email = m.import_email
-    if (!email) continue
-    try {
-      await resend.emails.send({
-        from: "Avaimo <onboarding@resend.dev>",
-        to: [email],
-        subject: `Willkommen bei ${club.name}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; color: #0f172a;">
-            <h2>Willkommen bei Avaimo</h2>
-            <p>Dein Verein <strong>${club.name}</strong> nutzt ab sofort Avaimo.</p>
-            <p>Bitte logge dich ein und setze dein Passwort.</p>
-            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/login">Zum Login</a></p>
-          </div>
-        `,
-      })
-      sent += 1
-    } catch (err) {
-      console.error("Bulk invite mail failed:", err)
-    }
-  }
-
   if (members && members.length > 0) {
     await supabaseAdmin
       .from("club_members")
@@ -4488,7 +4477,7 @@ export async function activateImportedMembers(clubSlug: string) {
       .eq("invite_status", "imported")
   }
 
-  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true, sent }
 }
 
@@ -4577,7 +4566,7 @@ export async function updateMembershipContract(
 
   if (error) return { success: false, error: error.message }
 
-  revalidatePath(`/club/${clubSlug}/admin/members`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
 }
 
@@ -4645,7 +4634,7 @@ export async function submitMembershipSignature(
   if (!club) return { success: false, error: "Club nicht gefunden" }
 
   const base64 = signatureDataUrl.split(",")[1]
-  if (!base64) return { success: false, error: "UngÃ¼ltige Signatur" }
+  if (!base64) return { success: false, error: "Ungültige Signatur" }
   const buffer = Uint8Array.from(Buffer.from(base64, "base64"))
   const filePath = `${club.id}/${user.id}/contract-signature-${Date.now()}.png`
 
@@ -4742,7 +4731,7 @@ export async function submitMembershipSignature(
     const html = `
       <div style="font-family: Arial, sans-serif; color: #0f172a;">
         <h2>Dein Mitgliedsvertrag</h2>
-        <p>Vielen Dank fÃ¼r deine Unterschrift. Dein Vertrag wurde erfolgreich erstellt.</p>
+        <p>Vielen Dank für deine Unterschrift. Dein Vertrag wurde erfolgreich erstellt.</p>
         ${downloadUrl ? `<p><a href="${downloadUrl}">PDF herunterladen</a></p>` : ""}
         <p>Verein: <strong>${club.name}</strong></p>
       </div>
@@ -4762,12 +4751,12 @@ export async function submitMembershipSignature(
       await resend.emails.send({
         from: "Avaimo <onboarding@resend.dev>",
         to: [adminEmail],
-        subject: `Neuer Mitgliedsvertrag â€“ ${club.name}`,
+        subject: `Neuer Mitgliedsvertrag – ${club.name}`,
         html: `
           <div style="font-family: Arial, sans-serif; color: #0f172a;">
             <h2>Neuer Mitgliedsvertrag unterschrieben</h2>
             <p>Mitglied: ${payload.memberName}</p>
-            ${downloadUrl ? `<p><a href="${downloadUrl}">PDF Ã¶ffnen</a></p>` : ""}
+            ${downloadUrl ? `<p><a href="${downloadUrl}">PDF öffnen</a></p>` : ""}
           </div>
         `,
       })
@@ -4785,7 +4774,7 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
   const { data: { user } } = await supabase.auth.getUser()
 
   // 1. Admin Check (Owner oder Super Admin)
-  const supabaseAdmin = getAdminClient() // Wir nutzen den Admin Client fÃ¼r vollen Zugriff
+  const supabaseAdmin = getAdminClient() // Wir nutzen den Admin Client für vollen Zugriff
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
 
@@ -4826,7 +4815,7 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
     const dateStr = date.toLocaleDateString('de-DE')
     const timeStr = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 
-    // Payment Status Ã¼bersetzen
+    // Payment Status übersetzen
     let payStatus = "Unbekannt"
     if (b.status === 'awaiting_payment' || b.payment_status === 'unpaid') payStatus = "Ausstehend"
     if (b.payment_status === 'paid_stripe') payStatus = "Online (Stripe)"
@@ -4836,12 +4825,12 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
     return [
       dateStr,
       timeStr,
-      b.courts?.name || "GelÃ¶schter Platz",
-      `"${b.guest_name || '-'}"`, // AnfÃ¼hrungszeichen fÃ¼r Namen mit Kommas
+      b.courts?.name || "Gelöschter Platz",
+      `"${b.guest_name || '-'}"`, // Anführungszeichen für Namen mit Kommas
       payStatus,
-      (b.price_paid || 0).toString().replace('.', ','), // Deutsches Format fÃ¼r Excel
+      (b.price_paid || 0).toString().replace('.', ','), // Deutsches Format für Excel
       b.status
-    ].join(";") // Semikolon ist besser fÃ¼r Excel in DE
+    ].join(";") // Semikolon ist besser für Excel in DE
   })
 
   const csvContent = [header.join(";"), ...rows].join("\n")
@@ -4997,5 +4986,15 @@ export async function exportTrainerRevenueCsv(clubSlug: string, year: number, mo
   const csvContent = [header.join(";"), ...rows].join("\n")
   return { success: true, csv: csvContent, filename: `trainerabrechnungen_${year}_${month}.csv` }
 }
+
+
+
+
+
+
+
+
+
+
 
 

@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { Resend } from "resend"
 import { MatchRecapEmailTemplate } from "@/components/emails/match-recap-template"
-import { format } from "date-fns"
 import crypto from "crypto"
 import React from "react"
 
@@ -15,6 +14,9 @@ const supabaseAdmin = createClient(
     auth: { autoRefreshToken: false, persistSession: false },
   }
 )
+
+const normalizeLang = (lang?: string | null) => (lang === "it" || lang === "en" ? lang : "de")
+const localeMap: Record<string, string> = { de: "de-DE", en: "en-US", it: "it-IT" }
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET
@@ -64,9 +66,12 @@ export async function GET(req: Request) {
 
     const { data: club } = await supabaseAdmin
       .from("clubs")
-      .select("name, slug")
+      .select("name, slug, default_language")
       .eq("id", booking.club_id)
       .single()
+
+    const lang = normalizeLang(club?.default_language)
+    const locale = localeMap[lang]
 
     const recapUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/match/recap/${token}`
 
@@ -97,17 +102,21 @@ export async function GET(req: Request) {
     if (!email) continue
 
     try {
+      const endTime = new Date(booking.end_time)
       const emailReact = React.createElement(MatchRecapEmailTemplate, {
         clubName: club?.name || "Club",
-        date: format(new Date(booking.end_time), "dd.MM.yyyy"),
-        time: format(new Date(booking.end_time), "HH:mm"),
+        date: endTime.toLocaleDateString(locale),
+        time: endTime.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
         recapUrl,
+        lang,
       })
 
+      const subject = lang === "en" ? "How did your match go?" : lang === "it" ? "Com'è andata la partita?" : "Wie lief dein Match?"
+
       await resend.emails.send({
-        from: "Suedtirol Booking <onboarding@resend.dev>",
+        from: "Avaimo <onboarding@resend.dev>",
         to: [email],
-        subject: `Wie lief dein Match?`,
+        subject,
         react: emailReact,
       })
 

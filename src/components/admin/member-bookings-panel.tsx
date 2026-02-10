@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { exportMemberBookingsCsv } from "@/app/actions"
+import { useI18n } from "@/components/i18n/locale-provider"
+import { useParams } from "next/navigation"
 
 type BookingRow = {
   id: string
@@ -26,6 +28,11 @@ export function MemberBookingsPanel({
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all")
   const [visibleCount, setVisibleCount] = useState(8)
   const [exporting, setExporting] = useState(false)
+  const { t } = useI18n()
+  const params = useParams()
+  const langRaw = params?.lang
+  const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
+  const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
 
   const filtered = useMemo(() => {
     if (filter === "all") return bookings
@@ -47,7 +54,7 @@ export function MemberBookingsPanel({
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.download = "mitglied-buchungen.csv"
+      link.download = t("admin_member_bookings.filename", "mitglied-buchungen.csv")
       link.click()
       URL.revokeObjectURL(url)
     }
@@ -57,31 +64,31 @@ export function MemberBookingsPanel({
   return (
     <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-slate-800">BuchungsÃ¼bersicht</h3>
+        <h3 className="text-sm font-semibold text-slate-800">{t("admin_member_bookings.title", "Buchungsübersicht")}</h3>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={filter === "all" ? "default" : "outline"}
             className="rounded-full text-xs"
             onClick={() => setFilter("all")}
           >
-            Alle
+            {t("admin_member_bookings.all", "Alle")}
           </Button>
           <Button
             variant={filter === "upcoming" ? "default" : "outline"}
             className="rounded-full text-xs"
             onClick={() => setFilter("upcoming")}
           >
-            ZukÃ¼nftig
+            {t("admin_member_bookings.upcoming", "Zukünftig")}
           </Button>
           <Button
             variant={filter === "past" ? "default" : "outline"}
             className="rounded-full text-xs"
             onClick={() => setFilter("past")}
           >
-            Vergangen
+            {t("admin_member_bookings.past", "Vergangen")}
           </Button>
           <Button variant="outline" className="rounded-full text-xs" onClick={handleExport} disabled={exporting}>
-            {exporting ? "Export..." : "CSV Export"}
+            {exporting ? t("admin_member_bookings.exporting", "Export...") : t("admin_member_bookings.export", "CSV Export")}
           </Button>
         </div>
       </div>
@@ -90,23 +97,25 @@ export function MemberBookingsPanel({
         <div className="max-h-72 overflow-auto space-y-2 pr-1">
           {visible.map((b) => (
             <div key={b.id} className="rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm">
-              <div className="font-medium text-slate-800">{b.courts?.[0]?.name || "Platz"}</div>
+              <div className="font-medium text-slate-800">{b.courts?.[0]?.name || t("admin_member_bookings.court", "Platz")}</div>
               <div className="text-xs text-slate-500">
-                {new Date(b.start_time).toLocaleDateString("de-DE")} Â·{" "}
-                {new Date(b.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} â€“{" "}
-                {new Date(b.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                {new Date(b.start_time).toLocaleDateString(locale)} ·{" "}
+                {new Date(b.start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} –{" "}
+                {new Date(b.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
               </div>
-              <div className="text-xs text-slate-500">Status: {b.status || "-"} Â· Zahlung: {b.payment_status || "-"}</div>
+              <div className="text-xs text-slate-500">
+                {t("admin_member_bookings.status", "Status")}: {b.status || "-"} · {t("admin_member_bookings.payment", "Zahlung")}: {b.payment_status || "-"}
+              </div>
             </div>
           ))}
           {visibleCount < filtered.length && (
             <Button variant="outline" className="w-full rounded-full text-xs" onClick={() => setVisibleCount((v) => v + 8)}>
-              Mehr anzeigen
+              {t("admin_member_bookings.more", "Mehr anzeigen")}
             </Button>
           )}
         </div>
       ) : (
-        <p className="text-sm text-slate-500">Keine Buchungen vorhanden.</p>
+        <p className="text-sm text-slate-500">{t("admin_member_bookings.empty", "Keine Buchungen vorhanden.")}</p>
       )}
     </div>
   )

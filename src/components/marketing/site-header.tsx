@@ -1,19 +1,25 @@
-import Link from "next/link"
+"use client"
 
-const navItems = [
-  { href: "/features", label: "Funktionen" },
-  { href: "/pricing", label: "Preise" },
-  { href: "/demo", label: "Demo" },
-  { href: "/security", label: "Sicherheit" },
-  { href: "/contact", label: "Kontakt" },
-]
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export function SiteHeader() {
+  const params = useParams()
+  const lang = typeof params?.lang === "string" ? params.lang : "de"
+  const { t } = useI18n()
+  const navItems = [
+    { href: `/${lang}/features`, label: t("nav.features") },
+    { href: `/${lang}/pricing`, label: t("nav.pricing") },
+    { href: `/${lang}/demo`, label: t("nav.demo") },
+    { href: `/${lang}/security`, label: t("nav.security", "Sicherheit") },
+    { href: `/${lang}/contact`, label: t("nav.contact") },
+  ]
   return (
     <header className="sticky top-0 z-30 border-b border-[#0E1A14]/10 bg-[#1F3D2B]/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-[#F9F8F4]">
-          Avaimo
+        <Link href={`/${lang}`} className="text-lg font-semibold tracking-tight text-[#F9F8F4]">
+          {t("app.name", "Avaimo")}
         </Link>
         <nav className="hidden items-center gap-6 text-sm md:flex">
           {navItems.map((item) => (
@@ -24,16 +30,16 @@ export function SiteHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <Link
-            href="/demo"
+            href={`/${lang}/demo`}
             className="rounded-full border border-[#F9F8F4]/30 bg-transparent px-4 py-2 text-sm text-[#F9F8F4] hover:bg-[#F9F8F4]/10"
           >
-            Demo ansehen
+            {t("cta.demo", "Demo ansehen")}
           </Link>
           <Link
-            href="/contact"
+            href={`/${lang}/contact`}
             className="rounded-full bg-[#CBBF9A] px-4 py-2 text-sm text-[#0E1A14] hover:opacity-90"
           >
-            Beratung
+            {t("cta.consulting", "Beratung")}
           </Link>
         </div>
       </div>

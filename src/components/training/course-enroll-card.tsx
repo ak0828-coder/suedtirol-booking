@@ -1,8 +1,10 @@
-Ôªø"use client"
+"use client"
 
 import { useTransition, useState } from "react"
 import { createCourseCheckoutSession } from "@/app/actions"
 import { Button } from "@/components/ui/button"
+import { useParams } from "next/navigation"
+import { useI18n } from "@/components/i18n/locale-provider"
 
 export function CourseEnrollCard({
   clubSlug,
@@ -17,6 +19,11 @@ export function CourseEnrollCard({
   const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
+  const { t } = useI18n()
+  const params = useParams()
+  const langRaw = params?.lang
+  const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
+  const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
 
   const sessions = Array.isArray(course.sessions) ? course.sessions : []
   const now = new Date()
@@ -33,15 +40,23 @@ export function CourseEnrollCard({
     for (const s of sortedSessions) {
       const d = new Date(s.start_time)
       const day = d.getDay()
-      const start = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
-      const end = new Date(s.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+      const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+      const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
       keys.add(`${day}-${start}-${end}`)
     }
     if (keys.size !== 1) return ""
-    const dayNames = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
+    const dayNames = [
+      t("days.short.0", "So"),
+      t("days.short.1", "Mo"),
+      t("days.short.2", "Di"),
+      t("days.short.3", "Mi"),
+      t("days.short.4", "Do"),
+      t("days.short.5", "Fr"),
+      t("days.short.6", "Sa"),
+    ]
     const [key] = Array.from(keys)
     const [day, start, end] = key.split("-")
-    return `W√∂chentlich ${dayNames[Number(day)]} ${start}-${end}`
+    return `${t("training.course.weekly", "Wˆchentlich")} ${dayNames[Number(day)]} ${start}-${end}`
   })()
 
   const miniCalendar = (() => {
@@ -53,7 +68,15 @@ export function CourseEnrollCard({
       return `${y}-${m}-${dayNum}`
     }
     const base = new Date(nextSession.start_time)
-    const dayNames = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+    const dayNames = [
+      t("days.short.1", "Mo"),
+      t("days.short.2", "Di"),
+      t("days.short.3", "Mi"),
+      t("days.short.4", "Do"),
+      t("days.short.5", "Fr"),
+      t("days.short.6", "Sa"),
+      t("days.short.0", "So"),
+    ]
     const weekStart = new Date(base)
     const day = weekStart.getDay()
     const diff = (day + 6) % 7
@@ -102,46 +125,50 @@ export function CourseEnrollCard({
           <div className="text-lg font-semibold text-slate-900 tracking-tight">{course.title}</div>
           {isCourseFull ? (
             <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
-              Ausgebucht
+              {t("training.course.sold_out", "Ausgebucht")}
             </span>
           ) : null}
         </div>
-        <div className="text-sm text-slate-500">{course.description || "Kursbeschreibung"}</div>
+        <div className="text-sm text-slate-500">{course.description || t("training.course.description_fallback", "Kursbeschreibung")}</div>
       </div>
       <div className="text-sm text-slate-600">
-        Preis: {course.price ? `${course.price} EUR` : "Kostenlos"}
-        {pricingMode === "per_session" ? " pro Termin" : ""}
+        {t("training.course.price", "Preis")}: {course.price ? `${course.price} EUR` : t("training.course.free", "Kostenlos")}
+        {pricingMode === "per_session" ? ` ${t("training.course.per_session", "pro Termin")}` : ""}
       </div>
       {sessionSignature ? (
         <div className="text-xs text-slate-500">{sessionSignature}</div>
       ) : null}
       {nextSession ? (
         <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-xs">
-          <div className="text-emerald-700 font-semibold">N√§chster Termin</div>
+          <div className="text-emerald-700 font-semibold">{t("training.course.next", "N‰chster Termin")}</div>
           <div className="text-emerald-700">
-            {new Date(nextSession.start_time).toLocaleDateString("de-DE")}{" "}
-            {new Date(nextSession.start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+            {new Date(nextSession.start_time).toLocaleDateString(locale)}{" "}
+            {new Date(nextSession.start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
       ) : null}
       {displaySessions.length > 0 ? (
         <div className="text-xs text-slate-500">
-          N√§chste Termine:{" "}
+          {t("training.course.upcoming", "N‰chste Termine")}: {" "}
           {displaySessions.map((s: any, idx: number) => {
             const d = new Date(s.start_time)
-            const dateStr = d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
-            const start = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
-            const end = new Date(s.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+            const dateStr = d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })
+            const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+            const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
             return `${dateStr} ${start}-${end}${idx < displaySessions.length - 1 ? " | " : ""}`
           })}
-          {sortedSessions.length > displaySessions.length ? ` (+${sortedSessions.length - displaySessions.length} weitere)` : ""}
+          {sortedSessions.length > displaySessions.length
+            ? ` (+${sortedSessions.length - displaySessions.length} ${t("training.course.more", "weitere")})`
+            : ""}
         </div>
       ) : (
-        <div className="text-xs text-slate-500">Termine folgen</div>
+        <div className="text-xs text-slate-500">{t("training.course.upcoming_empty", "Termine folgen")}</div>
       )}
       {miniCalendar ? (
         <div className="rounded-xl border border-slate-200/60 bg-white p-3">
-          <div className="text-[11px] font-semibold text-slate-500 mb-2">Kalender (Woche)</div>
+          <div className="text-[11px] font-semibold text-slate-500 mb-2">
+            {t("training.course.calendar_week", "Kalender (Woche)")}
+          </div>
           <div className="grid grid-cols-7 gap-2 text-[10px]">
             {miniCalendar.dayNames.map((d) => (
               <div key={d} className="text-center font-semibold text-slate-400">{d}</div>
@@ -158,7 +185,7 @@ export function CourseEnrollCard({
                   <div className="text-[10px] text-slate-500">{d.getDate().toString().padStart(2, "0")}</div>
                   {daySessions.length > 0 ? (
                     <div className="mt-1 text-[10px] text-slate-600">
-                      {new Date(daySessions[0].start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                      {new Date(daySessions[0].start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   ) : (
                     <div className="mt-1 text-[10px] text-slate-300">-</div>
@@ -171,7 +198,7 @@ export function CourseEnrollCard({
       ) : null}
       {error ? <div className="text-xs text-red-500">{error}</div> : null}
       <Button className="rounded-full w-full" onClick={() => setOpen(true)}>
-        Details & anmelden
+        {t("training.course.cta", "Details & anmelden")}
       </Button>
 
       {open ? (
@@ -180,10 +207,10 @@ export function CourseEnrollCard({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xl font-semibold text-slate-900">{course.title}</div>
-                <div className="text-sm text-slate-500">{course.description || "Kursbeschreibung"}</div>
+                <div className="text-sm text-slate-500">{course.description || t("training.course.description_fallback", "Kursbeschreibung")}</div>
                 {pricingMode === "per_session" ? (
                   <div className="mt-2 text-xs text-slate-500">
-                    Auswahl: {selected.length} von {sortedSessions.length} Terminen
+                    {t("training.course.selection", "Auswahl")}: {selected.length} {t("training.course.of", "von")} {sortedSessions.length} {t("training.course.sessions", "Terminen")}
                   </div>
                 ) : null}
               </div>
@@ -194,7 +221,7 @@ export function CourseEnrollCard({
                   setSelected([])
                 }}
               >
-                Schlie√üen
+                {t("training.course.close", "Schlieﬂen")}
               </button>
             </div>
 
@@ -202,38 +229,40 @@ export function CourseEnrollCard({
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">Pl√§tze</div>
+                    <div className="text-xs text-slate-500">{t("training.course.seats", "Pl‰tze")}</div>
                     <div className="font-semibold text-slate-900">
                       {course.confirmed_count ?? 0}/{course.max_participants ?? "-"}
                     </div>
                     <div className="text-[11px] text-slate-500">
-                      Noch {Math.max(0, (course.max_participants ?? 0) - (course.confirmed_count ?? 0))} frei
+                      {t("training.course.seats_left", "Noch")} {Math.max(0, (course.max_participants ?? 0) - (course.confirmed_count ?? 0))} {t("training.course.seats_free", "frei")}
                     </div>
                   </div>
                   <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">Preis</div>
+                    <div className="text-xs text-slate-500">{t("training.course.price", "Preis")}</div>
                     <div className="font-semibold text-slate-900">
-                      {course.price ? `${course.price} EUR` : "Kostenlos"}
-                      {pricingMode === "per_session" ? " / Termin" : ""}
+                      {course.price ? `${course.price} EUR` : t("training.course.free", "Kostenlos")}
+                      {pricingMode === "per_session" ? ` / ${t("training.course.session", "Termin")}` : ""}
                     </div>
                   </div>
                   <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">Leitung</div>
+                    <div className="text-xs text-slate-500">{t("training.course.lead", "Leitung")}</div>
                     <div className="font-semibold text-slate-900">
-                      {course.trainer_name || "Verein"}
+                      {course.trainer_name || t("training.course.club_fallback", "Verein")}
                     </div>
                   </div>
                   <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">Zeitraum</div>
+                    <div className="text-xs text-slate-500">{t("training.course.period", "Zeitraum")}</div>
                     <div className="font-semibold text-slate-900">
-                      {course.start_date || "-"} bis {course.end_date || "-"}
+                      {course.start_date || "-"} {t("training.course.to", "bis")} {course.end_date || "-"}
                     </div>
                   </div>
                 </div>
 
                 {miniCalendar ? (
                   <div className="rounded-xl border border-slate-200/60 bg-white p-3">
-                    <div className="text-[11px] font-semibold text-slate-500 mb-2">Kalender (Woche)</div>
+                    <div className="text-[11px] font-semibold text-slate-500 mb-2">
+                      {t("training.course.calendar_week", "Kalender (Woche)")}
+                    </div>
                     <div className="grid grid-cols-7 gap-2 text-[10px]">
                       {miniCalendar.dayNames.map((d) => (
                         <div key={d} className="text-center font-semibold text-slate-400">{d}</div>
@@ -250,7 +279,7 @@ export function CourseEnrollCard({
                             <div className="text-[10px] text-slate-500">{d.getDate().toString().padStart(2, "0")}</div>
                             {daySessions.length > 0 ? (
                               <div className="mt-1 text-[10px] text-slate-600">
-                                {new Date(daySessions[0].start_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                                {new Date(daySessions[0].start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                               </div>
                             ) : (
                               <div className="mt-1 text-[10px] text-slate-300">-</div>
@@ -263,17 +292,17 @@ export function CourseEnrollCard({
                 ) : null}
 
                 <div className="space-y-2">
-                  <div className="text-sm font-semibold text-slate-900">Alle Termine</div>
+                  <div className="text-sm font-semibold text-slate-900">{t("training.course.all_sessions", "Alle Termine")}</div>
                   {sortedSessions.length === 0 ? (
-                    <div className="text-sm text-slate-500">Termine folgen</div>
+                    <div className="text-sm text-slate-500">{t("training.course.upcoming_empty", "Termine folgen")}</div>
                   ) : (
                     <div className="max-h-48 overflow-auto space-y-1 text-sm">
                       {sortedSessions.map((s: any) => {
                         const d = new Date(s.start_time)
-                        const dateStr = d.toLocaleDateString("de-DE")
-                        const start = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
-                        const end = new Date(s.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
-                        const court = s.courts?.name || "Platz"
+                        const dateStr = d.toLocaleDateString(locale)
+                        const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+                        const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+                        const court = s.courts?.name || t("training.course.court", "Platz")
                         const isNext = nextSession && s.id === nextSession.id
                         return (
                           <div
@@ -295,15 +324,15 @@ export function CourseEnrollCard({
 
               <div className="space-y-4">
                 <div className="rounded-xl border border-slate-200/60 bg-white p-4">
-                  <div className="text-sm font-semibold text-slate-900">Deine Auswahl</div>
+                  <div className="text-sm font-semibold text-slate-900">{t("training.course.selection_title", "Deine Auswahl")}</div>
                   <div className="text-xs text-slate-500 mb-3">
                     {pricingMode === "per_session"
-                      ? "W√§hle die Termine, an denen du teilnehmen m√∂chtest."
-                      : "Dieser Kurs wird als Gesamtpaket gebucht."}
+                      ? t("training.course.selection_hint", "W‰hle die Termine, an denen du teilnehmen mˆchtest.")
+                      : t("training.course.selection_full", "Dieser Kurs wird als Gesamtpaket gebucht.")}
                   </div>
                   {pricingMode === "per_session" ? (
                     <div className="text-xs font-semibold text-slate-700 mb-2">
-                      {selected.length} von {sortedSessions.length} Terminen ausgew√§hlt
+                      {selected.length} {t("training.course.of", "von")} {sortedSessions.length} {t("training.course.selected", "Terminen ausgew‰hlt")}
                     </div>
                   ) : null}
 
@@ -322,7 +351,7 @@ export function CourseEnrollCard({
                           setSelected(selectable.map((s: any) => s.id))
                         }}
                       >
-                        Alle freien
+                        {t("training.course.select_available", "Alle freien")}
                       </Button>
                       <Button
                         type="button"
@@ -330,7 +359,7 @@ export function CourseEnrollCard({
                         className="rounded-full text-xs"
                         onClick={() => setSelected([])}
                       >
-                        Auswahl leeren
+                        {t("training.course.clear_selection", "Auswahl leeren")}
                       </Button>
                     </div>
                   ) : null}
@@ -338,10 +367,10 @@ export function CourseEnrollCard({
                   <div className="max-h-80 overflow-auto space-y-2">
                     {sortedSessions.map((s: any) => {
                       const d = new Date(s.start_time)
-                      const dateStr = d.toLocaleDateString("de-DE")
-                      const start = d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
-                      const end = new Date(s.end_time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
-                      const court = s.courts?.name || "Platz"
+                      const dateStr = d.toLocaleDateString(locale)
+                      const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+                      const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+                      const court = s.courts?.name || t("training.course.court", "Platz")
                       const max = Number(course.max_participants || 0)
                       const booked = Number(s.booked_count || 0)
                       const remaining = max ? Math.max(0, max - booked) : null
@@ -356,9 +385,9 @@ export function CourseEnrollCard({
                         >
                           <div>
                             <div className="font-medium text-slate-900">{dateStr}</div>
-                            <div className="text-xs text-slate-500">{start}-{end} ¬∑ {court}</div>
+                            <div className="text-xs text-slate-500">{start}-{end} ∑ {court}</div>
                             <div className="text-xs text-slate-500">
-                              {max ? `${remaining} frei` : "Keine Begrenzung"}
+                              {max ? `${remaining} ${t("training.course.seats_free", "frei")}` : t("training.course.no_limit", "Keine Begrenzung")}
                             </div>
                           </div>
                           {pricingMode === "per_session" ? (
@@ -373,7 +402,7 @@ export function CourseEnrollCard({
                               }}
                             />
                           ) : (
-                            <div className="text-xs text-slate-500">Im Paket</div>
+                            <div className="text-xs text-slate-500">{t("training.course.included", "Im Paket")}</div>
                           )}
                         </label>
                       )
@@ -383,19 +412,21 @@ export function CourseEnrollCard({
 
                 <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-4 sticky top-4">
                   <div className="flex items-center justify-between text-sm">
-                    <div className="text-slate-600">ausgew√§hlt</div>
+                    <div className="text-slate-600">{t("training.course.selected_label", "ausgew‰hlt")}</div>
                     <div className="font-semibold text-slate-900">
-                      {pricingMode === "per_session" ? `${selected.length} Termin(e)` : `${sortedSessions.length} Termine`}
+                      {pricingMode === "per_session"
+                        ? `${selected.length} ${t("training.course.sessions_short", "Termin(e)")}`
+                        : `${sortedSessions.length} ${t("training.course.sessions_label", "Termine")}`}
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm mt-2">
-                    <div className="text-slate-600">Gesamt</div>
+                    <div className="text-slate-600">{t("training.course.total", "Gesamt")}</div>
                     <div className="font-semibold text-slate-900">
-                      {totalPrice > 0 ? `${totalPrice.toFixed(2).replace(".", ",")} EUR` : "Kostenlos"}
+                      {totalPrice > 0 ? `${totalPrice.toFixed(2).replace(".", ",")} EUR` : t("training.course.free", "Kostenlos")}
                     </div>
                   </div>
                   {pricingMode === "per_session" && selected.length === 0 ? (
-                    <div className="text-xs text-rose-600 mt-2">Bitte mindestens einen Termin w√§hlen.</div>
+                    <div className="text-xs text-rose-600 mt-2">{t("training.course.select_min", "Bitte mindestens einen Termin w‰hlen.")}</div>
                   ) : null}
                 </div>
               </div>
@@ -412,14 +443,18 @@ export function CourseEnrollCard({
                   setSelected([])
                 }}
               >
-                Abbrechen
+                {t("training.course.cancel", "Abbrechen")}
               </Button>
               <Button
                 className="rounded-full"
                 onClick={handleEnroll}
                 disabled={pending || (pricingMode === "per_session" && selected.length === 0)}
               >
-                {pending ? "Weiter..." : pricingMode === "per_session" ? "Termine buchen" : "Kurs buchen"}
+                {pending
+                  ? t("training.course.loading", "Weiter...")
+                  : pricingMode === "per_session"
+                    ? t("training.course.book_sessions", "Termine buchen")
+                    : t("training.course.book_course", "Kurs buchen")}
               </Button>
             </div>
           </div>
@@ -428,6 +463,3 @@ export function CourseEnrollCard({
     </div>
   )
 }
-
-
-

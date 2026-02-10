@@ -15,6 +15,7 @@ export type ContractData = {
   signatureUrl?: string | null
   signedAt: string
   signedCity: string
+  lang?: string
 }
 
 const styles = StyleSheet.create({
@@ -112,7 +113,37 @@ const styles = StyleSheet.create({
   },
 })
 
+const copy = {
+  de: {
+    defaultTitle: "Mitgliedsvertrag",
+    memberLabel: "Vertragspartner (Mitglied)",
+    customLabel: "Zusätzliche Angaben",
+    emptyText: "Kein Vertragstext hinterlegt.",
+    clubSignature: "für den Verein",
+    footer: "Dieses Dokument wurde digital über Avaimo erstellt am",
+  },
+  en: {
+    defaultTitle: "Membership Agreement",
+    memberLabel: "Contracting party (member)",
+    customLabel: "Additional information",
+    emptyText: "No contract text available.",
+    clubSignature: "for the club",
+    footer: "This document was digitally generated via Avaimo on",
+  },
+  it: {
+    defaultTitle: "Contratto di iscrizione",
+    memberLabel: "Contraente (socio)",
+    customLabel: "Dati aggiuntivi",
+    emptyText: "Nessun testo contrattuale disponibile.",
+    clubSignature: "per il club",
+    footer: "Documento generato digitalmente tramite Avaimo il",
+  },
+}
+
 export function ContractPDF({ data }: { data: ContractData }) {
+  const lang = data?.lang === "it" || data?.lang === "en" || data?.lang === "de" ? data.lang : "de"
+  const dict = copy[lang]
+
   const normalized = {
     clubName: data?.clubName || "",
     clubLogoUrl:
@@ -120,7 +151,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
         ? data.clubLogoUrl
         : null,
     clubAddress: data?.clubAddress || "",
-    contractTitle: data?.contractTitle || "Mitgliedsvertrag",
+    contractTitle: data?.contractTitle || dict.defaultTitle,
     memberName: data?.memberName || "",
     memberAddress: data?.memberAddress || "",
     memberEmail: data?.memberEmail || "",
@@ -160,7 +191,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
         <Text style={styles.title}>{normalized.contractTitle}</Text>
 
         <View style={styles.memberBlock}>
-          <Text style={styles.memberLabel}>Vertragspartner (Mitglied)</Text>
+          <Text style={styles.memberLabel}>{dict.memberLabel}</Text>
           <Text style={styles.memberName}>{normalized.memberName}</Text>
           <Text>{normalized.memberAddress}</Text>
           <Text>
@@ -170,7 +201,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         {normalized.customFields.length > 0 ? (
           <View style={styles.customBlock}>
-            <Text style={styles.memberLabel}>Zusaetzliche Angaben</Text>
+            <Text style={styles.memberLabel}>{dict.customLabel}</Text>
             {normalized.customFields.map((field, idx) => (
               <View key={`${field.label}-${idx}`} style={styles.customRow}>
                 <Text>
@@ -184,7 +215,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         <View>
           {paragraphs.length === 0 ? (
-            <Text style={styles.textBlock}>Kein Vertragstext hinterlegt.</Text>
+            <Text style={styles.textBlock}>{dict.emptyText}</Text>
           ) : (
             paragraphs.map((line, idx) => (
               <Text key={idx} style={styles.textBlock}>
@@ -196,22 +227,21 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         <View style={styles.signatureSection}>
           <View style={styles.signatureBox}>
-            <Text style={{ fontSize: 9 }}>für den Verein ({normalized.clubName})</Text>
+            <Text style={{ fontSize: 9 }}>{dict.clubSignature} ({normalized.clubName})</Text>
           </View>
           <View style={styles.signatureBox}>
             {normalized.signatureUrl ? <Image src={normalized.signatureUrl} style={styles.signatureImage} /> : null}
             <Text style={{ fontSize: 9 }}>
-              {normalized.signedCity}, am {normalized.signedAt}
+              {normalized.signedCity}, {normalized.signedAt}
             </Text>
             <Text style={{ fontSize: 9, fontWeight: 700 }}>{normalized.memberName}</Text>
           </View>
         </View>
 
         <Text style={styles.footer}>
-          Dieses Dokument wurde digital Über Avaimo erstellt am {normalized.signedAt}.
+          {dict.footer} {normalized.signedAt}.
         </Text>
       </Page>
     </Document>
   )
 }
-
