@@ -56,7 +56,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                                     <Input name="code" placeholder="CODE" required style={{textTransform: 'uppercase'}} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>{t("admin_vouchers.amount", "Wert (€)")}</Label>
+                                    <Label>{t("admin_vouchers.amount", "Wert (â‚¬)")}</Label>
                                     <Input name="amount" type="number" step="0.01" required />
                                 </div>
                             </div>
@@ -97,7 +97,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                             return (
                                 <TableRow key={v.id} className="hover:bg-slate-50/80">
                                     <TableCell className="font-mono font-bold">{v.code}</TableCell>
-                                    <TableCell>{v.amount}€</TableCell>
+                                    <TableCell>{v.amount}â‚¬</TableCell>
                                     <TableCell>{v.usage_count || 0} / {v.usage_limit || 1}</TableCell>
                                     <TableCell>
                                         {v.expires_at ? format(new Date(v.expires_at), 'dd.MM.yyyy') : t("admin_vouchers.unlimited", "Unbegrenzt")}
@@ -117,7 +117,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                                             size="icon"
                                             className="text-red-500 hover:text-red-700 rounded-full"
                                             onClick={async () => {
-                                                if(confirm(t("admin_vouchers.confirm", "Löschen?"))) await deleteVoucher(v.id, clubSlug)
+                                                if(confirm(t("admin_vouchers.confirm", "LÃ¶schen?"))) await deleteVoucher(v.id, clubSlug)
                                             }}
                                         >
                                             <Trash2 className="w-4 h-4" />

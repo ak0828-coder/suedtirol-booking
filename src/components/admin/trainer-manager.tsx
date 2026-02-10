@@ -66,7 +66,7 @@ export function TrainerManager({
             setShowForm((v) => !v)
           }}
         >
-          {showForm ? t("admin_trainer.close", "Schließen") : t("admin_trainer.add", "Trainer hinzufügen")}
+          {showForm ? t("admin_trainer.close", "SchlieÃŸen") : t("admin_trainer.add", "Trainer hinzufÃ¼gen")}
         </Button>
       </div>
 
@@ -120,7 +120,7 @@ export function TrainerManager({
                 <Input name="image" type="file" accept="image/*" />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>{t("admin_trainer.availability", "Verfügbarkeit (Woche)")}</Label>
+                <Label>{t("admin_trainer.availability", "VerfÃ¼gbarkeit (Woche)")}</Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {dayLabels.map((d, idx) => (
                     <div key={d.day} className="flex items-center gap-2 text-sm">
@@ -153,7 +153,7 @@ export function TrainerManager({
                 <Input name="hourlyRate" type="number" step="0.01" defaultValue={editingTrainer?.hourly_rate ?? ""} />
               </div>
               <div className="space-y-2">
-                <Label>{t("admin_trainer.salary_type", "Vergütungstyp")}</Label>
+                <Label>{t("admin_trainer.salary_type", "VergÃ¼tungstyp")}</Label>
                 <select
                   name="salaryType"
                   className="w-full border rounded-md px-3 py-2 text-sm"
@@ -193,7 +193,7 @@ export function TrainerManager({
             <div className="flex items-center gap-2">
               <label className="text-sm text-slate-600 flex items-center gap-2">
                 <input type="checkbox" name="includeCourtFee" defaultChecked={editingTrainer ? !!editingTrainer.include_court_fee : true} />
-                {t("admin_trainer.include_court", "Platzgebühr einrechnen")}
+                {t("admin_trainer.include_court", "PlatzgebÃ¼hr einrechnen")}
               </label>
               <label className="text-sm text-slate-600 flex items-center gap-2">
                 <input type="checkbox" name="isActive" defaultChecked={editingTrainer ? !!editingTrainer.is_active : true} />
@@ -239,7 +239,7 @@ export function TrainerManager({
                     })
                   }
                 >
-                  {t("admin_trainer.delete", "Löschen")}
+                  {t("admin_trainer.delete", "LÃ¶schen")}
                 </Button>
               </div>
             </div>
