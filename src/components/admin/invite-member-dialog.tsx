@@ -47,7 +47,7 @@ export function InviteMemberDialog({ clubSlug }: { clubSlug: string }) {
         <DialogHeader>
           <DialogTitle>{t("admin_invite.title", "Mitglied einladen")}</DialogTitle>
           <DialogDescription>
-            {t("admin_invite.desc", "Das neue Mitglied erh‰lt eine E-Mail mit Zugangsdaten und wird sofort als Aktiv freigeschaltet.")}
+            {t("admin_invite.desc", "Das neue Mitglied erh√§lt eine E-Mail mit Zugangsdaten und wird sofort als Aktiv freigeschaltet.")}
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4 mt-2">

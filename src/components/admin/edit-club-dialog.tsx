@@ -31,9 +31,9 @@ export function EditClubDialog({ club }: { club: any }) {
         title: t("admin_edit.features_nav", "Navigation"),
         key: "admin",
         items: [
-          { key: "overview", label: t("admin_edit.nav.overview", "‹bersicht") },
+          { key: "overview", label: t("admin_edit.nav.overview", "√úbersicht") },
           { key: "bookings", label: t("admin_edit.nav.bookings", "Buchungen") },
-          { key: "courts", label: t("admin_edit.nav.courts", "Pl‰tze") },
+          { key: "courts", label: t("admin_edit.nav.courts", "Pl√§tze") },
           { key: "blocks", label: t("admin_edit.nav.blocks", "Sperrzeiten") },
           { key: "plans", label: t("admin_edit.nav.plans", "Abos") },
           { key: "members", label: t("admin_edit.nav.members", "Mitglieder") },

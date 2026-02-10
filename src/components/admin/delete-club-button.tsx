@@ -14,17 +14,17 @@ export function DeleteClubButton({ clubId }: { clubId: string }) {
       variant="destructive"
       disabled={pending}
       onClick={() => {
-        if (!confirm(t("admin_delete.confirm", "ACHTUNG: Willst du diesen Verein wirklich löschen? \nAlle Daten (Buchungen, Plätze, Admin-Account) werden unwiderruflich gelöscht!"))) return
+        if (!confirm(t("admin_delete.confirm", "ACHTUNG: Willst du diesen Verein wirklich lÃ¶schen? \nAlle Daten (Buchungen, PlÃ¤tze, Admin-Account) werden unwiderruflich gelÃ¶scht!"))) return
         startTransition(async () => {
           const res = await deleteClub(clubId)
           if (res?.error) {
-            alert(t("admin_delete.error", "Fehler beim Löschen: ") + res.error)
+            alert(t("admin_delete.error", "Fehler beim LÃ¶schen: ") + res.error)
           }
         })
       }}
-      title={t("admin_delete.title", "Verein löschen")}
+      title={t("admin_delete.title", "Verein lÃ¶schen")}
     >
-      {t("admin_delete.title", "Verein löschen")}
+      {t("admin_delete.title", "Verein lÃ¶schen")}
     </Button>
   )
 }
