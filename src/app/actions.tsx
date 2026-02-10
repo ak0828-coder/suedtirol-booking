@@ -2529,6 +2529,7 @@ export async function rejectTrainerBooking(formData: FormData) {
 export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return { error: "Bitte einloggen, um ein Abo abzuschließen." }
 
   const { data: club } = await supabase
     .from('clubs')
@@ -2573,7 +2574,7 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     }
   }
 
-  const customerId = await getOrCreateStripeCustomerId(user?.email || null, null)
+  const customerId = await getOrCreateStripeCustomerId(user.email, null)
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
