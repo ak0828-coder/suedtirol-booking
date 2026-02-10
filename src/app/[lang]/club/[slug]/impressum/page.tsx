@@ -45,13 +45,13 @@ export default async function ClubImpressumPage({
             <div className="whitespace-pre-wrap text-sm text-slate-700">{content.impressum.body}</div>
           ) : (
             <div className="text-sm text-slate-500">
-              {t("club_impressum.empty", "Impressum Text ist noch leer. Bitte im Admin-CMS ausfüllen.")}
+              {t("club_impressum.empty", "Impressum Text ist noch leer. Bitte im Admin-CMS ausfÃ¼llen.")}
             </div>
           )}
         </div>
 
         <Link href={`/${lang}/club/${slug}`} className="text-sm text-slate-600 hover:text-slate-900">
-          {t("club_impressum.back", "Zurück zur Club-Seite")}
+          {t("club_impressum.back", "ZurÃ¼ck zur Club-Seite")}
         </Link>
       </div>
     </div>

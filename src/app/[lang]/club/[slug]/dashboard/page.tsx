@@ -141,7 +141,7 @@ export default async function MemberDashboard({
             <CardContent>
               <div className="text-3xl font-semibold">{t("dashboard.status.active", "Aktiv")}</div>
               <p className="text-sm text-slate-500 mt-2">
-                {t("dashboard.valid_until", "Gültig bis:")}{" "}
+                {t("dashboard.valid_until", "GÃ¼ltig bis:")}{" "}
                 {member.valid_until
                   ? new Date(member.valid_until).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE")
                   : t("dashboard.unlimited", "Unbegrenzt")}
@@ -166,7 +166,7 @@ export default async function MemberDashboard({
           <Card id="tour-member-profile" className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
-                <Calendar className="club-primary-text" /> {t("dashboard.cards.next", "Nächster Termin")}
+                <Calendar className="club-primary-text" /> {t("dashboard.cards.next", "NÃ¤chster Termin")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -268,7 +268,7 @@ export default async function MemberDashboard({
         <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle className="flex gap-2 items-center">
-              <Calendar className="club-primary-text" /> {t("dashboard.cards.upcoming", "Deine nächsten Spiele")}
+              <Calendar className="club-primary-text" /> {t("dashboard.cards.upcoming", "Deine nÃ¤chsten Spiele")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -286,7 +286,7 @@ export default async function MemberDashboard({
                       <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3" />
                         {format(new Date(b.start_time), "HH:mm")} {t("dashboard.clock", "Uhr")}
-                        <span className="mx-1">•</span>
+                        <span className="mx-1">â€¢</span>
                         {b.courts?.name}
                       </div>
                     </div>
@@ -330,7 +330,7 @@ export default async function MemberDashboard({
                       <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3" />
                         {format(new Date(b.start_time), "HH:mm")} {t("dashboard.clock", "Uhr")}
-                        <span className="mx-1">•</span>
+                        <span className="mx-1">â€¢</span>
                         {b.courts?.name}
                       </div>
                     </div>
@@ -341,7 +341,7 @@ export default async function MemberDashboard({
                         </Button>
                       </Link>
                     ) : (
-                      <span className="text-xs text-slate-500">{t("dashboard.recap_pending", "Wird vorbereitet…")}</span>
+                      <span className="text-xs text-slate-500">{t("dashboard.recap_pending", "Wird vorbereitet...")}</span>
                     )}
                   </div>
                 ))}

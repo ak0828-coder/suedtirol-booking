@@ -48,7 +48,7 @@ export default async function MemberSettingsPage({
               <p className="text-sm text-slate-500">{t("member_settings.subtitle", "Dein Bereich bei")} {club.name}</p>
             </div>
             <Link href={`/${lang}/club/${slug}/dashboard`}>
-              <Button variant="outline" className="rounded-full">{t("member_settings.back", "Zurück")}</Button>
+              <Button variant="outline" className="rounded-full">{t("member_settings.back", "ZurÃ¼ck")}</Button>
             </Link>
           </div>
         </header>
