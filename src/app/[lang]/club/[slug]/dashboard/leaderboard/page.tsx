@@ -61,7 +61,7 @@ export default async function ClubLeaderboardPage({
               <p className="text-sm text-slate-500">{t("leaderboard.club", "Club:")} {club.name}</p>
             </div>
             <Link href={`/${lang}/club/${slug}/dashboard`}>
-              <Button variant="outline" className="rounded-full">{t("leaderboard.back", "Zurück")}</Button>
+              <Button variant="outline" className="rounded-full">{t("leaderboard.back", "ZurÃ¼ck")}</Button>
             </Link>
           </div>
         </header>

@@ -64,7 +64,7 @@ export default async function MemberDocumentsPage({
               <p className="text-sm text-slate-500">{t("documents.club", "Club:")} {club.name}</p>
             </div>
             <Link href={`/${lang}/club/${slug}/dashboard`}>
-              <Button variant="outline" className="rounded-full">{t("documents.back", "Zurück")}</Button>
+              <Button variant="outline" className="rounded-full">{t("documents.back", "ZurÃ¼ck")}</Button>
             </Link>
           </div>
           <Suspense fallback={null}>
