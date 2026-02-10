@@ -425,6 +425,31 @@ export async function getClubMembers(clubSlug: string) {
   }))
 }
 
+export async function getImportedMembersCount(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return 0
+
+  const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL
+  if (club.owner_id !== user.id && !isSuperAdmin) return 0
+
+  const supabaseAdmin = getAdminClient()
+  const { count } = await supabaseAdmin
+    .from("club_members")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+    .eq("invite_status", "imported")
+
+  return count || 0
+}
+
 export async function getMemberAdminDashboardStats(clubSlug: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
