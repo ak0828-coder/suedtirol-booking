@@ -1237,6 +1237,10 @@ export async function deleteMembershipPlan(id: string) {
   return { success: true }
 }
 
+export async function deletePlan(id: string) {
+  return deleteMembershipPlan(id)
+}
+
 export async function updateMembershipPlanText(
   planId: string,
   updates: { name?: string; description?: string; ctaLabel?: string; features?: string }
@@ -3761,6 +3765,15 @@ export async function getMemberDocumentSignedUrl(clubSlug: string, documentId: s
 
   if (!signed?.signedUrl) return { success: false, error: "Signed URL fehlgeschlagen" }
   return { success: true, url: signed.signedUrl }
+}
+
+// Aliases for admin plan manager
+export async function createPlan(clubSlug: string, name: string, price: number, interval: string) {
+  if (interval && interval !== "year") {
+    // Currently only yearly plans are supported in Stripe setup
+    return { error: "Nur jährliche Tarife sind aktuell unterstützt." }
+  }
+  return createMembershipPlan(clubSlug, name, price)
 }
 
 export async function getAdminDocumentSignedUrl(clubSlug: string, documentId: string) {
