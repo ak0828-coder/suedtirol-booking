@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { createCourt, deleteCourt, updateCourtHours } from "@/app/actions"
@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, Plus, MapPin, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useI18n } from "@/components/i18n/locale-provider"
 
 type Court = {
   id: string
@@ -20,21 +19,21 @@ type Court = {
   end_hour?: number
 }
 
-export function CourtManager({
-  initialCourts,
-  clubSlug,
-}: {
-  initialCourts: Court[]
-  clubSlug: string
+export function CourtManager({ 
+  initialCourts, 
+  clubSlug 
+}: { 
+  initialCourts: Court[], 
+  clubSlug: string 
 }) {
   const router = useRouter()
   const [courts, setCourts] = useState<Court[]>(initialCourts)
-  const { t } = useI18n()
-
+  
+  // Form States
   const [newCourtName, setNewCourtName] = useState("")
   const [newCourtPrice, setNewCourtPrice] = useState("15")
   const [newCourtDuration, setNewCourtDuration] = useState("60")
-
+  
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleAdd() {
@@ -42,8 +41,8 @@ export function CourtManager({
     setIsLoading(true)
 
     const result = await createCourt(
-      clubSlug,
-      newCourtName,
+      clubSlug, 
+      newCourtName, 
       parseFloat(newCourtPrice),
       parseInt(newCourtDuration)
     )
@@ -53,22 +52,24 @@ export function CourtManager({
       setNewCourtName("")
       router.refresh()
     } else {
-      alert(t("admin_courts.error", "Fehler") + ": " + (result.error || t("admin_courts.unknown", "Unbekannter Fehler")))
+      alert("Fehler: " + (result.error || "Unbekannter Fehler"))
     }
     setIsLoading(false)
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("admin_courts.confirm_delete", "Platz wirklich l�schen?"))) return
+    if(!confirm("Platz wirklich löschen?")) return;
     const result = await deleteCourt(id)
     if (result.success) {
-      setCourts(courts.filter((c) => c.id !== id))
+      setCourts(courts.filter(c => c.id !== id))
       router.refresh()
     }
   }
 
+  // NEU: Öffnungszeiten direkt speichern
   const handleUpdateHours = async (courtId: string, start: number, end: number) => {
-    setCourts(courts.map((c) => c.id === courtId ? { ...c, start_hour: start, end_hour: end } : c))
+    // Optimistic update
+    setCourts(courts.map(c => c.id === courtId ? { ...c, start_hour: start, end_hour: end } : c))
     await updateCourtHours(courtId, start, end)
     router.refresh()
   }
@@ -78,10 +79,11 @@ export function CourtManager({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          {t("admin_courts.title", "Platzverwaltung")}
+          Platzverwaltung
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* LISTE */}
         <div className="space-y-4 mb-6">
           {courts.map((court) => (
             <Card key={court.id} className="bg-white border border-slate-200/60 rounded-2xl shadow-sm">
@@ -89,11 +91,12 @@ export function CourtManager({
                 <div>
                   <h3 className="font-semibold text-lg">{court.name}</h3>
                   <div className="text-sm text-slate-500 flex gap-3">
-                    <span>{court.price_per_hour}� / {t("admin_courts.per_play", "Spiel")}</span>
-                    <span>? {court.duration_minutes} {t("admin_courts.minutes", "Min")}</span>
+                    <span>{court.price_per_hour}€ / Spiel</span>
+                    <span>⏱ {court.duration_minutes} Min</span>
                   </div>
                 </div>
 
+                {/* ÖFFNUNGSZEITEN EINSTELLUNG */}
                 <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200/60">
                   <Clock className="w-4 h-4 text-slate-400" />
                   <div className="flex items-center gap-1">
@@ -103,14 +106,14 @@ export function CourtManager({
                       value={court.start_hour || 8}
                       onChange={(e) => handleUpdateHours(court.id, parseInt(e.target.value), court.end_hour || 22)}
                     />
-                    <span className="text-xs text-slate-400">{t("admin_courts.to", "bis")}</span>
+                    <span className="text-xs text-slate-400">bis</span>
                     <Input
                       type="number"
                       className="w-16 h-8 text-xs"
                       value={court.end_hour || 22}
                       onChange={(e) => handleUpdateHours(court.id, court.start_hour || 8, parseInt(e.target.value))}
                     />
-                    <span className="text-xs text-slate-400">{t("admin_courts.clock", "Uhr")}</span>
+                    <span className="text-xs text-slate-400">Uhr</span>
                   </div>
                 </div>
 
@@ -125,39 +128,41 @@ export function CourtManager({
               </CardContent>
             </Card>
           ))}
-          {courts.length === 0 && <p className="text-slate-500 italic">{t("admin_courts.empty", "Keine Pl�tze angelegt.")}</p>}
+          {courts.length === 0 && <p className="text-slate-500 italic">Keine Plätze angelegt.</p>}
         </div>
 
+        {/* NEU ERSTELLEN FORMULAR */}
         <div className="flex flex-col md:flex-row gap-3 items-end border-t border-slate-200/60 pt-4">
           <div className="grid gap-1 flex-1 w-full">
-            <Label className="text-xs font-medium">{t("admin_courts.name", "Name")}</Label>
-            <Input
-              placeholder={t("admin_courts.name_placeholder", "Platz Name")}
+            <Label className="text-xs font-medium">Name</Label>
+            <Input 
+              placeholder="Platz Name" 
               value={newCourtName}
               onChange={(e) => setNewCourtName(e.target.value)}
             />
           </div>
-
+          
           <div className="grid gap-1 w-full md:w-32">
-            <Label className="text-xs font-medium">{t("admin_courts.price", "Preis (�)")}</Label>
-            <Input
-              type="number"
+            <Label className="text-xs font-medium">Preis (€)</Label>
+            <Input 
+              type="number" 
               value={newCourtPrice}
               onChange={(e) => setNewCourtPrice(e.target.value)}
             />
           </div>
 
+          {/* NEU: DAUER AUSWAHL */}
           <div className="grid gap-1 w-full md:w-40">
-            <Label className="text-xs font-medium">{t("admin_courts.duration", "Dauer")}</Label>
+            <Label className="text-xs font-medium">Dauer</Label>
             <Select value={newCourtDuration} onValueChange={setNewCourtDuration}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="45">45 {t("admin_courts.minutes", "Min")}</SelectItem>
-                <SelectItem value="60">60 {t("admin_courts.minutes", "Min")}</SelectItem>
-                <SelectItem value="90">90 {t("admin_courts.minutes", "Min")}</SelectItem>
-                <SelectItem value="120">120 {t("admin_courts.minutes", "Min")}</SelectItem>
+                <SelectItem value="45">45 Minuten</SelectItem>
+                <SelectItem value="60">60 Minuten</SelectItem>
+                <SelectItem value="90">90 Minuten</SelectItem>
+                <SelectItem value="120">120 Minuten</SelectItem>
               </SelectContent>
             </Select>
           </div>
