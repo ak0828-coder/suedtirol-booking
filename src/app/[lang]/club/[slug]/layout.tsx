@@ -7,9 +7,9 @@ export default async function ClubLocaleLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { lang: string; slug: string };
+  params: Promise<{ lang: string; slug: string }>;
 }) {
-  const { lang, slug } = params;
+  const { lang, slug } = await params;
   const supabase = await createClient();
   const { data: club } = await supabase
     .from("clubs")
