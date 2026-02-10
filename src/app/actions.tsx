@@ -2810,7 +2810,7 @@ export async function createCheckoutSession(
   // Club & Member prÃ¼fen, um Mitgliedspreis anzuwenden
   const { data: club } = await supabaseAdmin
     .from('clubs')
-    .select('id, member_booking_pricing_mode, member_booking_pricing_value')
+    .select('id, member_booking_pricing_mode, member_booking_pricing_value, stripe_account_id, application_fee_cents')
     .eq('slug', clubSlug)
     .single()
 
@@ -2893,11 +2893,17 @@ export async function createCheckoutSession(
   }
 
   try {
-    if (finalPrice > 0 && !club.stripe_account_id) {
+    const clubStripeAccountId = (club as any)?.stripe_account_id || null
+    const clubApplicationFeeCents = (club as any)?.application_fee_cents ?? null
+
+    if (finalPrice > 0 && !clubStripeAccountId) {
       return { error: "Verein ist noch nicht für Stripe eingerichtet." }
     }
 
-    const paymentIntentData = buildClubPaymentIntentData(club)
+    const paymentIntentData = buildClubPaymentIntentData({
+      stripe_account_id: clubStripeAccountId,
+      application_fee_cents: clubApplicationFeeCents,
+    })
 
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
