@@ -450,6 +450,94 @@ export async function getImportedMembersCount(clubSlug: string) {
   return count || 0
 }
 
+export async function activateImportedMembers(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id, name, default_language")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  const lang = (club as any)?.default_language || defaultLocale
+  const { data: members } = await supabaseAdmin
+    .from("club_members")
+    .select("id, import_email")
+    .eq("club_id", club.id)
+    .eq("invite_status", "imported")
+
+  let sent = 0
+  for (const m of members || []) {
+    const email = (m.import_email || "").toString().trim().toLowerCase()
+    if (!email) continue
+
+    const subject = lang === "en"
+      ? `Avaimo access for ${club.name}`
+      : lang === "it"
+      ? `Accesso Avaimo per ${club.name}`
+      : `Avaimo Zugang für ${club.name}`
+
+    const headline = lang === "en"
+      ? "Welcome to Avaimo"
+      : lang === "it"
+      ? "Benvenuto in Avaimo"
+      : "Willkommen bei Avaimo"
+
+    const intro = lang === "en"
+      ? `Your club <strong>${club.name}</strong> is now using Avaimo.`
+      : lang === "it"
+      ? `Il tuo club <strong>${club.name}</strong> utilizza ora Avaimo.`
+      : `Dein Verein <strong>${club.name}</strong> nutzt ab sofort Avaimo.`
+
+    const loginText = lang === "en"
+      ? "Log in to complete your profile."
+      : lang === "it"
+      ? "Accedi per completare il tuo profilo."
+      : "Bitte logge dich ein und setze dein Passwort."
+
+    const loginLabel = lang === "en" ? "Go to login" : lang === "it" ? "Vai al login" : "Zum Login"
+
+    try {
+      await resend.emails.send({
+        from: "Avaimo <info@avaimo.com>",
+        to: [email],
+        subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; color: #0f172a;">
+            <h2>${headline}</h2>
+            <p>${intro}</p>
+            <p>${loginText}</p>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login">${loginLabel}</a></p>
+          </div>
+        `,
+      })
+      sent += 1
+    } catch (err) {
+      console.error("Bulk invite mail failed:", err)
+    }
+  }
+
+  if (members && members.length > 0) {
+    await supabaseAdmin
+      .from("club_members")
+      .update({ invite_status: "invited", invited_at: new Date().toISOString() })
+      .eq("club_id", club.id)
+      .eq("invite_status", "imported")
+  }
+
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
+  return { success: true, sent }
+}
+
 export async function getMemberAdminDashboardStats(clubSlug: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -4091,9 +4179,8 @@ export async function inviteMember(formData: FormData) {
 
   if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
     return { success: false, error: "Keine Berechtigung" }
-
-    const lang = (club as any)?.default_language || defaultLocale
   }
+  const lang = (club as any)?.default_language || defaultLocale
 
   // 2. User Check / Create
   let targetUserId = null
