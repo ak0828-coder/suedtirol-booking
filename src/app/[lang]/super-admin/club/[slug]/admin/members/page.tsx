@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Edit, AlertTriangle, CheckCircle, FileText } from "lucide-react"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export default async function SuperAdminMembersPage({
@@ -237,4 +237,5 @@ export default async function SuperAdminMembersPage({
     </>
   )
 }
+
 

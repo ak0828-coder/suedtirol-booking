@@ -1,8 +1,8 @@
-import { format } from "date-fns"
+﻿import { format } from "date-fns"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
@@ -44,8 +44,8 @@ export default async function SuperAdminBookingsPage({
 
       <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Aktivität</CardTitle>
-          <span className="text-xs text-slate-500">{bookings?.length || 0} Einträge</span>
+          <CardTitle>AktivitÃ¤t</CardTitle>
+          <span className="text-xs text-slate-500">{bookings?.length || 0} EintrÃ¤ge</span>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -97,3 +97,4 @@ export default async function SuperAdminBookingsPage({
     </>
   )
 }
+

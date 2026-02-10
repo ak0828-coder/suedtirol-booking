@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+﻿import { createClient } from "@/lib/supabase/server"
 import { CourtManager } from "@/components/admin/court-manager"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
@@ -25,8 +25,8 @@ export default async function SuperAdminCourtsPage({
       <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-semibold">Plätze</h2>
-            <p className="text-slate-500 text-sm">Plätze anlegen, bearbeiten und organisieren.</p>
+            <h2 className="text-2xl md:text-3xl font-semibold">PlÃ¤tze</h2>
+            <p className="text-slate-500 text-sm">PlÃ¤tze anlegen, bearbeiten und organisieren.</p>
           </div>
           <FeatureGateToggle
             clubId={club.id}
@@ -43,3 +43,4 @@ export default async function SuperAdminCourtsPage({
     </>
   )
 }
+

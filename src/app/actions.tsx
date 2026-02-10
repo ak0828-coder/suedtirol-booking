@@ -634,7 +634,7 @@ export async function resendMembershipContract(clubSlug: string, memberId: strin
   if (!email) return { success: false, error: "E-Mail nicht gefunden" }
 
   await resend.emails.send({
-    from: "Avaimo <onboarding@resend.dev>",
+    from: "Avaimo <info@avaimo.com>",
     to: [email],
     subject: `Dein Mitgliedsvertrag – ${club.name}`,
     html: `
@@ -1983,7 +1983,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
       if (trainer.email) {
         try {
           await resend.emails.send({
-            from: "Avaimo <onboarding@resend.dev>",
+            from: "Avaimo <info@avaimo.com>",
             to: [trainer.email],
             subject: `Traineranfrage - ${clubSlug || ""}`,
             html: `
@@ -2006,7 +2006,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
       if (user?.email) {
         try {
           await resend.emails.send({
-            from: "Suedtirol Booking <onboarding@resend.dev>",
+            from: "Avaimo <info@avaimo.com>",
             to: [user.email],
             subject: "Traineranfrage erhalten",
             html: `
@@ -2178,7 +2178,7 @@ export async function createCourseCheckoutSession(
           .join("<br/>")
         try {
           await resend.emails.send({
-            from: "Avaimo <onboarding@resend.dev>",
+            from: "Avaimo <info@avaimo.com>",
             to: [user.email],
             subject: `Kurs Best�tigt - ${course.title}`,
             html: `
@@ -2264,7 +2264,7 @@ export async function createCourseCheckoutSession(
     if (user?.email) {
       try {
         await resend.emails.send({
-          from: "Avaimo <onboarding@resend.dev>",
+          from: "Avaimo <info@avaimo.com>",
           to: [user.email],
           subject: `Kurs Best�tigt - ${course.title}`,
           html: `
@@ -2638,7 +2638,7 @@ export async function createBooking(
 
     if (customerEmail) {
       await resend.emails.send({
-        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        from: 'Avaimo <info@avaimo.com>',
         to: [customerEmail],
           subject: lang === "en" ? `Your booking on ${format(date, "dd.MM.yyyy")} at ${time}` : lang === "it" ? `La tua prenotazione del ${format(date, "dd.MM.yyyy")} alle ${time}` : `Deine Buchung am ${format(date, "dd.MM.yyyy")} um ${time}`,
         react: <BookingEmailTemplate
@@ -2655,7 +2655,7 @@ export async function createBooking(
 
     if (adminEmail && adminEmail !== customerEmail) {
       await resend.emails.send({
-        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        from: 'Avaimo <info@avaimo.com>',
         to: [adminEmail],
           subject: lang === "en" ? `New booking: ${format(date, "dd.MM.yyyy")} at ${time}` : lang === "it" ? `Nuova prenotazione: ${format(date, "dd.MM.yyyy")} alle ${time}` : `Neue Buchung: ${format(date, "dd.MM.yyyy")} um ${time}`,
         react: <BookingEmailTemplate
@@ -3401,7 +3401,7 @@ export async function uploadMemberDocument(formData: FormData) {
     if (adminEmail) {
       try {
         await resend.emails.send({
-          from: "Suedtirol Booking <onboarding@resend.dev>",
+          from: "Avaimo <info@avaimo.com>",
           to: [adminEmail],
           subject: `Neues ärztliches Zeugnis (${clubSlug})`,
           react: (
@@ -3574,7 +3574,7 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
         )
 
         await resend.emails.send({
-          from: "Suedtirol Booking <onboarding@resend.dev>",
+          from: "Avaimo <info@avaimo.com>",
           to: [memberEmail],
           subject: approve ? "Ärztliches Zeugnis bestätigt" : "Ärztliches Zeugnis abgelehnt",
           react: emailReact,
@@ -4136,7 +4136,7 @@ export async function inviteMember(formData: FormData) {
   try {
     if (isNewUser) {
       await resend.emails.send({
-        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        from: 'Avaimo <info@avaimo.com>',
         to: [email],
         subject: lang === "en" ? `Welcome to ${club.name}!` : lang === "it" ? `Benvenuto in ${club.name}!` : `Willkommen im ${club.name}!`,
         react: <WelcomeMemberEmailTemplate
@@ -4150,7 +4150,7 @@ export async function inviteMember(formData: FormData) {
     } else {
       // Existierender User: Info Mail
       await resend.emails.send({
-        from: 'Suedtirol Booking <onboarding@resend.dev>',
+        from: 'Avaimo <info@avaimo.com>',
         to: [email],
         subject: `Du wurdest zu ${club.name} hinzugefügt`,
         html: `
@@ -4410,7 +4410,7 @@ export async function importMembersBatch(
       try {
         if (sendTempPassword) {
           await resend.emails.send({
-            from: "Avaimo <onboarding@resend.dev>",
+            from: "Avaimo <info@avaimo.com>",
             to: [email],
             subject: lang === "en" ? `Welcome to ${club.name}` : lang === "it" ? `Benvenuto in ${club.name}` : `Willkommen bei ${club.name}`,
             react: (
@@ -4451,7 +4451,7 @@ export async function importMembersBatch(
           const loginLabel = lang === "en" ? "Go to login" : lang === "it" ? "Vai al login" : "Zum Login"
 
           await resend.emails.send({
-            from: "Avaimo <onboarding@resend.dev>",
+            from: "Avaimo <info@avaimo.com>",
             to: [email],
             subject,
             html: `
@@ -4739,7 +4739,7 @@ export async function submitMembershipSignature(
 
     if (user.email) {
       await resend.emails.send({
-        from: "Avaimo <onboarding@resend.dev>",
+        from: "Avaimo <info@avaimo.com>",
         to: [user.email],
         subject,
         html,
@@ -4749,7 +4749,7 @@ export async function submitMembershipSignature(
     const adminEmail = club.admin_email || SUPER_ADMIN_EMAIL
     if (adminEmail) {
       await resend.emails.send({
-        from: "Avaimo <onboarding@resend.dev>",
+        from: "Avaimo <info@avaimo.com>",
         to: [adminEmail],
         subject: `Neuer Mitgliedsvertrag – ${club.name}`,
         html: `
@@ -4986,6 +4986,7 @@ export async function exportTrainerRevenueCsv(clubSlug: string, year: number, mo
   const csvContent = [header.join(";"), ...rows].join("\n")
   return { success: true, csv: csvContent, filename: `trainerabrechnungen_${year}_${month}.csv` }
 }
+
 
 
 

@@ -1,5 +1,5 @@
-import { ExportManager } from "@/components/admin/export-manager"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+﻿import { ExportManager } from "@/components/admin/export-manager"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
@@ -35,3 +35,4 @@ export default async function SuperAdminExportPage({
     </>
   )
 }
+

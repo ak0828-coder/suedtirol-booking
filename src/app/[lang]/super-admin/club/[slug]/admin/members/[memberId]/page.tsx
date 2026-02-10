@@ -1,6 +1,6 @@
 ﻿import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { getMemberDocumentAuditForAdmin, getMemberDocumentsForAdmin } from "@/app/actions"
 import { MemberBookingsPanel } from "@/components/admin/member-bookings-panel"
 import { AdminMemberQuickActions } from "@/components/admin/member-quick-actions"
@@ -154,4 +154,5 @@ export default async function SuperAdminMemberDetailPage({
     </div>
   )
 }
+
 

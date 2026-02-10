@@ -1,6 +1,6 @@
-import { getClubVouchers } from "@/app/actions"
+﻿import { getClubVouchers } from "@/app/actions"
 import { VoucherManager } from "@/components/admin/voucher-manager"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
@@ -37,3 +37,4 @@ export default async function SuperAdminVouchersPage({
     </>
   )
 }
+

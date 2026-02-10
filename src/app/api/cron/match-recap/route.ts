@@ -114,7 +114,7 @@ export async function GET(req: Request) {
       const subject = lang === "en" ? "How did your match go?" : lang === "it" ? "Com'è andata la partita?" : "Wie lief dein Match?"
 
       await resend.emails.send({
-        from: "Avaimo <onboarding@resend.dev>",
+        from: "Avaimo <info@avaimo.com>",
         to: [email],
         subject,
         react: emailReact,
@@ -133,3 +133,4 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ ok: true, sent })
 }
+

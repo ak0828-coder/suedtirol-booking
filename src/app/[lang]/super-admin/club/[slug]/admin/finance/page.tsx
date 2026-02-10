@@ -1,4 +1,4 @@
-﻿import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+﻿import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
 import { TrainerPayouts } from "@/components/admin/trainer-payouts"
@@ -77,4 +77,5 @@ export default async function SuperAdminFinancePage({
     </>
   )
 }
+
 

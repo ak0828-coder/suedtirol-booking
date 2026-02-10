@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+﻿import { createClient } from "@/lib/supabase/server"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 import { TrainerManager } from "@/components/admin/trainer-manager"
 
@@ -43,3 +43,4 @@ export default async function SuperAdminTrainersPage({
     </>
   )
 }
+

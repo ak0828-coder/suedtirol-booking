@@ -92,7 +92,7 @@ export async function GET(req: Request) {
 
     if (booking.guest_email) {
       await resend.emails.send({
-        from: "Avaimo <onboarding@resend.dev>",
+        from: "Avaimo <info@avaimo.com>",
         to: [booking.guest_email],
         subject: dict.confirmed,
         html: `
@@ -122,7 +122,7 @@ export async function GET(req: Request) {
 
   if (booking.guest_email) {
     await resend.emails.send({
-      from: "Avaimo <onboarding@resend.dev>",
+      from: "Avaimo <info@avaimo.com>",
       to: [booking.guest_email],
       subject: dict.rejected,
       html: `
@@ -135,3 +135,4 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ ok: true })
 }
+

@@ -2,7 +2,7 @@
 import { ClubCmsEditor } from "@/components/admin/club-cms-editor"
 import { getClubAiSettings, getClubContent } from "@/app/actions"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { AiDocumentSettings } from "@/components/admin/ai-document-settings"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
@@ -129,4 +129,5 @@ export default async function SuperAdminSettingsPage({
     </>
   )
 }
+
 

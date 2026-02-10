@@ -1,10 +1,10 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { format } from "date-fns"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
 import { DeleteBookingButton } from "@/components/admin/delete-button"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
@@ -34,8 +34,8 @@ export default async function SuperAdminClubOverviewPage({
     <>
       <div className="flex items-center justify-between rounded-3xl border border-slate-200/60 bg-white/80 px-6 py-4 shadow-sm">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Übersicht</h2>
-          <p className="text-xs text-slate-500">Admin-Startseite für den Verein.</p>
+          <h2 className="text-lg font-semibold text-slate-900">Ãœbersicht</h2>
+          <p className="text-xs text-slate-500">Admin-Startseite fÃ¼r den Verein.</p>
         </div>
         <FeatureGateToggle
           clubId={club.id}
@@ -54,8 +54,8 @@ export default async function SuperAdminClubOverviewPage({
         <div className="xl:col-span-2 space-y-6">
           <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Letzte Aktivitäten</CardTitle>
-              <span className="text-xs text-slate-500">{bookings?.length || 0} Einträge</span>
+              <CardTitle>Letzte AktivitÃ¤ten</CardTitle>
+              <span className="text-xs text-slate-500">{bookings?.length || 0} EintrÃ¤ge</span>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[620px] overflow-auto pr-2">
@@ -129,7 +129,7 @@ export default async function SuperAdminClubOverviewPage({
                   href={`/super-admin/club/${slug}/admin/courts`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
-                  Plätze
+                  PlÃ¤tze
                 </Link>
                 <Link
                   href={`/super-admin/club/${slug}/admin/blocks`}
@@ -181,3 +181,4 @@ export default async function SuperAdminClubOverviewPage({
     </>
   )
 }
+

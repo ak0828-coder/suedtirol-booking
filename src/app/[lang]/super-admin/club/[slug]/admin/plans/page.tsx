@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
+﻿import { createClient } from "@/lib/supabase/server"
 import { PlanManager } from "@/components/admin/plan-manager"
-import { getAdminContext } from "@/app/club/[slug]/admin/_lib/get-admin-context"
+import { getAdminContext } from "@/app/[lang]/club/[slug]/admin/_lib/get-admin-context"
 import { FeatureGateToggle } from "@/components/admin/feature-gate-toggle"
 
 export const dynamic = "force-dynamic"
@@ -25,7 +25,7 @@ export default async function SuperAdminPlansPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold">Abos</h2>
-            <p className="text-slate-500 text-sm">Mitgliedschaftspläne verwalten.</p>
+            <p className="text-slate-500 text-sm">MitgliedschaftsplÃ¤ne verwalten.</p>
           </div>
           <FeatureGateToggle
             clubId={club.id}
@@ -42,3 +42,4 @@ export default async function SuperAdminPlansPage({
     </>
   )
 }
+

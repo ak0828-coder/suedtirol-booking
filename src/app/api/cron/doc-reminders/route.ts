@@ -100,7 +100,7 @@ export async function GET(req: Request) {
       )
 
       await resend.emails.send({
-        from: "Avaimo <onboarding@resend.dev>",
+        from: "Avaimo <info@avaimo.com>",
         to: [adminEmail],
         subject: `${dict.subject} (${club?.name || "Club"})`,
         react: emailReact,
@@ -113,3 +113,4 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ ok: true, reminded: sent })
 }
+

@@ -200,7 +200,7 @@ export async function POST(req: Request) {
         try {
           if (isNewUser) {
             await resend.emails.send({
-              from: "Avaimo <onboarding@resend.dev>",
+              from: "Avaimo <info@avaimo.com>",
               to: [customerEmail],
               subject: `${clubName}`,
               react: (
@@ -216,7 +216,7 @@ export async function POST(req: Request) {
           } else {
             const dict = membershipCopy[lang]
             await resend.emails.send({
-              from: "Avaimo <onboarding@resend.dev>",
+              from: "Avaimo <info@avaimo.com>",
               to: [customerEmail],
               subject: dict.existingSubject,
               html: `
@@ -296,7 +296,7 @@ export async function POST(req: Request) {
               : `Deine Buchung am ${startTime.toLocaleDateString(locale)} um ${time}`
 
             await resend.emails.send({
-              from: "Avaimo <onboarding@resend.dev>",
+              from: "Avaimo <info@avaimo.com>",
               to: [customerEmail],
               subject,
               react: (
@@ -389,7 +389,7 @@ export async function POST(req: Request) {
 
             try {
               await resend.emails.send({
-                from: "Avaimo <onboarding@resend.dev>",
+                from: "Avaimo <info@avaimo.com>",
                 to: [trainer.email],
                 subject: `${dict.requestSubject} - ${clubSlug || ""}`,
                 html: `
@@ -422,7 +422,7 @@ export async function POST(req: Request) {
           const dict = trainerCopy[lang]
 
           await resend.emails.send({
-            from: "Avaimo <onboarding@resend.dev>",
+            from: "Avaimo <info@avaimo.com>",
             to: [customerEmail],
             subject: dict.pendingSubject,
             html: `
@@ -561,7 +561,7 @@ export async function POST(req: Request) {
 
           try {
             await resend.emails.send({
-              from: "Avaimo <onboarding@resend.dev>",
+              from: "Avaimo <info@avaimo.com>",
               to: [customerEmail],
               subject: `${dict.subject} - ${course?.title || "Course"}`,
               html: `
@@ -632,3 +632,4 @@ export async function POST(req: Request) {
 
   return new NextResponse(null, { status: 200 })
 }
+
