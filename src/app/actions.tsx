@@ -4469,6 +4469,7 @@ export async function importMembersBatch(
         console.error("Bulk invite mail failed:", err)
       }
     }
+  }
   if (members && members.length > 0) {
     await supabaseAdmin
       .from("club_members")
