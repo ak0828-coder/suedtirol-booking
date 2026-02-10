@@ -1,4 +1,4 @@
-"use client"
+Ôªø"use client"
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -66,9 +66,9 @@ export default function DemoPage() {
   }, [initialView])
 
   const navItems = [
-    { href: "", label: t("demo.nav.overview", "‹bersicht") },
+    { href: "", label: t("demo.nav.overview", "√úbersicht") },
     { href: "/bookings", label: t("demo.nav.bookings", "Buchungen") },
-    { href: "/courts", label: t("demo.nav.courts", "Pl‰tze") },
+    { href: "/courts", label: t("demo.nav.courts", "Pl√§tze") },
     { href: "/blocks", label: t("demo.nav.blocks", "Sperrzeiten") },
     { href: "/plans", label: t("demo.nav.plans", "Abos") },
     { href: "/members", label: t("demo.nav.members", "Mitglieder") },
@@ -87,7 +87,7 @@ export default function DemoPage() {
           <div>
             <div className="text-xs uppercase tracking-[0.2em] text-[#1F3D2B]/70">{t("demo.hero.badge", "Demo")}</div>
             <h1 className="text-2xl md:text-3xl font-semibold text-[#0E1A14]">{t("demo.hero.title", "Avaimo Live Demo")}</h1>
-            <p className="text-sm text-[#0E1A14]/60">{t("demo.hero.subtitle", "Wechsel zwischen Admin-Ansicht und Mitglieder-Ansicht. Keine Anmeldung nˆtig.")}</p>
+            <p className="text-sm text-[#0E1A14]/60">{t("demo.hero.subtitle", "Wechsel zwischen Admin-Ansicht und Mitglieder-Ansicht. Keine Anmeldung n√∂tig.")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -119,7 +119,7 @@ export default function DemoPage() {
               {t("demo.hero.member", "Mitglieder Ansicht")}
             </button>
             <Link href={`/${lang}`} className="rounded-full border border-[#1F3D2B]/30 px-4 py-2 text-sm text-[#1F3D2B]">
-              {t("demo.hero.back", "Zur¸ck zur Website")}
+              {t("demo.hero.back", "Zur√ºck zur Website")}
             </Link>
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function DemoPage() {
                     <h2 className="text-2xl md:text-3xl font-semibold text-[#0E1A14] tracking-tight">
                       {t("demo.admin.title", "Admin Dashboard")}
                     </h2>
-                    <p className="text-[#0E1A14]/60">{t("demo.admin.subtitle", "Verwaltung f¸r")} {demoClub.name}</p>
+                    <p className="text-[#0E1A14]/60">{t("demo.admin.subtitle", "Verwaltung f√ºr")} {demoClub.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -167,8 +167,8 @@ export default function DemoPage() {
                 <div className="xl:col-span-2 space-y-6">
                   <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                     <CardHeader className="flex flex-row items-center justify-between">
-                      <CardTitle>{t("demo.admin.recent", "Letzte Aktivit‰ten")}</CardTitle>
-                      <span className="text-xs text-[#0E1A14]/60">{demoBookings.length} {t("demo.admin.entries", "Eintr‰ge")}</span>
+                      <CardTitle>{t("demo.admin.recent", "Letzte Aktivit√§ten")}</CardTitle>
+                      <span className="text-xs text-[#0E1A14]/60">{demoBookings.length} {t("demo.admin.entries", "Eintr√§ge")}</span>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4 max-h-[520px] overflow-auto pr-2">
@@ -225,7 +225,7 @@ export default function DemoPage() {
                         {[
                           t("demo.admin.quick_items.settings", "Einstellungen"),
                           t("demo.admin.quick_items.vouchers", "Gutscheine"),
-                          t("demo.admin.quick_items.courts", "Pl‰tze"),
+                          t("demo.admin.quick_items.courts", "Pl√§tze"),
                           t("demo.admin.quick_items.blocks", "Sperrzeiten"),
                           t("demo.admin.quick_items.plans", "Abos"),
                           t("demo.admin.quick_items.members", "Mitglieder"),
@@ -294,7 +294,7 @@ export default function DemoPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-semibold">{t("demo.member.active_state", "Aktiv")}</div>
-                    <p className="text-sm text-[#0E1A14]/60 mt-2">{t("demo.member.valid_until", "g¸ltig bis: 31.12.2026")}</p>
+                    <p className="text-sm text-[#0E1A14]/60 mt-2">{t("demo.member.valid_until", "g√ºltig bis: 31.12.2026")}</p>
                     <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                       {[12, 4, 3].map((val, idx) => (
                         <div key={idx} className="rounded-xl border border-[#1F3D2B]/15 bg-white/90 px-2 py-2">
@@ -311,7 +311,7 @@ export default function DemoPage() {
                 <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex gap-2 items-center">
-                      <Calendar className="text-[#1F3D2B]" /> {t("demo.member.next", "N‰chster Termin")}
+                      <Calendar className="text-[#1F3D2B]" /> {t("demo.member.next", "N√§chster Termin")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -341,7 +341,7 @@ export default function DemoPage() {
               <Card className="rounded-2xl border border-[#1F3D2B]/15 bg-white/90 shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex gap-2 items-center">
-                    <Calendar className="text-[#1F3D2B]" /> {t("demo.member.upcoming", "Deine n‰chsten Spiele")}
+                    <Calendar className="text-[#1F3D2B]" /> {t("demo.member.upcoming", "Deine n√§chsten Spiele")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -377,3 +377,4 @@ export default function DemoPage() {
     </div>
   )
 }
+
