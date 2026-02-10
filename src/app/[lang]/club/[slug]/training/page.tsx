@@ -1,4 +1,4 @@
-﻿import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { TrainerBookingCard } from "@/components/training/trainer-booking-card"
 import { CourseGrid } from "@/components/training/course-grid"

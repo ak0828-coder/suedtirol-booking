@@ -1,4 +1,4 @@
-﻿import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { CalendarDays, MapPin, Check, LogIn, User, Sparkles, ChevronRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"

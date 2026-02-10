@@ -1,4 +1,4 @@
-﻿import * as React from "react"
+import * as React from "react"
 import { Preview } from "@react-email/preview"
 import { Text } from "@react-email/text"
 import { Button } from "@react-email/button"

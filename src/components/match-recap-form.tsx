@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useTransition, useState } from "react"
 import { submitMatchRecap } from "@/app/actions"

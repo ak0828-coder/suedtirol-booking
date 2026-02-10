@@ -1,4 +1,4 @@
-﻿import { ClubSettings } from "@/components/admin/club-settings"
+import { ClubSettings } from "@/components/admin/club-settings"
 import { ClubCmsEditor } from "@/components/admin/club-cms-editor"
 import { getClubAiSettings, getClubContent } from "@/app/actions"
 import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"

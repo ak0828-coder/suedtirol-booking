@@ -1,4 +1,4 @@
-﻿import { getAdminContext } from "../_lib/get-admin-context"
+import { getAdminContext } from "../_lib/get-admin-context"
 import { notFound } from "next/navigation"
 import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 import { getTrainerPayoutSummary, getClubRevenueSummary } from "@/app/actions"
