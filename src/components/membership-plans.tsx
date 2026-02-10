@@ -23,7 +23,7 @@ export function MembershipPlans({
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const { t } = useI18n()
   const defaultTitle = t("membership.title", "Werde Mitglied")
-  const defaultCta = t("membership.cta", "Jetzt w‰hlen")
+  const defaultCta = t("membership.cta", "Jetzt w√§hlen")
   const defaultFeatures = [
     t("membership.feature.free_play", "Kostenlos spielen"),
     t("membership.feature.priority", "Bevorzugte Buchung"),
@@ -72,7 +72,7 @@ export function MembershipPlans({
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
                 <div className="text-3xl font-bold mb-4">
-                  {plan.price}Ä <span className="text-sm font-normal text-slate-500">/ {t("membership.year", "Jahr")}</span>
+                  {plan.price}‚Ç¨ <span className="text-sm font-normal text-slate-500">/ {t("membership.year", "Jahr")}</span>
                 </div>
 
                 {features.length > 0 && (

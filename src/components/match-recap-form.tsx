@@ -50,13 +50,13 @@ export function MatchRecapForm({
     <div className="space-y-4">
       <div className="grid gap-3">
         <div>
-          <div className="text-sm font-semibold text-slate-900">{t("match_recap.member", "Mitglied wählen")}</div>
+          <div className="text-sm font-semibold text-slate-900">{t("match_recap.member", "Mitglied wÃ¤hlen")}</div>
           <select
             value={selectedMember}
             onChange={(e) => setSelectedMember(e.target.value)}
             className="mt-2 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
           >
-            <option value="">{t("match_recap.select", "Bitte auswählen")}</option>
+            <option value="">{t("match_recap.select", "Bitte auswÃ¤hlen")}</option>
             {memberOptions.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.label}
@@ -94,7 +94,7 @@ export function MatchRecapForm({
             try {
               if (!navigator.share) {
                 setShareSupported(false)
-                setMessage(t("match_recap.share_no", "Teilen nicht unterstützt. Bitte Download nutzen."))
+                setMessage(t("match_recap.share_no", "Teilen nicht unterstÃ¼tzt. Bitte Download nutzen."))
                 return
               }
               const url = window.location.href
@@ -103,18 +103,18 @@ export function MatchRecapForm({
                 text: t("match_recap.share_text", "Schau dir mein Match Recap an!"),
                 url,
               })
-              setMessage(t("match_recap.share_opened", "Teilen geöffnet."))
+              setMessage(t("match_recap.share_opened", "Teilen geÃ¶ffnet."))
             } catch (error) {
-              setMessage(t("match_recap.share_error", "Teilen nicht unterstützt. Bitte Download nutzen."))
+              setMessage(t("match_recap.share_error", "Teilen nicht unterstÃ¼tzt. Bitte Download nutzen."))
             }
           }}
         >
-          {shareSupported ? t("match_recap.share", "Teilen") : t("match_recap.download", "Download für Insta")}
+          {shareSupported ? t("match_recap.share", "Teilen") : t("match_recap.download", "Download fÃ¼r Insta")}
         </Button>
       </div>
 
       <div className="text-xs text-slate-500">
-        {t("match_recap.tip", "Tipp: Für Instagram einfach „Download“ wählen und dann in der Story posten.")}
+        {t("match_recap.tip", "Tipp: FÃ¼r Instagram einfach â€žDownloadâ€œ wÃ¤hlen und dann in der Story posten.")}
       </div>
     </div>
   )
