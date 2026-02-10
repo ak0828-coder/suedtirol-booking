@@ -9,7 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Save, Settings } from "lucide-react"
 
-export function ClubSettings({ club, isSuperAdmin = false }: { club: any; isSuperAdmin?: boolean }) {
+export function ClubSettings({
+  club,
+  isSuperAdmin = false,
+  showApplicationFee = false,
+}: {
+  club: any
+  isSuperAdmin?: boolean
+  showApplicationFee?: boolean
+}) {
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(formData: FormData) {
@@ -88,7 +96,7 @@ export function ClubSettings({ club, isSuperAdmin = false }: { club: any; isSupe
             <Input id="logo" name="logo" type="file" accept="image/*" />
           </div>
 
-          {isSuperAdmin ? (
+          {isSuperAdmin || showApplicationFee ? (
             <div className="space-y-2">
               <Label htmlFor="application_fee_cents">Avaimo Provision pro Buchung (Cent)</Label>
               <Input

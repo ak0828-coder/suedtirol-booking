@@ -70,7 +70,7 @@ export default async function SuperAdminSettingsPage({
             />
           </div>
           <div className="mt-5">
-            <ClubSettings club={club} isSuperAdmin={isSuperAdmin} />
+            <ClubSettings club={club} isSuperAdmin={isSuperAdmin} showApplicationFee />
           </div>
         </section>
 
