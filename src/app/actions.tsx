@@ -2526,16 +2526,11 @@ export async function rejectTrainerBooking(formData: FormData) {
   return
 }
 
-export async function createMembershipCheckout(
-  clubSlug: string,
-  planId: string,
-  stripePriceId: string,
-  guestEmail?: string
-) {
+export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const email = user?.email || guestEmail || ""
-  if (!email) return { error: "Bitte E-Mail angeben, um ein Abo abzuschließen." }
+  const email = user?.email || ""
+  if (!email) return { error: "Bitte einloggen, um ein Abo abzuschließen." }
   if (!stripePriceId) return { error: "Tarif ist nicht mit Stripe verknüpft." }
 
   const { data: club } = await supabase

@@ -7,6 +7,7 @@ import { createMembershipCheckout } from "@/app/actions"
 import { useEffect, useState } from "react"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { createClient } from "@/lib/supabase/client"
+import { useParams, useRouter } from "next/navigation"
 
 export function MembershipPlans({
   plans,
@@ -22,9 +23,11 @@ export function MembershipPlans({
   ctaLabel?: string
 }) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
-  const [guestEmail, setGuestEmail] = useState("")
   const [hasSession, setHasSession] = useState<boolean | null>(null)
   const { t } = useI18n()
+  const params = useParams()
+  const router = useRouter()
+  const lang = typeof params?.lang === "string" ? params.lang : "de"
   const defaultTitle = t("membership.title", "Werde Mitglied")
   const defaultCta = t("membership.cta", "Jetzt wählen")
   const defaultFeatures = [
@@ -40,13 +43,13 @@ export function MembershipPlans({
   }, [])
 
   const handleSubscribe = async (planId: string, priceId: string) => {
+    if (hasSession === false) {
+      const next = `/${lang}/club/${clubSlug}/onboarding`
+      router.push(`/${lang}/login?redirect=${encodeURIComponent(next)}`)
+      return
+    }
     setLoadingId(planId)
-    const res = await createMembershipCheckout(
-      clubSlug,
-      planId,
-      priceId,
-      hasSession ? undefined : guestEmail.trim()
-    )
+    const res = await createMembershipCheckout(clubSlug, planId, priceId)
 
     if (res?.url) {
       window.location.href = res.url
@@ -65,21 +68,6 @@ export function MembershipPlans({
       </h2>
       {subtitle && (
         <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
-      )}
-      {hasSession === false && (
-        <div className="mt-4 max-w-md mx-auto">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            {t("membership.email_label", "E-Mail für die Mitgliedschaft")}
-          </label>
-          <input
-            type="email"
-            value={guestEmail}
-            onChange={(e) => setGuestEmail(e.target.value)}
-            placeholder={t("membership.email_placeholder", "deine@email.com")}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm"
-            required
-          />
-        </div>
       )}
 
       <div className="mt-8 grid md:grid-cols-3 gap-6">
@@ -118,7 +106,7 @@ export function MembershipPlans({
                 <Button
                   className="w-full club-primary-bg btn-press touch-44"
                   onClick={() => handleSubscribe(plan.id, plan.stripe_price_id)}
-                  disabled={!!loadingId || (hasSession === false && !guestEmail.trim())}
+                  disabled={!!loadingId}
                 >
                   {loadingId === plan.id ? <Loader2 className="animate-spin" /> : ctaText}
                 </Button>
