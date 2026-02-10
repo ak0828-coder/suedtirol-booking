@@ -5104,6 +5104,98 @@ export async function exportTrainerRevenueCsv(clubSlug: string, year: number, mo
   return { success: true, csv: csvContent, filename: `trainerabrechnungen_${year}_${month}.csv` }
 }
 
+// --- ADMIN MEMBER ACTIONS ---
+
+export async function resetMemberPassword(clubSlug: string, memberId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("email")
+    .eq("id", memberId)
+    .single()
+
+  if (!profile?.email) return { success: false, error: "Mitglied hat keine E-Mail" }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/change-password`,
+  })
+
+  if (error) return { success: false, error: "Fehler beim Senden der Reset-Mail" }
+  return { success: true }
+}
+
+export async function blockMember(clubSlug: string, memberId: string, shouldBlock: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  const { error } = await supabaseAdmin
+    .from("club_members")
+    .update({ status: shouldBlock ? "blocked" : "active" })
+    .eq("club_id", club.id)
+    .eq("user_id", memberId)
+
+  if (error) return { success: false, error: "Status konnte nicht geändert werden" }
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members/${memberId}`)
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
+  return { success: true }
+}
+
+export async function deleteMember(clubSlug: string, memberId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, owner_id")
+    .eq("slug", clubSlug)
+    .single()
+
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  const { error } = await supabaseAdmin
+    .from("club_members")
+    .delete()
+    .eq("club_id", club.id)
+    .eq("user_id", memberId)
+
+  if (error) return { success: false, error: "Löschen fehlgeschlagen" }
+  revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
+  return { success: true }
+}
+
 
 
 
