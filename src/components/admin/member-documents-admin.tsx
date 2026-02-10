@@ -24,8 +24,8 @@ export function MemberDocumentsAdmin({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">{t("admin_docs.title", "Dokumente prüfen")}</h3>
-        <p className="text-sm text-slate-500">{t("admin_docs.subtitle", "Prüfe und bestätige medizinische Nachweise.")}</p>
+        <h3 className="text-lg font-semibold text-slate-900">{t("admin_docs.title", "Dokumente prÃ¼fen")}</h3>
+        <p className="text-sm text-slate-500">{t("admin_docs.subtitle", "PrÃ¼fe und bestÃ¤tige medizinische Nachweise.")}</p>
       </div>
 
       {message && <div className="text-xs text-emerald-600">{message}</div>}
@@ -41,10 +41,10 @@ export function MemberDocumentsAdmin({
               <div className="text-xs text-slate-500">{doc.file_name}</div>
               <div className="mt-1 text-xs text-slate-500">
                 {doc.valid_until
-                  ? t("admin_docs.valid_until", "Gültig bis {date}").replace("{date}", new Date(doc.valid_until).toLocaleDateString(locale))
+                  ? t("admin_docs.valid_until", "GÃ¼ltig bis {date}").replace("{date}", new Date(doc.valid_until).toLocaleDateString(locale))
                   : doc.temp_valid_until
-                  ? t("admin_docs.temp_until", "Vorläufig bis {date}").replace("{date}", new Date(doc.temp_valid_until).toLocaleDateString(locale))
-                  : t("admin_docs.invalid", "Nicht gültig")}
+                  ? t("admin_docs.temp_until", "VorlÃ¤ufig bis {date}").replace("{date}", new Date(doc.temp_valid_until).toLocaleDateString(locale))
+                  : t("admin_docs.invalid", "Nicht gÃ¼ltig")}
               </div>
             </div>
 
@@ -57,11 +57,11 @@ export function MemberDocumentsAdmin({
                   if (res?.success && res.url) {
                     window.open(res.url, "_blank")
                   } else {
-                    setMessage(res?.error || t("admin_docs.open_error", "Dokument konnte nicht geöffnet werden."))
+                    setMessage(res?.error || t("admin_docs.open_error", "Dokument konnte nicht geÃ¶ffnet werden."))
                   }
                 }}
               >
-                {t("admin_docs.open", "Öffnen")}
+                {t("admin_docs.open", "Ã–ffnen")}
               </Button>
               <Button
                 variant="outline"
@@ -70,12 +70,12 @@ export function MemberDocumentsAdmin({
                 onClick={() => {
                   startTransition(async () => {
                     const res = await reviewMemberDocument(clubSlug, doc.id, true)
-                    if (res?.success) setMessage(t("admin_docs.approved", "Dokument bestätigt."))
+                    if (res?.success) setMessage(t("admin_docs.approved", "Dokument bestÃ¤tigt."))
                     else setMessage(res?.error || t("admin_docs.action_error", "Aktion fehlgeschlagen."))
                   })
                 }}
               >
-                {t("admin_docs.approve", "Bestätigen")}
+                {t("admin_docs.approve", "BestÃ¤tigen")}
               </Button>
               <Button
                 variant="outline"

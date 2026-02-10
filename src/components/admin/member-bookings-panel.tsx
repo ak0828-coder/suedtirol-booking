@@ -64,7 +64,7 @@ export function MemberBookingsPanel({
   return (
     <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-slate-800">{t("admin_member_bookings.title", "Buchungsübersicht")}</h3>
+        <h3 className="text-sm font-semibold text-slate-800">{t("admin_member_bookings.title", "BuchungsÃ¼bersicht")}</h3>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={filter === "all" ? "default" : "outline"}
@@ -78,7 +78,7 @@ export function MemberBookingsPanel({
             className="rounded-full text-xs"
             onClick={() => setFilter("upcoming")}
           >
-            {t("admin_member_bookings.upcoming", "Zukünftig")}
+            {t("admin_member_bookings.upcoming", "ZukÃ¼nftig")}
           </Button>
           <Button
             variant={filter === "past" ? "default" : "outline"}
@@ -99,12 +99,12 @@ export function MemberBookingsPanel({
             <div key={b.id} className="rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm">
               <div className="font-medium text-slate-800">{b.courts?.[0]?.name || t("admin_member_bookings.court", "Platz")}</div>
               <div className="text-xs text-slate-500">
-                {new Date(b.start_time).toLocaleDateString(locale)} ·{" "}
-                {new Date(b.start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} –{" "}
+                {new Date(b.start_time).toLocaleDateString(locale)} Â·{" "}
+                {new Date(b.start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })} â€“{" "}
                 {new Date(b.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
               </div>
               <div className="text-xs text-slate-500">
-                {t("admin_member_bookings.status", "Status")}: {b.status || "-"} · {t("admin_member_bookings.payment", "Zahlung")}: {b.payment_status || "-"}
+                {t("admin_member_bookings.status", "Status")}: {b.status || "-"} Â· {t("admin_member_bookings.payment", "Zahlung")}: {b.payment_status || "-"}
               </div>
             </div>
           ))}
