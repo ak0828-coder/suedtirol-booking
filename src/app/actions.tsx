@@ -2526,10 +2526,16 @@ export async function rejectTrainerBooking(formData: FormData) {
   return
 }
 
-export async function createMembershipCheckout(clubSlug: string, planId: string, stripePriceId: string) {
+export async function createMembershipCheckout(
+  clubSlug: string,
+  planId: string,
+  stripePriceId: string,
+  guestEmail?: string
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user?.email) return { error: "Bitte einloggen, um ein Abo abzuschließen." }
+  const email = user?.email || guestEmail || ""
+  if (!email) return { error: "Bitte E-Mail angeben, um ein Abo abzuschließen." }
   if (!stripePriceId) return { error: "Tarif ist nicht mit Stripe verknüpft." }
 
   const { data: club } = await supabase
@@ -2575,7 +2581,7 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     }
   }
 
-  const customerId = await getOrCreateStripeCustomerId(user.email, null)
+  const customerId = await getOrCreateStripeCustomerId(email, null)
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
@@ -2584,7 +2590,7 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     subscription_data: subscriptionData,
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?membership_success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}`,
-    ...(customerId ? { customer: customerId } : { customer_email: user?.email }),
+    ...(customerId ? { customer: customerId } : { customer_email: email }),
     metadata: metadata
   })
 
