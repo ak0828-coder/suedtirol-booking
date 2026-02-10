@@ -3763,6 +3763,10 @@ export async function getMemberDocumentSignedUrl(clubSlug: string, documentId: s
   return { success: true, url: signed.signedUrl }
 }
 
+export async function getAdminDocumentSignedUrl(clubSlug: string, documentId: string) {
+  return getMemberDocumentSignedUrl(clubSlug, documentId)
+}
+
 export async function submitMatchRecap(token: string, payload: {
   playerName: string
   opponentName: string
