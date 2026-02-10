@@ -23,6 +23,16 @@ if (!SUPER_ADMIN_EMAIL) console.warn("âš ï¸ ACHTUNG: SUPER_ADMIN_EMAIL is
 
 const MEMBER_DOC_BUCKET = "member-documents"
 
+async function getOrCreateStripeCustomerId(email?: string | null, name?: string | null) {
+  const cleanEmail = (email || "").trim()
+  if (!cleanEmail) return null
+  const customer = await stripe.customers.create({
+    email: cleanEmail,
+    name: name || undefined,
+  })
+  return customer.id
+}
+
 type PaymentStatus = 'paid_cash' | 'paid_stripe' | 'paid_member' | 'unpaid' | 'internal' | 'authorized'
 
 function revalidatePathAllLocales(path: string) {
@@ -2147,6 +2157,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
 
   const paymentIntentData = buildClubPaymentIntentData(club, { captureManual: true })
 
+  const customerId = await getOrCreateStripeCustomerId(user?.email || guestEmail || null, null)
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [
@@ -2174,7 +2185,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
     },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
-    customer_email: user?.email || guestEmail,
+    ...(customerId ? { customer: customerId } : { customer_email: user?.email || guestEmail }),
     expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
   })
 
@@ -2318,6 +2329,7 @@ export async function createCourseCheckoutSession(
 
   let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
 
+    const customerId = await getOrCreateStripeCustomerId(user?.email || null, null)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -2342,7 +2354,7 @@ export async function createCourseCheckoutSession(
       },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
-      customer_email: user.email || undefined,
+      ...(customerId ? { customer: customerId } : { customer_email: user.email || undefined }),
       expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
     })
 
@@ -2561,6 +2573,8 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     }
   }
 
+  const customerId = await getOrCreateStripeCustomerId(user?.email || null, null)
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [{ price: stripePriceId, quantity: 1 }],
@@ -2568,7 +2582,7 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
     subscription_data: subscriptionData,
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?membership_success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}`,
-    customer_email: user?.email,
+    ...(customerId ? { customer: customerId } : { customer_email: user?.email }),
     metadata: metadata
   })
 
@@ -3059,6 +3073,7 @@ export async function createCheckoutSession(
       application_fee_cents: clubApplicationFeeCents,
     })
 
+    const customerId = await getOrCreateStripeCustomerId(user?.email || guestEmail || null, null)
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
@@ -3079,7 +3094,7 @@ export async function createCheckoutSession(
         },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
-      customer_email: user?.email || guestEmail,
+      ...(customerId ? { customer: customerId } : { customer_email: user?.email || guestEmail }),
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
     })
 
