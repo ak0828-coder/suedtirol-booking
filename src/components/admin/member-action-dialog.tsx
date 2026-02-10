@@ -1,105 +1,106 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { updateMemberStatusManual } from "@/app/actions"
-import { useI18n } from "@/components/i18n/locale-provider"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal, Trash, Ban, KeyRound, CheckCircle } from "lucide-react"
+import { resetMemberPassword, blockMember, deleteMember } from "@/app/actions"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
-export function MemberActionDialog({
-  clubSlug,
-  member,
-  trigger,
-}: {
+interface MemberActionDialogProps {
+  memberId: string
   clubSlug: string
-  member: any
-  trigger: React.ReactNode
-}) {
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const { t } = useI18n()
+  isBlocked?: boolean
+  userName: string
+}
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+export function MemberActionDialog({ memberId, clubSlug, isBlocked, userName }: MemberActionDialogProps) {
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+
+  const handleResetPassword = async () => {
     setLoading(true)
-    const formData = new FormData(e.currentTarget)
-    const res = await updateMemberStatusManual(member.id, clubSlug, formData)
+    const res = await resetMemberPassword(clubSlug, memberId)
     setLoading(false)
-    if (res?.success) setOpen(false)
+    if (res.success) {
+      toast.success(`Passwort-Reset für ${userName} gesendet`)
+    } else {
+      toast.error(res.error || "Fehler beim Senden")
+    }
+  }
+
+  const handleBlock = async () => {
+    setLoading(true)
+    const res = await blockMember(clubSlug, memberId, !isBlocked)
+    setLoading(false)
+    if (res.success) {
+      toast.success(isBlocked ? "Mitglied entsperrt" : "Mitglied gesperrt")
+      router.refresh()
+    } else {
+      toast.error("Fehler beim Ändern des Status")
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm(`Möchtest du ${userName} wirklich entfernen?`)) return
+    
+    setLoading(true)
+    const res = await deleteMember(clubSlug, memberId)
+    setLoading(false)
+    
+    if (res.success) {
+      toast.success("Mitglied gelöscht")
+      router.refresh()
+    } else {
+      toast.error("Löschen fehlgeschlagen")
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t("admin_member_action.title", "Manuelle Erfassung")}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t("admin_member_action.status", "Status")}</Label>
-              <Select name="status" defaultValue={member.status || "active"}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">{t("admin_member_action.status_active", "Aktiv")}</SelectItem>
-                  <SelectItem value="expired">{t("admin_member_action.status_expired", "Abgelaufen")}</SelectItem>
-                  <SelectItem value="paused">{t("admin_member_action.status_paused", "Pausiert")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>{t("admin_member_action.valid_until", "Mitglied gültig bis")}</Label>
-              <Input type="date" name="valid_until" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t("admin_member_action.medical_until", "Ärztliches Zeugnis gültig bis")}</Label>
-              <Input type="date" name="medical_certificate_valid_until" />
-            </div>
-            <div className="space-y-2">
-              <Label>{t("admin_member_action.payment_status", "Zahlungsstatus")}</Label>
-              <Select name="payment_status" defaultValue={member.payment_status || "unpaid"}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paid">{t("admin_member_action.paid", "Bezahlt")}</SelectItem>
-                  <SelectItem value="paid_cash">{t("admin_member_action.paid_cash", "Bar bezahlt")}</SelectItem>
-                  <SelectItem value="paid_bank">{t("admin_member_action.paid_bank", "Überwiesen")}</SelectItem>
-                  <SelectItem value="unpaid">{t("admin_member_action.unpaid", "Offen")}</SelectItem>
-                  <SelectItem value="overdue">{t("admin_member_action.overdue", "Überfällig")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("admin_member_action.next_payment", "Nächster Beitragseinzug")}</Label>
-            <Input type="date" name="next_payment_at" />
-            <p className="text-xs text-slate-500">
-              {t("admin_member_action.next_payment_hint", "Falls bereits bezahlt, hier das nächste Einzugsdatum setzen.")}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>{t("admin_member_action.notes", "Interne Notiz")}</Label>
-            <Textarea name="notes" placeholder={t("admin_member_action.notes_ph", "z.B. Bar bezahlt am 12.02., Vertrag liegt im Büro.")} />
-          </div>
-
-          <Button className="w-full rounded-full" disabled={loading} type="submit">
-            {loading ? t("admin_member_action.saving", "Speichere...") : t("admin_member_action.save", "Manuell speichern")}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Menü öffnen</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(memberId)}>
+          ID kopieren
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={handleResetPassword} disabled={loading}>
+          <KeyRound className="mr-2 h-4 w-4" /> Passwort Reset
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handleBlock} disabled={loading}>
+          {isBlocked ? (
+            <>
+              <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Entsperren
+            </>
+          ) : (
+            <>
+              <Ban className="mr-2 h-4 w-4 text-amber-600" /> Sperren
+            </>
+          )}
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={handleDelete} disabled={loading} className="text-red-600 focus:text-red-600">
+          <Trash className="mr-2 h-4 w-4" /> Mitglied löschen
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
