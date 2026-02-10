@@ -39,7 +39,7 @@ export function ProfileForm({ profile }: { profile: any }) {
           <Input id="last_name" name="last_name" defaultValue={profile.last_name || ""} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="phone">{t("profile.phone", "Telefonnummer (für Rückfragen)")}</Label>
+          <Label htmlFor="phone">{t("profile.phone", "Telefonnummer (fÃ¼r RÃ¼ckfragen)")}</Label>
           <Input id="phone" name="phone" defaultValue={profile.phone || ""} />
         </div>
       </div>

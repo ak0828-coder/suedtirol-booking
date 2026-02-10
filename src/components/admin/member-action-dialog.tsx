@@ -55,14 +55,14 @@ export function MemberActionDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t("admin_member_action.valid_until", "Mitglied gültig bis")}</Label>
+              <Label>{t("admin_member_action.valid_until", "Mitglied gÃ¼ltig bis")}</Label>
               <Input type="date" name="valid_until" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>{t("admin_member_action.medical_until", "Ärztliches Zeugnis gültig bis")}</Label>
+              <Label>{t("admin_member_action.medical_until", "Ã„rztliches Zeugnis gÃ¼ltig bis")}</Label>
               <Input type="date" name="medical_certificate_valid_until" />
             </div>
             <div className="space-y-2">
@@ -74,25 +74,25 @@ export function MemberActionDialog({
                 <SelectContent>
                   <SelectItem value="paid">{t("admin_member_action.paid", "Bezahlt")}</SelectItem>
                   <SelectItem value="paid_cash">{t("admin_member_action.paid_cash", "Bar bezahlt")}</SelectItem>
-                  <SelectItem value="paid_bank">{t("admin_member_action.paid_bank", "Überwiesen")}</SelectItem>
+                  <SelectItem value="paid_bank">{t("admin_member_action.paid_bank", "Ãœberwiesen")}</SelectItem>
                   <SelectItem value="unpaid">{t("admin_member_action.unpaid", "Offen")}</SelectItem>
-                  <SelectItem value="overdue">{t("admin_member_action.overdue", "Überfällig")}</SelectItem>
+                  <SelectItem value="overdue">{t("admin_member_action.overdue", "ÃœberfÃ¤llig")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>{t("admin_member_action.next_payment", "Nächster Beitragseinzug")}</Label>
+            <Label>{t("admin_member_action.next_payment", "NÃ¤chster Beitragseinzug")}</Label>
             <Input type="date" name="next_payment_at" />
             <p className="text-xs text-slate-500">
-              {t("admin_member_action.next_payment_hint", "Falls bereits bezahlt, hier das nächste Einzugsdatum setzen.")}
+              {t("admin_member_action.next_payment_hint", "Falls bereits bezahlt, hier das nÃ¤chste Einzugsdatum setzen.")}
             </p>
           </div>
 
           <div className="space-y-2">
             <Label>{t("admin_member_action.notes", "Interne Notiz")}</Label>
-            <Textarea name="notes" placeholder={t("admin_member_action.notes_ph", "z.B. Bar bezahlt am 12.02., Vertrag liegt im Büro.")} />
+            <Textarea name="notes" placeholder={t("admin_member_action.notes_ph", "z.B. Bar bezahlt am 12.02., Vertrag liegt im BÃ¼ro.")} />
           </div>
 
           <Button className="w-full rounded-full" disabled={loading} type="submit">

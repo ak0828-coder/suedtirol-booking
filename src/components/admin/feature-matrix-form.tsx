@@ -29,9 +29,9 @@ export function FeatureMatrixForm({
       title: t("admin_features.nav", "Navigation"),
       key: "admin",
       items: [
-        { key: "overview", label: t("admin_features.nav_overview", "Übersicht") },
+        { key: "overview", label: t("admin_features.nav_overview", "Ãœbersicht") },
         { key: "bookings", label: t("admin_features.nav_bookings", "Buchungen") },
-        { key: "courts", label: t("admin_features.nav_courts", "Plätze") },
+        { key: "courts", label: t("admin_features.nav_courts", "PlÃ¤tze") },
         { key: "blocks", label: t("admin_features.nav_blocks", "Sperrzeiten") },
         { key: "plans", label: t("admin_features.nav_plans", "Abos") },
         { key: "members", label: t("admin_features.nav_members", "Mitglieder") },

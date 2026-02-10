@@ -81,7 +81,7 @@ export function ClubCmsEditor({
 
   const handleResetDefaults = () => {
     setContent(applyClubDefaults(defaultClubContent, clubName))
-    setMessage(t("admin_cms.reset", "Auf Standard zur¸ckgesetzt."))
+    setMessage(t("admin_cms.reset", "Auf Standard zur√ºckgesetzt."))
   }
 
   const handleRevertSaved = () => {
@@ -121,7 +121,7 @@ export function ClubCmsEditor({
           )}
           {message && <span className="text-xs text-slate-500">{message}</span>}
           <Button variant="outline" onClick={handleRevertSaved} disabled={isPending} className="rounded-full">
-            {t("admin_cms.undo", "R¸ckg‰ngig")}
+            {t("admin_cms.undo", "R√ºckg√§ngig")}
           </Button>
           <Button variant="outline" onClick={handleResetDefaults} disabled={isPending} className="rounded-full">
             {t("admin_cms.default", "Standard")}
@@ -135,7 +135,7 @@ export function ClubCmsEditor({
         <div className="flex flex-wrap gap-2 text-sm">
           {[
             { id: "hero", label: t("admin_cms.tabs.hero", "Hero") },
-            { id: "overview", label: t("admin_cms.tabs.overview", "Badges & ‹berblick") },
+            { id: "overview", label: t("admin_cms.tabs.overview", "Badges & √úberblick") },
             { id: "sections", label: t("admin_cms.tabs.sections", "Sektionen") },
             { id: "impressum", label: t("admin_cms.tabs.impressum", "Impressum") },
             { id: "footer", label: t("admin_cms.tabs.footer", "Footer") },
@@ -163,7 +163,7 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">{t("admin_cms.hero", "Hero")}</div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.hero_title_tip", "Haupt¸berschrift der Club-Seite")}>{t("admin_cms.title_label", "Titel")}</Label>
+                    <Label title={t("admin_cms.hero_title_tip", "Haupt√ºberschrift der Club-Seite")}>{t("admin_cms.title_label", "Titel")}</Label>
                     <Input value={content.hero.title} onChange={(e) => updateHero("title", e.target.value)} />
                   </div>
                   <div className="space-y-2">
@@ -174,21 +174,21 @@ export function ClubCmsEditor({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.hero_primary_tip", "Haupt-Call-to-Action")}>{t("admin_cms.primary", "Prim‰rer Button")}</Label>
+                    <Label title={t("admin_cms.hero_primary_tip", "Haupt-Call-to-Action")}>{t("admin_cms.primary", "Prim√§rer Button")}</Label>
                     <Input
                       value={content.hero.primaryCtaText}
                       onChange={(e) => updateHero("primaryCtaText", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.hero_secondary_tip", "Sekund‰rer Call-to-Action")}>{t("admin_cms.secondary", "Sekund‰rer Button")}</Label>
+                    <Label title={t("admin_cms.hero_secondary_tip", "Sekund√§rer Call-to-Action")}>{t("admin_cms.secondary", "Sekund√§rer Button")}</Label>
                     <Input
                       value={content.hero.secondaryCtaText}
                       onChange={(e) => updateHero("secondaryCtaText", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.hero_member_badge_tip", "Badge f¸r eingeloggte Mitglieder")}>{t("admin_cms.member_badge", "Member Badge Text")}</Label>
+                    <Label title={t("admin_cms.hero_member_badge_tip", "Badge f√ºr eingeloggte Mitglieder")}>{t("admin_cms.member_badge", "Member Badge Text")}</Label>
                     <Input
                       value={content.hero.memberBadgeText}
                       onChange={(e) => updateHero("memberBadgeText", e.target.value)}
@@ -200,7 +200,7 @@ export function ClubCmsEditor({
 
             {activeTab === "overview" && (
               <section className="space-y-4">
-                <div className="text-sm font-semibold text-slate-700">{t("admin_cms.overview", "Badges & ‹berblick")}</div>
+                <div className="text-sm font-semibold text-slate-700">{t("admin_cms.overview", "Badges & √úberblick")}</div>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label title={t("admin_cms.location_tip", "Ort/Region des Clubs")}>{t("admin_cms.location", "Standort Text")}</Label>
@@ -217,28 +217,28 @@ export function ClubCmsEditor({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.overview_title_tip", "Titel der Overview-Karte")}>{t("admin_cms.overview_title", "‹berblick Titel")}</Label>
+                    <Label title={t("admin_cms.overview_title_tip", "Titel der Overview-Karte")}>{t("admin_cms.overview_title", "√úberblick Titel")}</Label>
                     <Input
                       value={content.overview.title}
                       onChange={(e) => updateOverview("title", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.label_courts_tip", "Label f¸r Court-Anzahl")}>{t("admin_cms.label_courts", "Label Pl‰tze")}</Label>
+                    <Label title={t("admin_cms.label_courts_tip", "Label f√ºr Court-Anzahl")}>{t("admin_cms.label_courts", "Label Pl√§tze")}</Label>
                     <Input
                       value={content.overview.labelCourts}
                       onChange={(e) => updateOverview("labelCourts", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.label_price_tip", "Label f¸r niedrigsten Preis")}>{t("admin_cms.label_price", "Label Ab Preis")}</Label>
+                    <Label title={t("admin_cms.label_price_tip", "Label f√ºr niedrigsten Preis")}>{t("admin_cms.label_price", "Label Ab Preis")}</Label>
                     <Input
                       value={content.overview.labelFromPrice}
                       onChange={(e) => updateOverview("labelFromPrice", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.label_status_tip", "Label f¸r Statuszeile")}>{t("admin_cms.label_status", "Label Status")}</Label>
+                    <Label title={t("admin_cms.label_status_tip", "Label f√ºr Statuszeile")}>{t("admin_cms.label_status", "Label Status")}</Label>
                     <Input
                       value={content.overview.labelStatus}
                       onChange={(e) => updateOverview("labelStatus", e.target.value)}
@@ -251,10 +251,10 @@ export function ClubCmsEditor({
             {activeTab === "sections" && (
               <section className="space-y-6">
                 <div className="space-y-4">
-                  <div className="text-sm font-semibold text-slate-700">{t("admin_cms.section_courts", "Abschnitt: Pl‰tze")}</div>
+                  <div className="text-sm font-semibold text-slate-700">{t("admin_cms.section_courts", "Abschnitt: Pl√§tze")}</div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label title={t("admin_cms.section_courts_title_tip", "Sektionstitel f¸r Courts")}>{t("admin_cms.title_label", "Titel")}</Label>
+                      <Label title={t("admin_cms.section_courts_title_tip", "Sektionstitel f√ºr Courts")}>{t("admin_cms.title_label", "Titel")}</Label>
                       <Input
                         value={content.sections.courts.title}
                         onChange={(e) => updateSection("courts", "title", e.target.value)}
@@ -274,7 +274,7 @@ export function ClubCmsEditor({
                   <div className="text-sm font-semibold text-slate-700">{t("admin_cms.section_membership", "Abschnitt: Mitgliedschaft")}</div>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label title={t("admin_cms.section_membership_title_tip", "Sektionstitel f¸r Mitgliedschaft")}>{t("admin_cms.title_label", "Titel")}</Label>
+                      <Label title={t("admin_cms.section_membership_title_tip", "Sektionstitel f√ºr Mitgliedschaft")}>{t("admin_cms.title_label", "Titel")}</Label>
                       <Input
                         value={content.sections.membership.title}
                         onChange={(e) => updateSection("membership", "title", e.target.value)}
@@ -304,7 +304,7 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">{t("admin_cms.impressum", "Impressum")}</div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.impressum_title_tip", "‹berschrift der Impressum-Seite")}>{t("admin_cms.impressum_title", "Impressum Titel")}</Label>
+                    <Label title={t("admin_cms.impressum_title_tip", "√úberschrift der Impressum-Seite")}>{t("admin_cms.impressum_title", "Impressum Titel")}</Label>
                     <Input
                       value={content.impressum.title}
                       onChange={(e) => updateImpressum("title", e.target.value)}
@@ -349,9 +349,9 @@ export function ClubCmsEditor({
                 <div className="text-sm font-semibold text-slate-700">SEO</div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label title={t("admin_cms.seo_tip", "Kurzbeschreibung f¸r Suchmaschinen")}>{t("admin_cms.seo_desc", "SEO Description")}</Label>
+                    <Label title={t("admin_cms.seo_tip", "Kurzbeschreibung f√ºr Suchmaschinen")}>{t("admin_cms.seo_desc", "SEO Description")}</Label>
                     <div className="text-xs text-slate-500">
-                      {t("admin_cms.seo_hint", "Erscheint in Suchergebnissen. Ideal sind 120ñ160 Zeichen.")}
+                      {t("admin_cms.seo_hint", "Erscheint in Suchergebnissen. Ideal sind 120‚Äì160 Zeichen.")}
                     </div>
                     <Input
                       value={content.seo.description}
@@ -381,10 +381,10 @@ export function ClubCmsEditor({
               <div className="mt-5 rounded-xl border border-slate-200/60 bg-slate-50 p-3 text-xs text-slate-600">
                 <div className="font-semibold uppercase tracking-wide text-slate-500">{content.overview.title}</div>
                 <div className="mt-1">
-                  {content.overview.labelCourts}: 4 ï {content.overview.labelFromPrice}: 20Ä ï {content.overview.labelStatus}: {content.badges.statusText}
+                  {content.overview.labelCourts}: 4 ‚Ä¢ {content.overview.labelFromPrice}: 20‚Ç¨ ‚Ä¢ {content.overview.labelStatus}: {content.badges.statusText}
                 </div>
                 <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1">
-                  {content.badges.locationText} ï {content.badges.statusText}
+                  {content.badges.locationText} ‚Ä¢ {content.badges.statusText}
                 </div>
               </div>
 
@@ -410,7 +410,7 @@ export function ClubCmsEditor({
               </div>
 
               <div className="mt-5 border-t border-slate-200/60 pt-3 text-xs text-slate-500">
-                {content.footer.smallText} ï {content.footer.impressumLinkText}
+                {content.footer.smallText} ‚Ä¢ {content.footer.impressumLinkText}
               </div>
             </div>
           </div>

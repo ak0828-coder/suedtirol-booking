@@ -42,7 +42,7 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
     formData.set("clubSlug", clubSlug)
     const res = await uploadMemberDocument(formData)
     if (res?.success) {
-      setMessage(t("member_docs.upload_success", "Upload erfolgreich. Prüfung läuft."))
+      setMessage(t("member_docs.upload_success", "Upload erfolgreich. PrÃ¼fung lÃ¤uft."))
       form.reset()
       window.location.reload()
     } else {
@@ -61,13 +61,13 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
         <div>
           <h2 className="text-lg font-semibold text-slate-900">{t("member_docs.title", "Dokument hochladen")}</h2>
           <p className="text-sm text-slate-500">
-            {t("member_docs.subtitle", "Lade dein ärztliches Zeugnis oder deinen Vertrag hoch.")}
+            {t("member_docs.subtitle", "Lade dein Ã¤rztliches Zeugnis oder deinen Vertrag hoch.")}
           </p>
         </div>
         <div className="grid gap-3">
           <label className="text-sm text-slate-600">{t("member_docs.type", "Dokumenttyp")}</label>
           <select name="docType" className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm">
-            <option value="medical_certificate">{t("member_docs.medical", "Ärztliches Zeugnis")}</option>
+            <option value="medical_certificate">{t("member_docs.medical", "Ã„rztliches Zeugnis")}</option>
             <option value="contract">{t("member_docs.contract", "Mitgliedsvertrag")}</option>
           </select>
           <label className="text-sm text-slate-600">{t("member_docs.file", "Datei")}</label>
@@ -102,7 +102,7 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                 <div>
                   <div className="font-medium text-slate-800">{doc.file_name}</div>
                   <div className="text-xs text-slate-500">
-                    {t("member_docs.ai", "KI")}: {doc.ai_status} · {t("member_docs.review", "Review")}: {doc.review_status}
+                    {t("member_docs.ai", "KI")}: {doc.ai_status} Â· {t("member_docs.review", "Review")}: {doc.review_status}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500">
                     <span>{t("member_docs.upload_label", "Upload")}</span>
@@ -112,12 +112,12 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                         ? t("member_docs.ai_ok", "KI ok")
                         : doc.ai_status === "reject"
                         ? t("member_docs.ai_reject", "KI abgelehnt")
-                        : t("member_docs.ai_check", "KI prüft")}
+                        : t("member_docs.ai_check", "KI prÃ¼ft")}
                     </span>
                     <span>?</span>
                     <span>
                       {doc.review_status === "approved"
-                        ? t("member_docs.approved", "Bestätigt")
+                        ? t("member_docs.approved", "BestÃ¤tigt")
                         : doc.review_status === "rejected"
                         ? t("member_docs.rejected", "Abgelehnt")
                         : t("member_docs.pending", "Wartet")}
@@ -126,10 +126,10 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                 </div>
                 <div className="text-xs text-slate-500">
                   {doc.valid_until
-                    ? t("member_docs.valid_until", "Gültig bis {date}").replace("{date}", new Date(doc.valid_until).toLocaleDateString(locale))
+                    ? t("member_docs.valid_until", "GÃ¼ltig bis {date}").replace("{date}", new Date(doc.valid_until).toLocaleDateString(locale))
                     : doc.temp_valid_until
-                    ? t("member_docs.temp_until", "Vorläufig bis {date}").replace("{date}", new Date(doc.temp_valid_until).toLocaleDateString(locale))
-                    : t("member_docs.invalid", "Nicht gültig")}
+                    ? t("member_docs.temp_until", "VorlÃ¤ufig bis {date}").replace("{date}", new Date(doc.temp_valid_until).toLocaleDateString(locale))
+                    : t("member_docs.invalid", "Nicht gÃ¼ltig")}
                 </div>
                 <Button
                   variant="outline"
@@ -141,12 +141,12 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
                     if (res?.success && res.url) {
                       setPreviewUrl(res.url)
                     } else {
-                      setMessage(res?.error || t("member_docs.open_error", "Dokument konnte nicht geöffnet werden."))
+                      setMessage(res?.error || t("member_docs.open_error", "Dokument konnte nicht geÃ¶ffnet werden."))
                     }
                     setOpeningId(null)
                   }}
                 >
-                  {t("member_docs.open", "Öffnen")}
+                  {t("member_docs.open", "Ã–ffnen")}
                 </Button>
                 <Button
                   variant="outline"

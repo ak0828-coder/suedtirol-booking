@@ -28,7 +28,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
   }, [initialBlocks])
 
   const handleAdd = async () => {
-    if (!reason || !startDate || !endDate) return alert(t("admin_blocks.fill", "Bitte alle Felder ausfüllen"))
+    if (!reason || !startDate || !endDate) return alert(t("admin_blocks.fill", "Bitte alle Felder ausfÃ¼llen"))
 
     setIsLoading(true)
     const res = await createBlockedPeriod(clubSlug, targetCourt, new Date(startDate), new Date(endDate), reason)
@@ -71,7 +71,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
                 <span>{format(new Date(block.start_date), 'dd.MM.yy')} - {format(new Date(block.end_date), 'dd.MM.yy')}</span>
                 <span className="mx-2 text-slate-400">|</span>
                 <span className="italic text-slate-500">
-                  {!block.court_id ? t("admin_blocks.all_courts", "Alle Plätze") : t("admin_blocks.single_court", "Einzelplatz")}
+                  {!block.court_id ? t("admin_blocks.all_courts", "Alle PlÃ¤tze") : t("admin_blocks.single_court", "Einzelplatz")}
                 </span>
               </div>
               <Button

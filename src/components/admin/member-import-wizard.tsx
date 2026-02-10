@@ -21,7 +21,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
     { id: "phone", label: t("admin_import.phone", "Telefon") },
     { id: "credit_balance", label: t("admin_import.balance", "Guthaben") },
     { id: "membership_start_date", label: t("admin_import.start", "Eintrittsdatum (Start)") },
-    { id: "membership_end_date", label: t("admin_import.end", "Gültig bis (Ende)") },
+    { id: "membership_end_date", label: t("admin_import.end", "GÃ¼ltig bis (Ende)") },
   ]
 
   type Mapping = Record<string, string>
@@ -74,7 +74,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
       return
     }
     if (csvData.length === 0) {
-      setErrorMessage(t("admin_import.error_empty", "Keine Datensätze gefunden."))
+      setErrorMessage(t("admin_import.error_empty", "Keine DatensÃ¤tze gefunden."))
       return
     }
     setImporting(true)
@@ -119,7 +119,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
             </div>
             <h3 className="text-lg font-semibold">{t("admin_import.upload", "CSV Datei hochladen")}</h3>
             <p className="text-sm text-slate-500 mt-2">
-              {t("admin_import.upload_hint", "Wansport/eTennis Export auswählen – wir kümmern uns um den Rest.")}
+              {t("admin_import.upload_hint", "Wansport/eTennis Export auswÃ¤hlen â€“ wir kÃ¼mmern uns um den Rest.")}
             </p>
             <div className="mt-4 flex justify-center">
               <Input type="file" accept=".csv" onChange={handleFileUpload} className="max-w-xs" />
@@ -135,7 +135,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
                   {t("admin_import.map", "Spalten zuordnen")}
                   {isAnalyzing && <Sparkles className="h-4 w-4 text-indigo-500 animate-pulse" />}
                 </h3>
-                <p className="text-sm text-slate-500">{t("admin_import.ai_hint", "KI-Vorschlag bitte kurz prüfen.")}</p>
+                <p className="text-sm text-slate-500">{t("admin_import.ai_hint", "KI-Vorschlag bitte kurz prÃ¼fen.")}</p>
               </div>
               <Badge variant="outline">{csvData.length} {t("admin_import.rows", "Zeilen")}</Badge>
             </div>
@@ -228,7 +228,7 @@ export function MemberImportWizard({ clubSlug }: { clubSlug: string }) {
         {step === 3 && (
           <div className="py-10 text-center space-y-4">
             <Loader2 className="h-10 w-10 animate-spin mx-auto text-slate-500" />
-            <p className="text-slate-600">{t("admin_import.loading", "Import läuft… bitte warten.")}</p>
+            <p className="text-slate-600">{t("admin_import.loading", "Import lÃ¤uftâ€¦ bitte warten.")}</p>
           </div>
         )}
 

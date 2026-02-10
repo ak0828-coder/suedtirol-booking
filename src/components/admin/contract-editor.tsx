@@ -111,8 +111,8 @@ export function ContractEditor({
         setPreviewUrl(nextUrl)
       } catch (err) {
         if ((err as Error)?.name === "AbortError") return
-        const message = err instanceof Error ? err.message : t("admin_contract.preview_unavailable", "PDF Vorschau nicht Verfügbar.")
-        setPreviewError(message || t("admin_contract.preview_unavailable", "PDF Vorschau nicht Verfügbar."))
+        const message = err instanceof Error ? err.message : t("admin_contract.preview_unavailable", "PDF Vorschau nicht VerfÃ¼gbar.")
+        setPreviewError(message || t("admin_contract.preview_unavailable", "PDF Vorschau nicht VerfÃ¼gbar."))
       } finally {
         setPreviewLoading(false)
       }
@@ -205,7 +205,7 @@ export function ContractEditor({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={10}
-              placeholder={t("admin_contract.body_placeholder", "Schreibe hier die Mitgliedsbeitrag-Erklärung / Vertrag...")}
+              placeholder={t("admin_contract.body_placeholder", "Schreibe hier die Mitgliedsbeitrag-ErklÃ¤rung / Vertrag...")}
             />
             <p className="text-xs text-slate-500">
               {t("admin_contract.placeholders", "Platzhalter")}: <code>{"{{name}}"}</code>, <code>{"{{email}}"}</code>, <code>{"{{address}}"}</code>, <code>{"{{fee}}"}</code> {t("admin_contract.custom_fields", "und eigene Felder z.B.")} <code>{"{{mitgliedsnummer}}"}</code>.
@@ -218,7 +218,7 @@ export function ContractEditor({
                 <div className="text-xs text-slate-500">{t("admin_contract.extra_fields_hint", "Diese Felder sehen Mitglieder im Formular.")}</div>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={addField}>
-                {t("admin_contract.add_field", "Feld hinzufügen")}
+                {t("admin_contract.add_field", "Feld hinzufÃ¼gen")}
               </Button>
             </div>
             {fields.length === 0 ? (
@@ -292,7 +292,7 @@ export function ContractEditor({
               <Input value={fee} onChange={(e) => setFee(e.target.value)} type="number" min="0" step="0.01" />
             </div>
             <div className="text-xs text-slate-500 pt-6">
-              {t("admin_contract.subscription_only", "Mitgliedschaften laufen ausschließlich als Abo.")}
+              {t("admin_contract.subscription_only", "Mitgliedschaften laufen ausschlieÃŸlich als Abo.")}
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
@@ -328,7 +328,7 @@ export function ContractEditor({
       <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
         <CardHeader>
           <CardTitle>{t("admin_contract.preview", "PDF Vorschau")}</CardTitle>
-          <p className="text-sm text-slate-500">{t("admin_contract.preview_hint", "So sieht der Vertrag für Mitglieder aus.")}</p>
+          <p className="text-sm text-slate-500">{t("admin_contract.preview_hint", "So sieht der Vertrag fÃ¼r Mitglieder aus.")}</p>
         </CardHeader>
         <CardContent>
           <div className="aspect-[3/4] w-full rounded-xl border border-slate-200 bg-white overflow-hidden">
@@ -340,14 +340,14 @@ export function ContractEditor({
             {isClient && previewError && (
               <div className="h-full w-full flex flex-col items-center justify-center text-center text-sm text-slate-500 px-4">
                 <div className="font-medium text-slate-700">{previewError}</div>
-                <div className="mt-1">{t("admin_contract.preview_open", "Bitte öffne die PDF in einem neuen Tab.")}</div>
+                <div className="mt-1">{t("admin_contract.preview_open", "Bitte Ã¶ffne die PDF in einem neuen Tab.")}</div>
                 <a
                   href={`/api/contract-pdf/${clubSlug}`}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50"
                 >
-                  {t("admin_contract.open_pdf", "PDF öffnen")}
+                  {t("admin_contract.open_pdf", "PDF Ã¶ffnen")}
                 </a>
               </div>
             )}
@@ -360,7 +360,7 @@ export function ContractEditor({
               </div>
             )}
           </div>
-          <div className="mt-3 text-xs text-slate-500">{t("admin_contract.live_preview", "Live-Preview während du tippst.")}</div>
+          <div className="mt-3 text-xs text-slate-500">{t("admin_contract.live_preview", "Live-Preview wÃ¤hrend du tippst.")}</div>
         </CardContent>
       </Card>
     </div>

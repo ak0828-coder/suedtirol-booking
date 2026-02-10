@@ -75,7 +75,7 @@ export function ClubSettings({
               <Input id="name" name="name" defaultValue={club.name} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="primary_color">{t("admin_club.primary", "Primärfarbe (Hex)")}</Label>
+              <Label htmlFor="primary_color">{t("admin_club.primary", "PrimÃ¤rfarbe (Hex)")}</Label>
               <div className="flex gap-2">
                 <Input
                   id="primary_color"
@@ -97,10 +97,10 @@ export function ClubSettings({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cancellation">{t("admin_club.cancellation", "Stornierungsfrist (für Mitglieder)")}</Label>
+            <Label htmlFor="cancellation">{t("admin_club.cancellation", "Stornierungsfrist (fÃ¼r Mitglieder)")}</Label>
             <Select name="cancellation_buffer_hours" defaultValue={String(club.cancellation_buffer_hours || "24")}> 
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder={t("admin_club.cancellation_placeholder", "Wähle eine Frist")} />
+                <SelectValue placeholder={t("admin_club.cancellation_placeholder", "WÃ¤hle eine Frist")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="0">{t("admin_club.cancellation_none", "Keine Frist (Jederzeit)")}</SelectItem>
@@ -118,7 +118,7 @@ export function ClubSettings({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="logo">{t("admin_club.logo", "Logo ändern (Optional)")}</Label>
+            <Label htmlFor="logo">{t("admin_club.logo", "Logo Ã¤ndern (Optional)")}</Label>
             <Input id="logo" name="logo" type="file" accept="image/*" />
           </div>
 
@@ -126,7 +126,7 @@ export function ClubSettings({
             <div>
               <Label>{t("admin_club.languages", "Sprachen auf der Club-Seite")}</Label>
               <p className="text-xs text-slate-500">
-                {t("admin_club.languages_help", "Wähle, welche Sprachen für Mitglieder verfügbar sind. Nicht erlaubte Sprachen leiten automatisch weiter.")}
+                {t("admin_club.languages_help", "WÃ¤hle, welche Sprachen fÃ¼r Mitglieder verfÃ¼gbar sind. Nicht erlaubte Sprachen leiten automatisch weiter.")}
               </p>
             </div>
             <div className="flex flex-wrap gap-3 text-sm">`n              {[

@@ -35,16 +35,16 @@ export function AiDocumentSettings({ clubSlug, initialEnabled, initialMode }: Ai
   return (
     <div className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">{t("admin_ai.title", "KI-Prüfung")}</h3>
+        <h3 className="text-lg font-semibold text-slate-900">{t("admin_ai.title", "KI-PrÃ¼fung")}</h3>
         <p className="text-sm text-slate-500">
-          {t("admin_ai.subtitle", "Steuere, ob die KI Dokumente vorprüft und wie die Gültigkeit gesetzt wird.")}
+          {t("admin_ai.subtitle", "Steuere, ob die KI Dokumente vorprÃ¼ft und wie die GÃ¼ltigkeit gesetzt wird.")}
         </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/60 bg-white/90 px-4 py-3">
         <div>
           <div className="text-sm font-medium text-slate-800">{t("admin_ai.active_label", "KI aktiv")}</div>
-          <div className="text-xs text-slate-500">{t("admin_ai.active_hint", "Wenn deaktiviert, nur manuelle Bestätigung.")}</div>
+          <div className="text-xs text-slate-500">{t("admin_ai.active_hint", "Wenn deaktiviert, nur manuelle BestÃ¤tigung.")}</div>
         </div>
         <Button
           variant={enabled ? "default" : "outline"}
@@ -61,7 +61,7 @@ export function AiDocumentSettings({ clubSlug, initialEnabled, initialMode }: Ai
           <div>
             <div className="text-sm font-medium text-slate-800">{t("admin_ai.mode", "Modus")}</div>
             <div className="text-xs text-slate-500">
-              {t("admin_ai.mode_hint", "30 Tage = KI-Vorprüfung + manuelle Bestätigung. Unendlich = KI-only (365 Tage).")}
+              {t("admin_ai.mode_hint", "30 Tage = KI-VorprÃ¼fung + manuelle BestÃ¤tigung. Unendlich = KI-only (365 Tage).")}
             </div>
           </div>
           <div className="flex gap-2">

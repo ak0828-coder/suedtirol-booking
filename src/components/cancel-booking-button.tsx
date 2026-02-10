@@ -11,7 +11,7 @@ export function CancelBookingButton({ bookingId }: { bookingId: string }) {
   const { t } = useI18n()
 
   async function handleCancel() {
-    if (!confirm(t("booking.cancel.confirm", "Möchtest du diesen Termin wirklich stornieren?"))) return
+    if (!confirm(t("booking.cancel.confirm", "MÃ¶chtest du diesen Termin wirklich stornieren?"))) return
 
     setLoading(true)
     const res = await cancelBooking(bookingId)
