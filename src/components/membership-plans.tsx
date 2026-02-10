@@ -37,7 +37,7 @@ export function MembershipPlans({
       window.location.href = res.url
     } else {
       setLoadingId(null)
-      alert(t("membership.error", "Fehler beim Checkout"))
+      alert(res?.error || t("membership.error", "Fehler beim Checkout"))
     }
   }
 

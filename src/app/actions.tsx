@@ -2530,13 +2530,14 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user?.email) return { error: "Bitte einloggen, um ein Abo abzuschließen." }
+  if (!stripePriceId) return { error: "Tarif ist nicht mit Stripe verknüpft." }
 
   const { data: club } = await supabase
     .from('clubs')
     .select('id, stripe_account_id, application_fee_cents, default_language')
     .eq('slug', clubSlug)
     .single()
-  if (!club) return { url: "" }
+  if (!club) return { error: "Club nicht gefunden." }
 
   const lang = (club as any)?.default_language || defaultLocale
 
@@ -2551,13 +2552,13 @@ export async function createMembershipCheckout(clubSlug: string, planId: string,
   }
 
   if (!(club as any).stripe_account_id) {
-    return { error: "Verein ist noch nicht fÃ¼r Stripe eingerichtet." }
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
 
   const paymentIntentData = buildClubPaymentIntentData(club)
 
   if (!(club as any).stripe_account_id) {
-    return { error: "Verein ist noch nicht fÃ¼r Stripe eingerichtet." }
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
 
   const subscriptionData: any = {
