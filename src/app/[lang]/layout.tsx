@@ -6,6 +6,7 @@ import { TourShell } from "@/components/tours/tour-shell";
 import { defaultLocale, isLocale, locales } from "@/lib/i18n";
 import { getDictionary } from "@/lib/dictionaries";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
+import { Toaster } from "sonner";
 
 const sora = Sora({
   variable: "--font-sans",
@@ -47,6 +48,7 @@ export default async function RootLayout({
           <LocaleProvider dictionary={dictionary}>
             <TourShell>{children}</TourShell>
           </LocaleProvider>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>
