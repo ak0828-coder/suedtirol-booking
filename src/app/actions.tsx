@@ -2893,13 +2893,13 @@ export async function createCheckoutSession(
   }
 
   try {
-      if (finalPrice > 0 && !club.stripe_account_id) {
-        return { error: "Verein ist noch nicht für Stripe eingerichtet." }
-      }
+    if (finalPrice > 0 && !club.stripe_account_id) {
+      return { error: "Verein ist noch nicht für Stripe eingerichtet." }
+    }
 
-      const paymentIntentData = buildClubPaymentIntentData(club)
+    const paymentIntentData = buildClubPaymentIntentData(club)
 
-      const session = await stripe.checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
           price_data: {
