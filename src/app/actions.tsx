@@ -2934,7 +2934,7 @@ export async function createBooking(
       usedCreditAmount = check.amount || 0
       finalPrice = Math.max(0, finalPrice - usedCreditAmount)
       if (finalPrice <= 0) {
-        finalPaymentStatus = 'paid_stripe'
+        finalPaymentStatus = 'paid_member'
       }
     }
 
@@ -3232,7 +3232,7 @@ export async function createCheckoutSession(
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       status: 'awaiting_payment',
-      payment_status: finalPrice <= 0 && memberAdjusted ? 'paid_member' : 'unpaid',
+      payment_status: finalPrice <= 0 ? 'paid_member' : 'unpaid',
       price_paid: finalPrice,
       guest_name: user ? 'Mitglied' : (guestName || 'Gast'),
       guest_email: user?.email || guestEmail || null,
@@ -3257,7 +3257,27 @@ export async function createCheckoutSession(
     return { error: "Fehler beim Reservieren des Slots: " + bookingError.message }
   }
 
-  if (finalPrice <= 0 && memberAdjusted) {
+  if (finalPrice <= 0) {
+    if (creditCode) {
+      const { data: current } = await supabaseAdmin
+        .from("credit_codes")
+        .select("usage_count, usage_limit")
+        .eq("code", creditCode.toUpperCase())
+        .eq("club_id", club.id)
+        .single()
+
+      if (current) {
+        const newCount = (current.usage_count || 0) + 1
+        const limit = current.usage_limit || 1
+        const isFullyRedeemed = newCount >= limit
+        await supabaseAdmin
+          .from("credit_codes")
+          .update({ usage_count: newCount, is_redeemed: isFullyRedeemed })
+          .eq("code", creditCode.toUpperCase())
+          .eq("club_id", club.id)
+      }
+    }
+
     await supabaseAdmin
       .from("bookings")
       .update({ status: "confirmed" })
