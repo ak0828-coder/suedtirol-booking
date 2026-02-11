@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
-import { getMembershipContractForMember, getMyDocuments } from "@/app/actions"
+import { ensureMembershipFromCheckoutSession, getMembershipContractForMember, getMyDocuments } from "@/app/actions"
 import { MemberOnboardingForm } from "@/components/member/onboarding-form"
 import { MemberDocumentsForm } from "@/components/member-documents-form"
 
@@ -9,15 +9,19 @@ export default async function MemberOnboardingPage({
   searchParams,
 }: {
   params: Promise<{ lang: string; slug: string }>
-  searchParams?: Promise<{ post_payment?: string }>
+  searchParams?: Promise<{ post_payment?: string; session_id?: string }>
 }) {
   const { slug, lang } = await params
-  const { post_payment } = (await searchParams) || {}
+  const { post_payment, session_id } = (await searchParams) || {}
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  if (user && session_id) {
+    await ensureMembershipFromCheckoutSession(session_id)
+  }
 
   let contract = user ? await getMembershipContractForMember(slug) : null
   if (user && !contract && post_payment === "1") {

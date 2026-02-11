@@ -88,7 +88,7 @@ export default async function SuccessPage({
       const hasMedical = (docs?.length || 0) > 0
 
       if (!hasContract || !hasMedical) {
-        redirect(`/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1`)
+        redirect(`/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${encodeURIComponent(session_id)}`)
       }
     }
   }
