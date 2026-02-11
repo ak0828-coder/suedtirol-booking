@@ -185,20 +185,40 @@ export async function POST(req: Request) {
         const validUntil = new Date()
         validUntil.setFullYear(validUntil.getFullYear() + 1)
 
-        const { error } = await supabaseAdmin.from("club_members").upsert(
-          {
+        const { data: existing } = await supabaseAdmin
+          .from("club_members")
+          .select("id")
+          .eq("club_id", clubId)
+          .eq("user_id", userId)
+          .limit(1)
+
+        const existingId = existing?.[0]?.id
+        let writeError = null
+        if (existingId) {
+          const { error } = await supabaseAdmin
+            .from("club_members")
+            .update({
+              plan_id: planId,
+              stripe_subscription_id: session.subscription,
+              status: "active",
+              valid_until: validUntil.toISOString(),
+            })
+            .eq("id", existingId)
+          writeError = error
+        } else {
+          const { error } = await supabaseAdmin.from("club_members").insert({
             user_id: userId,
             club_id: clubId,
             plan_id: planId,
             stripe_subscription_id: session.subscription,
             status: "active",
             valid_until: validUntil.toISOString(),
-          },
-          { onConflict: "club_id, user_id" }
-        )
+          })
+          writeError = error
+        }
 
-        if (error) {
-          console.error("DB Error Member Upsert:", error)
+        if (writeError) {
+          console.error("DB Error Member Write:", writeError)
           return new NextResponse("DB Error", { status: 500 })
         }
 
