@@ -50,9 +50,6 @@ export default async function MemberDashboard({
     .limit(1)
 
   const hasContract = !!member.contract_signed_at || (contractDocs?.length || 0) > 0
-  if (!hasContract) {
-    return redirect(`/${lang}/club/${slug}/onboarding?post_payment=1`)
-  }
 
   const { data: upcomingBookings } = await supabase
     .from("bookings")
@@ -100,6 +97,21 @@ export default async function MemberDashboard({
       style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
     >
       <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
+        {!hasContract && (
+          <Card className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5 text-sm text-amber-900 shadow-sm">
+            <div className="font-semibold">Onboarding unvollständig</div>
+            <p className="mt-1 text-amber-800">
+              Bitte unterschreibe den Mitgliedsvertrag, um alle Funktionen freizuschalten.
+            </p>
+            <div className="mt-3">
+              <Link href={`/${lang}/club/${slug}/onboarding?post_payment=1`}>
+                <Button variant="outline" className="rounded-full">
+                  Zum Onboarding
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
         <header id="tour-member-header" className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
           <div
             className="absolute -top-10 -right-10 h-40 w-40 rounded-full blur-2xl"
