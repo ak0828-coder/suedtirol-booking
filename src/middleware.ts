@@ -28,6 +28,20 @@ function detectLocale(request: NextRequest) {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const canonicalHost = process.env.NEXT_PUBLIC_CANONICAL_HOST || "www.avaimo.com";
+  const currentHost = request.nextUrl.host;
+
+  if (
+    currentHost &&
+    canonicalHost &&
+    currentHost !== canonicalHost &&
+    !currentHost.includes("localhost")
+  ) {
+    const url = request.nextUrl.clone();
+    url.host = canonicalHost;
+    url.protocol = "https:";
+    return NextResponse.redirect(url, 308);
+  }
 
   if (
     pathname.startsWith("/api") ||
