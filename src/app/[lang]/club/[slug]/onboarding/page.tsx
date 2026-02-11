@@ -6,17 +6,40 @@ import { MemberDocumentsForm } from "@/components/member-documents-form"
 
 export default async function MemberOnboardingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams?: Promise<{ post_payment?: string }>
 }) {
   const { slug } = await params
+  const { post_payment } = (await searchParams) || {}
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const contract = user ? await getMembershipContractForMember(slug) : null
+  let contract = user ? await getMembershipContractForMember(slug) : null
+  if (user && !contract && post_payment === "1") {
+    const { data: fallback } = await supabase
+      .from("clubs")
+      .select(
+        "membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_fields, membership_fee, membership_fee_enabled, membership_allow_subscription"
+      )
+      .eq("slug", slug)
+      .single()
+    if (fallback) {
+      contract = {
+        title: fallback.membership_contract_title || "Mitgliedschaft",
+        body: fallback.membership_contract_body || "",
+        version: fallback.membership_contract_version || 1,
+        membership_contract_fields: fallback.membership_contract_fields || [],
+        membership_fee: fallback.membership_fee || 0,
+        membership_fee_enabled: fallback.membership_fee_enabled ?? true,
+        membership_allow_subscription: fallback.membership_allow_subscription ?? true,
+      } as any
+    }
+  }
   if (user && !contract) return notFound()
 
   const { data: club } = await supabase
