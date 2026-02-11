@@ -53,6 +53,7 @@ export function MemberOnboardingForm({
   plans,
   initialMember,
   guestMode = false,
+  prePayment = false,
 }: {
   clubSlug: string
   clubName: string
@@ -67,6 +68,7 @@ export function MemberOnboardingForm({
   plans: Plan[]
   initialMember: InitialMember
   guestMode?: boolean
+  prePayment?: boolean
 }) {
   const { t } = useI18n()
   const params = useParams()
@@ -88,9 +90,21 @@ export function MemberOnboardingForm({
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [customValues, setCustomValues] = useState<Record<string, string | boolean>>({})
+  const [hasSession, setHasSession] = useState(false)
   useEffect(() => {
     if (plans.length === 1) setSelectedPlanId(plans[0].id)
   }, [plans])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      const email = data?.user?.email || ""
+      setHasSession(!!data?.user)
+      if (email && !formData.email) {
+        setFormData((prev) => ({ ...prev, email }))
+      }
+    })
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -200,6 +214,80 @@ export function MemberOnboardingForm({
 
   const handleSubmit = async () => {
     setError(null)
+    if (prePayment) {
+      const plan = plans.find((p) => p.id === selectedPlanId)
+      if (!plan) {
+        setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
+        return
+      }
+      if (!hasSession) {
+        if (!formData.email || !formData.email.includes("@")) {
+          setError(t("member_onboarding.error_email", "Bitte eine gültige E-Mail angeben."))
+          return
+        }
+        if (!password || password.length < 8) {
+          setError(t("member_onboarding.error_password", "Bitte ein Passwort mit mindestens 8 Zeichen angeben."))
+          return
+        }
+        if (password !== confirmPassword) {
+          setError(t("member_onboarding.error_password_match", "Passwörter stimmen nicht überein."))
+          return
+        }
+      }
+      setSaving(true)
+
+      if (!hasSession) {
+        const ensured = await ensureGuestAccount({
+          email: formData.email,
+          password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+        })
+        if (!ensured?.success) {
+          setSaving(false)
+          setError(ensured?.error || t("member_onboarding.error_account", "Account konnte nicht erstellt werden."))
+          return
+        }
+        if (ensured?.exists) {
+          setSaving(false)
+          setError(
+            t(
+              "member_onboarding.error_existing",
+              "Es gibt bereits ein Konto mit dieser E-Mail. Bitte einloggen oder Passwort zurücksetzen."
+            )
+          )
+          return
+        }
+
+        const supabase = createClient()
+        const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password,
+        })
+        if (!sessionData?.user || signInError) {
+          setSaving(false)
+          setError(signInError?.message || t("member_onboarding.error_login", "Login fehlgeschlagen. Bitte Passwort prüfen."))
+          return
+        }
+      }
+
+      const profileData = new FormData()
+      profileData.set("firstName", formData.firstName)
+      profileData.set("lastName", formData.lastName)
+      profileData.set("phone", formData.phone)
+      await updateProfile(profileData)
+
+      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
+      if (result?.url) {
+        window.location.href = result.url
+        return
+      }
+      setSaving(false)
+      setError(result?.error || t("member_onboarding.error_payment", "Zahlungslink konnte nicht erstellt werden."))
+      return
+    }
+
     if (guestMode) {
       if (!formData.email || !formData.email.includes("@")) {
         setError(t("member_onboarding.error_email", "Bitte eine gültige E-Mail angeben."))
@@ -375,7 +463,7 @@ export function MemberOnboardingForm({
               <Label>{t("member_onboarding.phone", "Telefon")}</Label>
               <Input value={formData.phone} onChange={(e) => setField("phone", e.target.value)} />
             </div>
-            {guestMode ? (
+            {guestMode && !hasSession ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>{t("member_onboarding.password", "Passwort")}</Label>
@@ -401,7 +489,7 @@ export function MemberOnboardingForm({
             ) : null}
           </Card>
 
-          {!guestMode && contractFields.length > 0 ? (
+          {!guestMode && !prePayment && contractFields.length > 0 ? (
             <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
               <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.more", "Weitere Angaben")}</div>
               {contractFields.map((field) => (
@@ -438,7 +526,7 @@ export function MemberOnboardingForm({
             </Card>
           ) : null}
 
-          {!guestMode ? (
+          {!guestMode && !prePayment ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2 text-sm">
@@ -464,7 +552,7 @@ export function MemberOnboardingForm({
             </div>
           ) : null}
 
-          {!guestMode ? (
+          {!guestMode && !prePayment ? (
             <div className="space-y-3">
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
@@ -476,26 +564,28 @@ export function MemberOnboardingForm({
             <p className="text-sm text-red-600">{error}</p>
           ) : null}
 
-          <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wÃ¤hlen")}</div>
-            {plans.length > 1 ? (
-              <select
-                className="w-full rounded-md border px-3 py-2 text-sm"
-                value={selectedPlanId}
-                onChange={(e) => setSelectedPlanId(e.target.value)}
-              >
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} â€“ {formatPrice(p.price)}â‚¬
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="text-sm text-slate-600">
-                {plans[0]?.name} – {formatPrice(plans[0]?.price || 0)}€ {t("member_onboarding.per_year", "pro Jahr")}
-              </div>
-            )}
-          </Card>
+          {prePayment && (
+            <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
+              <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wÃ¤hlen")}</div>
+              {plans.length > 1 ? (
+                <select
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  value={selectedPlanId}
+                  onChange={(e) => setSelectedPlanId(e.target.value)}
+                >
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} â€“ {formatPrice(p.price)}â‚¬
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-sm text-slate-600">
+                  {plans[0]?.name} – {formatPrice(plans[0]?.price || 0)}€ {t("member_onboarding.per_year", "pro Jahr")}
+                </div>
+              )}
+            </Card>
+          )}
 
           <Button
             size="lg"
@@ -507,6 +597,8 @@ export function MemberOnboardingForm({
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : isPostPayment ? (
               t("member_onboarding.cta_finish", "Onboarding abschließen")
+            ) : prePayment ? (
+              t("member_onboarding.cta_pay", "Jetzt bezahlen")
             ) : (
               t("member_onboarding.cta", "Jetzt zahlungspflichtig beitreten")
             )}
@@ -514,7 +606,7 @@ export function MemberOnboardingForm({
         </div>
       </div>
 
-      {!guestMode && !isPostPayment ? (
+      {!guestMode && !isPostPayment && !prePayment ? (
         <div className="hidden w-full bg-slate-200/60 md:flex md:w-1/2 md:items-center md:justify-center md:p-6 lg:p-8">
           <div className="h-[70vh] w-auto aspect-[1/1.414] shadow-2xl lg:h-[80vh]">
             <ContractPreview data={pdfData} className="h-full w-full" />
