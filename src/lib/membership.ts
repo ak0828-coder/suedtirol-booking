@@ -33,16 +33,10 @@ export async function writeClubMembership(params: {
   planId: string
   subscriptionId?: string | null
   validUntilIso?: string | null
+  paymentStatus?: string | null
 }) {
-  const { supabaseAdmin, userId, clubId, planId, subscriptionId, validUntilIso } = params
+  const { supabaseAdmin, userId, clubId, planId, subscriptionId, validUntilIso, paymentStatus } = params
   if (!userId || !clubId || !planId) return { success: false, error: "missing_params" }
-
-  const { data: existing } = await supabaseAdmin
-    .from("club_members")
-    .select("id")
-    .eq("club_id", clubId)
-    .eq("user_id", userId)
-    .limit(1)
 
   const payload: any = {
     user_id: userId,
@@ -51,19 +45,12 @@ export async function writeClubMembership(params: {
     stripe_subscription_id: subscriptionId || null,
     status: "active",
   }
+  if (paymentStatus) payload.payment_status = paymentStatus
   if (validUntilIso) payload.valid_until = validUntilIso
 
-  let writeError = null
-  if (existing?.[0]?.id) {
-    const { error } = await supabaseAdmin
-      .from("club_members")
-      .update(payload)
-      .eq("id", existing[0].id)
-    writeError = error
-  } else {
-    const { error } = await supabaseAdmin.from("club_members").insert(payload)
-    writeError = error
-  }
+  const { error: writeError } = await supabaseAdmin
+    .from("club_members")
+    .upsert(payload, { onConflict: "club_id,user_id" })
 
   if (writeError) {
     return { success: false, error: "member_write_failed" }

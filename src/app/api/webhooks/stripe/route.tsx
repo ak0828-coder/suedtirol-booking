@@ -191,11 +191,20 @@ export async function POST(req: Request) {
           planId,
           subscriptionId: session.subscription,
           validUntilIso: validUntil.toISOString(),
+          paymentStatus: "paid_stripe",
         })
 
         if (!writeResult?.success) {
           console.error("DB Error Member Write:", writeResult?.error)
           return new NextResponse("DB Error", { status: 500 })
+        }
+
+        if (typeof session.customer === "string") {
+          await supabaseAdmin.from("profiles").upsert({
+            id: userId,
+            stripe_customer_id: session.customer,
+            updated_at: new Date().toISOString(),
+          })
         }
 
         const { data: club } = await supabaseAdmin

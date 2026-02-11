@@ -552,10 +552,19 @@ async function upsertMembershipFromCheckoutSession(session: any) {
     planId,
     subscriptionId: session.subscription,
     validUntilIso: validUntil.toISOString(),
+    paymentStatus: "paid_stripe",
   })
 
   if (!writeResult?.success) {
     return { success: false, error: "member_write_failed" }
+  }
+
+  if (typeof session.customer === "string") {
+    await supabaseAdmin.from("profiles").upsert({
+      id: userId,
+      stripe_customer_id: session.customer,
+      updated_at: new Date().toISOString(),
+    })
   }
 
   return { success: true }
