@@ -30,11 +30,21 @@ export default async function MemberDashboard({
   } = await supabase.auth.getUser()
   if (!user) return redirect(`/${lang}/login`)
 
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, name, primary_color")
+    .eq("slug", slug)
+    .single()
+
+  if (!club) {
+    return redirect(`/${lang}/club/${slug}`)
+  }
+
   const { data: member } = await supabase
     .from("club_members")
-    .select("*, clubs!inner(slug, name, id, primary_color), membership_plans(name), contract_signed_at")
+    .select("*, membership_plans(name), contract_signed_at")
     .eq("user_id", user.id)
-    .eq("clubs.slug", slug)
+    .eq("club_id", club.id)
     .single()
 
   if (!member) {
@@ -44,7 +54,7 @@ export default async function MemberDashboard({
   const { data: contractDocs } = await supabase
     .from("member_documents")
     .select("id, doc_type")
-    .eq("club_id", member.clubs.id)
+    .eq("club_id", club.id)
     .eq("user_id", user.id)
     .in("doc_type", ["membership_contract", "contract"])
     .limit(1)
@@ -54,7 +64,7 @@ export default async function MemberDashboard({
   const { data: upcomingBookings } = await supabase
     .from("bookings")
     .select("*, courts(name)")
-    .eq("club_id", member.clubs.id)
+    .eq("club_id", club.id)
     .eq("user_id", user.id)
     .gte("start_time", new Date().toISOString())
     .order("start_time", { ascending: true })
@@ -65,7 +75,7 @@ export default async function MemberDashboard({
   const { data: pastBookings } = await supabase
     .from("bookings")
     .select("*, courts(name)")
-    .eq("club_id", member.clubs.id)
+    .eq("club_id", club.id)
     .eq("user_id", user.id)
     .gte("start_time", pastStart.toISOString())
     .lt("start_time", new Date().toISOString())
@@ -82,13 +92,13 @@ export default async function MemberDashboard({
   const recapMap = new Map((recaps || []).map((r: any) => [r.booking_id, r]))
 
   const profile = await getProfile()
-  const ranking = await getClubRanking(member.clubs.id)
-  const stats = await getMyMemberStats(member.clubs.id)
-  const badges = await getMyBadges(member.clubs.id)
+  const ranking = await getClubRanking(club.id)
+  const stats = await getMyMemberStats(club.id)
+  const badges = await getMyBadges(club.id)
 
   const nextBooking = upcomingBookings && upcomingBookings.length > 0 ? upcomingBookings[0] : null
 
-  const primary = member.clubs.primary_color || "#0f172a"
+  const primary = club.primary_color || "#0f172a"
   const primaryFg = getReadableTextColor(primary)
 
   return (
@@ -126,7 +136,7 @@ export default async function MemberDashboard({
               <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight">
                 {t("dashboard.greeting", "Hallo")} {profile?.first_name || t("dashboard.guest", "Mitglied")}!
               </h1>
-              <p className="text-slate-500">{t("dashboard.welcome", "Willkommen bei")} {member.clubs.name}!</p>
+              <p className="text-slate-500">{t("dashboard.welcome", "Willkommen bei")} {club.name}!</p>
             </div>
             <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/90 text-slate-900 px-4 py-2 text-sm font-semibold border border-slate-200/60">
