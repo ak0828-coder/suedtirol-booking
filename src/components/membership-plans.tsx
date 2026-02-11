@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Check, Loader2 } from "lucide-react"
-import { createMembershipCheckout } from "@/app/actions"
+import { Check } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { createClient } from "@/lib/supabase/client"
@@ -22,7 +21,6 @@ export function MembershipPlans({
   subtitle?: string
   ctaLabel?: string
 }) {
-  const [loadingId, setLoadingId] = useState<string | null>(null)
   const [hasSession, setHasSession] = useState<boolean | null>(null)
   const { t } = useI18n()
   const params = useParams()
@@ -42,21 +40,9 @@ export function MembershipPlans({
     })
   }, [])
 
-  const handleSubscribe = async (planId: string, priceId: string) => {
-    if (hasSession === false) {
-      const next = `/${lang}/club/${clubSlug}/onboarding`
-      router.push(`/${lang}/login?redirect=${encodeURIComponent(next)}`)
-      return
-    }
-    setLoadingId(planId)
-    const res = await createMembershipCheckout(clubSlug, planId, priceId)
-
-    if (res?.url) {
-      window.location.href = res.url
-    } else {
-      setLoadingId(null)
-      alert(res?.error || t("membership.error", "Fehler beim Checkout"))
-    }
+  const handleSubscribe = (planId: string) => {
+    const next = `/${lang}/club/${clubSlug}/onboarding?plan=${encodeURIComponent(planId)}`
+    router.push(next)
   }
 
   if (plans.length === 0) return null
@@ -105,10 +91,9 @@ export function MembershipPlans({
 
                 <Button
                   className="w-full club-primary-bg btn-press touch-44"
-                  onClick={() => handleSubscribe(plan.id, plan.stripe_price_id)}
-                  disabled={!!loadingId}
+                  onClick={() => handleSubscribe(plan.id)}
                 >
-                  {loadingId === plan.id ? <Loader2 className="animate-spin" /> : ctaText}
+                  {ctaText}
                 </Button>
               </CardContent>
             </Card>

@@ -12,7 +12,7 @@ import { ContractData } from "@/components/contract/contract-pdf"
 import { createMembershipCheckout, submitMembershipSignature, updateProfile } from "@/app/actions"
 import { Eraser, Loader2, PenLine } from "lucide-react"
 import { useI18n } from "@/components/i18n/locale-provider"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 
 type Plan = {
   id: string
@@ -51,6 +51,7 @@ export function MemberOnboardingForm({
   feeAmount,
   plans,
   initialMember,
+  guestMode = false,
 }: {
   clubSlug: string
   clubName: string
@@ -64,9 +65,11 @@ export function MemberOnboardingForm({
   feeAmount: number
   plans: Plan[]
   initialMember: InitialMember
+  guestMode?: boolean
 }) {
   const { t } = useI18n()
   const params = useParams()
+  const searchParams = useSearchParams()
   const langRaw = params?.lang
   const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
   const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
@@ -77,7 +80,8 @@ export function MemberOnboardingForm({
   const [accepted, setAccepted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPlanId, setSelectedPlanId] = useState(plans[0]?.id || "")
+  const initialPlanId = searchParams?.get("plan") || plans[0]?.id || ""
+  const [selectedPlanId, setSelectedPlanId] = useState(initialPlanId)
   const [formData, setFormData] = useState(initialMember)
   const [customValues, setCustomValues] = useState<Record<string, string | boolean>>({})
 
@@ -193,6 +197,31 @@ export function MemberOnboardingForm({
 
   const handleSubmit = async () => {
     setError(null)
+    if (guestMode) {
+      if (!formData.email || !formData.email.includes("@")) {
+        setError(t("member_onboarding.error_email", "Bitte eine gültige E-Mail angeben."))
+        return
+      }
+      const plan = plans.find((p) => p.id === selectedPlanId)
+      if (!plan) {
+        setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
+        return
+      }
+      setSaving(true)
+      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "", {
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+      })
+      if (result?.url) {
+        window.location.href = result.url
+        return
+      }
+      setSaving(false)
+      setError(result?.error || t("member_onboarding.error_payment", "Zahlungslink konnte nicht erstellt werden."))
+      return
+    }
     if (!accepted) {
       setError(t("member_onboarding.error_accept", "Bitte akzeptiere den Vertrag, um fortzufahren."))
       return
@@ -306,7 +335,7 @@ export function MemberOnboardingForm({
             </div>
           </Card>
 
-          {contractFields.length > 0 ? (
+          {!guestMode && contractFields.length > 0 ? (
             <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
               <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.more", "Weitere Angaben")}</div>
               {contractFields.map((field) => (
@@ -343,37 +372,43 @@ export function MemberOnboardingForm({
             </Card>
           ) : null}
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2 text-sm">
-                <PenLine className="h-4 w-4" />
-                {t("member_onboarding.signature", "Deine Unterschrift")}
-              </Label>
-              <Button variant="ghost" size="sm" onClick={clearSignature} className="h-8 text-red-500">
-                <Eraser className="mr-1 h-3 w-3" />
-                {t("member_onboarding.clear", "Löschen")}
-              </Button>
+          {!guestMode ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 text-sm">
+                  <PenLine className="h-4 w-4" />
+                  {t("member_onboarding.signature", "Deine Unterschrift")}
+                </Label>
+                <Button variant="ghost" size="sm" onClick={clearSignature} className="h-8 text-red-500">
+                  <Eraser className="mr-1 h-3 w-3" />
+                  {t("member_onboarding.clear", "Löschen")}
+                </Button>
+              </div>
+              <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-sm transition-colors hover:border-slate-400">
+                <SignatureCanvas
+                  ref={sigPad}
+                  penColor="#0f172a"
+                  velocityFilterWeight={0.7}
+                  canvasProps={{ className: "h-48 w-full", style: { width: "100%", height: "192px" } }}
+                  onBegin={startSignatureCapture}
+                  onEnd={endSignatureCapture}
+                />
+              </div>
+              <p className="text-xs text-slate-400">{t("member_onboarding.signature_hint", "Bitte unterschreibe im Feld oben.")}</p>
             </div>
-            <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-sm transition-colors hover:border-slate-400">
-              <SignatureCanvas
-                ref={sigPad}
-                penColor="#0f172a"
-                velocityFilterWeight={0.7}
-                canvasProps={{ className: "h-48 w-full", style: { width: "100%", height: "192px" } }}
-                onBegin={startSignatureCapture}
-                onEnd={endSignatureCapture}
-              />
-            </div>
-            <p className="text-xs text-slate-400">{t("member_onboarding.signature_hint", "Bitte unterschreibe im Feld oben.")}</p>
-          </div>
+          ) : null}
 
-          <div className="space-y-3">
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
-              <span>{t("member_onboarding.accept", "Ich habe den Vertrag gelesen und akzeptiere ihn.")}</span>
-            </label>
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          </div>
+          {!guestMode ? (
+            <div className="space-y-3">
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+                <span>{t("member_onboarding.accept", "Ich habe den Vertrag gelesen und akzeptiere ihn.")}</span>
+              </label>
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            </div>
+          ) : error ? (
+            <p className="text-sm text-red-600">{error}</p>
+          ) : null}
 
           <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
             <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wählen")}</div>
@@ -399,7 +434,7 @@ export function MemberOnboardingForm({
           <Button
             size="lg"
             className="h-14 w-full rounded-full text-base"
-            disabled={!accepted || saving}
+            disabled={(guestMode ? saving : !accepted || saving)}
             onClick={handleSubmit}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("member_onboarding.cta", "Jetzt zahlungspflichtig beitreten")}
@@ -407,11 +442,13 @@ export function MemberOnboardingForm({
         </div>
       </div>
 
-      <div className="hidden w-full bg-slate-200/60 md:flex md:w-1/2 md:items-center md:justify-center md:p-6 lg:p-8">
-        <div className="h-[70vh] w-auto aspect-[1/1.414] shadow-2xl lg:h-[80vh]">
-          <ContractPreview data={pdfData} className="h-full w-full" />
+      {!guestMode ? (
+        <div className="hidden w-full bg-slate-200/60 md:flex md:w-1/2 md:items-center md:justify-center md:p-6 lg:p-8">
+          <div className="h-[70vh] w-auto aspect-[1/1.414] shadow-2xl lg:h-[80vh]">
+            <ContractPreview data={pdfData} className="h-full w-full" />
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   )
 }

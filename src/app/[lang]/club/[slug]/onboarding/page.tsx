@@ -14,22 +14,24 @@ export default async function MemberOnboardingPage({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return notFound()
 
-  const contract = await getMembershipContractForMember(slug)
-  if (!contract) return notFound()
+  const contract = user ? await getMembershipContractForMember(slug) : null
+  if (user && !contract) return notFound()
 
   const { data: club } = await supabase
     .from("clubs")
     .select("id, name, logo_url")
     .eq("slug", slug)
     .single()
+  if (!club) return notFound()
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, phone")
-    .eq("id", user.id)
-    .single()
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("first_name, last_name, phone")
+        .eq("id", user.id)
+        .single()
+    : { data: null }
 
   const { data: plans } = await supabase
     .from("membership_plans")
@@ -42,22 +44,23 @@ export default async function MemberOnboardingPage({
       clubSlug={slug}
       clubName={club?.name || "Verein"}
       clubLogoUrl={club?.logo_url}
-      contractTitle={contract.title}
-      contractBody={contract.body}
-      contractVersion={contract.version}
-      contractFields={contract.membership_contract_fields || []}
-      allowSubscription={contract.membership_allow_subscription}
-      feeEnabled={contract.membership_fee_enabled}
-      feeAmount={contract.membership_fee}
+      contractTitle={contract?.title || "Mitgliedschaft"}
+      contractBody={contract?.body || ""}
+      contractVersion={contract?.version || 1}
+      contractFields={contract?.membership_contract_fields || []}
+      allowSubscription={contract?.membership_allow_subscription ?? true}
+      feeEnabled={contract?.membership_fee_enabled ?? true}
+      feeAmount={contract?.membership_fee ?? 0}
       plans={plans || []}
       initialMember={{
         firstName: profile?.first_name || "",
         lastName: profile?.last_name || "",
-        email: user.email || "",
+        email: user?.email || "",
         phone: profile?.phone || "",
         address: "",
         city: "",
       }}
+      guestMode={!user}
     />
   )
 }

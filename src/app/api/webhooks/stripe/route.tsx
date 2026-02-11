@@ -133,6 +133,9 @@ export async function POST(req: Request) {
     if (session.metadata?.type === "membership_subscription") {
       let { userId, clubId, planId } = session.metadata
       const customerEmail = session.customer_details?.email
+      const guestFirstName = session.metadata?.guestFirstName
+      const guestLastName = session.metadata?.guestLastName
+      const guestPhone = session.metadata?.guestPhone
 
       let isNewUser = false
       let tempPassword = ""
@@ -169,6 +172,16 @@ export async function POST(req: Request) {
       }
 
       if (userId) {
+        if (guestFirstName || guestLastName || guestPhone) {
+          await supabaseAdmin.from("profiles").upsert({
+            id: userId,
+            first_name: guestFirstName || null,
+            last_name: guestLastName || null,
+            phone: guestPhone || null,
+            updated_at: new Date().toISOString(),
+          })
+        }
+
         const validUntil = new Date()
         validUntil.setFullYear(validUntil.getFullYear() + 1)
 
