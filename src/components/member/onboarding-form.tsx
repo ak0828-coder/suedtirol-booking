@@ -231,6 +231,16 @@ export function MemberOnboardingForm({
         setError(ensured?.error || t("member_onboarding.error_account", "Account konnte nicht erstellt werden."))
         return
       }
+      if (ensured?.exists) {
+        setSaving(false)
+        setError(
+          t(
+            "member_onboarding.error_existing",
+            "Es gibt bereits ein Konto mit dieser E-Mail. Bitte einloggen oder Passwort zurücksetzen."
+          )
+        )
+        return
+      }
 
       const supabase = createClient()
       const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({

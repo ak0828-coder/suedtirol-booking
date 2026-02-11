@@ -2623,6 +2623,7 @@ export async function ensureGuestAccount(payload: {
   const existing = list.users.find((u) => u.email?.toLowerCase() === email)
 
   let userId = existing?.id
+  let created = false
   if (!userId) {
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -2637,6 +2638,7 @@ export async function ensureGuestAccount(payload: {
       return { success: false, error: createError?.message || "User konnte nicht erstellt werden." }
     }
     userId = newUser.user.id
+    created = true
   }
 
   await supabaseAdmin.from("profiles").upsert({
@@ -2647,7 +2649,7 @@ export async function ensureGuestAccount(payload: {
     updated_at: new Date().toISOString(),
   })
 
-  return { success: true }
+  return { success: true, created, exists: !!existing }
 }
 
 // ==========================================
