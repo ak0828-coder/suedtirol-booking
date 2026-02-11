@@ -62,7 +62,9 @@ export default async function MemberOnboardingPage({
             Um dein Onboarding abzuschließen, musst du eingeloggt sein.
           </p>
           <a
-            href={`/${lang || "de"}/login`}
+            href={`/${lang || "de"}/login?next=${encodeURIComponent(
+              `/${lang || "de"}/club/${slug}/onboarding?post_payment=1${session_id ? `&session_id=${session_id}` : ""}`
+            )}`}
             className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white"
           >
             Zum Login

@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,7 +14,9 @@ import { useI18n } from "@/components/i18n/locale-provider"
 export default function LoginPage() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
+  const nextParam = searchParams?.get("next")
   const { t } = useI18n()
   const supabase = createClient()
 
@@ -52,6 +54,11 @@ export default function LoginPage() {
     router.refresh()
 
     try {
+      if (nextParam) {
+        router.push(nextParam)
+        return
+      }
+
       const result = await getUserRole()
 
       if (!result) {
@@ -70,7 +77,7 @@ export default function LoginPage() {
         const roles = result.roles || []
 
         if (roles.length === 0) {
-          router.push(`/${lang}`)
+          router.push(nextParam || `/${lang}`)
           return
         } else if (roles.length === 1) {
           const r = roles[0]
