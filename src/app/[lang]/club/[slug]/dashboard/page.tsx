@@ -41,14 +41,6 @@ export default async function MemberDashboard({
     return redirect(`/${lang}/club/${slug}`)
   }
 
-  const { data: medicalDocs } = await supabase
-    .from("member_documents")
-    .select("id")
-    .eq("club_id", member.clubs.id)
-    .eq("user_id", user.id)
-    .eq("doc_type", "medical_certificate")
-    .limit(1)
-
   const { data: contractDocs } = await supabase
     .from("member_documents")
     .select("id, doc_type")
@@ -58,8 +50,7 @@ export default async function MemberDashboard({
     .limit(1)
 
   const hasContract = !!member.contract_signed_at || (contractDocs?.length || 0) > 0
-  const hasMedical = (medicalDocs?.length || 0) > 0
-  if (!hasContract || !hasMedical) {
+  if (!hasContract) {
     return redirect(`/${lang}/club/${slug}/onboarding?post_payment=1`)
   }
 

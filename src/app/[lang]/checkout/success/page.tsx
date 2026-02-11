@@ -76,18 +76,9 @@ export default async function SuccessPage({
         .eq("user_id", user.id)
         .single()
 
-      const { data: docs } = await supabase
-        .from("member_documents")
-        .select("id")
-        .eq("club_id", meta.clubId)
-        .eq("user_id", user.id)
-        .eq("doc_type", "medical_certificate")
-        .limit(1)
-
       const hasContract = !!member?.contract_signed_at
-      const hasMedical = (docs?.length || 0) > 0
 
-      if (!hasContract || !hasMedical) {
+      if (!hasContract) {
         redirect(`/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${encodeURIComponent(session_id)}`)
       }
     }
