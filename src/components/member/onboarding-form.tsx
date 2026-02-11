@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import SignatureCanvas from "react-signature-canvas"
@@ -13,6 +13,7 @@ import { createMembershipCheckout, submitMembershipSignature, updateProfile } fr
 import { Eraser, Loader2, PenLine } from "lucide-react"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { useParams, useSearchParams } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 type Plan = {
   id: string
@@ -83,8 +84,9 @@ export function MemberOnboardingForm({
   const initialPlanId = searchParams?.get("plan") || plans[0]?.id || ""
   const [selectedPlanId, setSelectedPlanId] = useState(initialPlanId)
   const [formData, setFormData] = useState(initialMember)
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [customValues, setCustomValues] = useState<Record<string, string | boolean>>({})
-
   useEffect(() => {
     if (plans.length === 1) setSelectedPlanId(plans[0].id)
   }, [plans])
@@ -202,18 +204,45 @@ export function MemberOnboardingForm({
         setError(t("member_onboarding.error_email", "Bitte eine gültige E-Mail angeben."))
         return
       }
+      if (!password || password.length < 8) {
+        setError(t("member_onboarding.error_password", "Bitte ein Passwort mit mindestens 8 Zeichen angeben."))
+        return
+      }
+      if (password !== confirmPassword) {
+        setError(t("member_onboarding.error_password_match", "Passwörter stimmen nicht überein."))
+        return
+      }
       const plan = plans.find((p) => p.id === selectedPlanId)
       if (!plan) {
         setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
         return
       }
       setSaving(true)
-      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "", {
+
+      const supabase = createClient()
+      const { data: existing } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
+        password,
       })
+      if (!existing?.user) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password,
+        })
+        if (signUpError) {
+          setSaving(false)
+          setError(signUpError.message)
+          return
+        }
+      }
+
+      const profileData = new FormData()
+      profileData.set("firstName", formData.firstName)
+      profileData.set("lastName", formData.lastName)
+      profileData.set("phone", formData.phone)
+      await updateProfile(profileData)
+
+      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
       if (result?.url) {
         window.location.href = result.url
         return
@@ -238,7 +267,7 @@ export function MemberOnboardingForm({
       return typeof value === "string" ? value.trim().length === 0 : true
     })
     if (missingRequired) {
-      const message = t("member_onboarding.error_missing", "Bitte fülle das Feld {field} aus.")
+      const message = t("member_onboarding.error_missing", "Bitte fÃ¼lle das Feld {field} aus.")
       setError(message.replace("{field}", missingRequired.label))
       return
     }
@@ -281,7 +310,7 @@ export function MemberOnboardingForm({
     const plan = plans.find((p) => p.id === selectedPlanId)
     if (!plan) {
       setSaving(false)
-      setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
+      setError(t("member_onboarding.error_plan", "Bitte wÃ¤hle einen Tarif."))
       return
     }
     const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
@@ -300,7 +329,7 @@ export function MemberOnboardingForm({
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t("member_onboarding.kicker", "Avaimo Vertrag")}</p>
             <h1 className="text-3xl font-semibold text-slate-900">{contractTitle}</h1>
             <p className="text-slate-500">
-              {t("member_onboarding.subhead", "Prüfe deine Angaben, unterschreibe und sieh live, wie dein Vertrag aussieht.")}
+              {t("member_onboarding.subhead", "PrÃ¼fe deine Angaben, unterschreibe und sieh live, wie dein Vertrag aussieht.")}
             </p>
           </div>
 
@@ -316,23 +345,37 @@ export function MemberOnboardingForm({
               </div>
             </div>
             <div className="space-y-2">
-              <Label>{t("member_onboarding.address", "Adresse")}</Label>
-              <Input value={formData.address} onChange={(e) => setField("address", e.target.value)} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>{t("member_onboarding.city", "Ort")}</Label>
-                <Input value={formData.city} onChange={(e) => setField("city", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("member_onboarding.email", "E-Mail")}</Label>
-                <Input type="email" value={formData.email} onChange={(e) => setField("email", e.target.value)} />
-              </div>
+              <Label>{t("member_onboarding.email", "E-Mail")}</Label>
+              <Input type="email" value={formData.email} onChange={(e) => setField("email", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>{t("member_onboarding.phone", "Telefon")}</Label>
               <Input value={formData.phone} onChange={(e) => setField("phone", e.target.value)} />
             </div>
+            {guestMode ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>{t("member_onboarding.password", "Passwort")}</Label>
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("member_onboarding.password_confirm", "Passwort bestätigen")}</Label>
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                </div>
+              </div>
+            ) : null}
+            {!guestMode ? (
+              <>
+                <div className="space-y-2">
+                  <Label>{t("member_onboarding.address", "Adresse")}</Label>
+                  <Input value={formData.address} onChange={(e) => setField("address", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("member_onboarding.city", "Ort")}</Label>
+                  <Input value={formData.city} onChange={(e) => setField("city", e.target.value)} />
+                </div>
+              </>
+            ) : null}
           </Card>
 
           {!guestMode && contractFields.length > 0 ? (
@@ -381,7 +424,7 @@ export function MemberOnboardingForm({
                 </Label>
                 <Button variant="ghost" size="sm" onClick={clearSignature} className="h-8 text-red-500">
                   <Eraser className="mr-1 h-3 w-3" />
-                  {t("member_onboarding.clear", "Löschen")}
+                  {t("member_onboarding.clear", "LÃ¶schen")}
                 </Button>
               </div>
               <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-sm transition-colors hover:border-slate-400">
@@ -411,7 +454,7 @@ export function MemberOnboardingForm({
           ) : null}
 
           <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wählen")}</div>
+            <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wÃ¤hlen")}</div>
             {plans.length > 1 ? (
               <select
                 className="w-full rounded-md border px-3 py-2 text-sm"
@@ -420,13 +463,13 @@ export function MemberOnboardingForm({
               >
                 {plans.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} – {formatPrice(p.price)}€
+                    {p.name} â€“ {formatPrice(p.price)}â‚¬
                   </option>
                 ))}
               </select>
             ) : (
               <div className="text-sm text-slate-600">
-                {plans[0]?.name} – {formatPrice(plans[0]?.price || 0)}€ {t("member_onboarding.per_year", "pro Jahr")}
+                {plans[0]?.name} â€“ {formatPrice(plans[0]?.price || 0)}â‚¬ {t("member_onboarding.per_year", "pro Jahr")}
               </div>
             )}
           </Card>
@@ -452,3 +495,5 @@ export function MemberOnboardingForm({
     </div>
   )
 }
+
+
