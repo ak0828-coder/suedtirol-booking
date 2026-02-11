@@ -514,7 +514,7 @@ export function MemberOnboardingForm({
         </div>
       </div>
 
-      {!guestMode ? (
+      {!guestMode && !isPostPayment ? (
         <div className="hidden w-full bg-slate-200/60 md:flex md:w-1/2 md:items-center md:justify-center md:p-6 lg:p-8">
           <div className="h-[70vh] w-auto aspect-[1/1.414] shadow-2xl lg:h-[80vh]">
             <ContractPreview data={pdfData} className="h-full w-full" />

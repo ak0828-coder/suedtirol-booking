@@ -5013,52 +5013,61 @@ export async function submitMembershipSignature(
       review_status: "approved"
     })
 
-  const pdfDoc = (
-    <ContractPDF
-      data={{
-        clubName: club.name,
-        clubLogoUrl: club.logo_url,
-        clubAddress: "",
-        contractTitle: payload.contractTitle,
-        memberName: payload.memberName,
-        memberAddress: payload.memberAddress,
-        memberEmail: payload.memberEmail,
-        memberPhone: payload.memberPhone,
-        customFields: payload.customFields
-          ? payload.customFields.map((field) => ({
-              label: field.label,
-              value: typeof field.value === "boolean" ? (field.value ? "Ja" : "Nein") : String(field.value || ""),
-            }))
-          : [],
-        contractText: payload.contractText,
-        signatureUrl: signatureDataUrl,
-        signedAt: payload.signedAt,
-        signedCity: payload.signedCity,
-      }}
-    />
-  )
+  let pdfPath: string | null = null
+  let pdfUploadOk = false
+  try {
+    const pdfDoc = (
+      <ContractPDF
+        data={{
+          clubName: club.name,
+          clubLogoUrl: club.logo_url,
+          clubAddress: "",
+          contractTitle: payload.contractTitle,
+          memberName: payload.memberName,
+          memberAddress: payload.memberAddress,
+          memberEmail: payload.memberEmail,
+          memberPhone: payload.memberPhone,
+          customFields: payload.customFields
+            ? payload.customFields.map((field) => ({
+                label: field.label,
+                value: typeof field.value === "boolean" ? (field.value ? "Ja" : "Nein") : String(field.value || ""),
+              }))
+            : [],
+          contractText: payload.contractText,
+          signatureUrl: signatureDataUrl,
+          signedAt: payload.signedAt,
+          signedCity: payload.signedCity,
+        }}
+      />
+    )
 
-  const pdfBuffer = (await pdf(pdfDoc).toBuffer()) as unknown as Buffer
-  const pdfPath = `${club.id}/${user.id}/membership-contract-${Date.now()}.pdf`
+    const pdfBuffer = (await pdf(pdfDoc).toBuffer()) as unknown as Buffer
+    pdfPath = `${club.id}/${user.id}/membership-contract-${Date.now()}.pdf`
 
-  const { error: pdfUploadError } = await supabaseAdmin.storage
-    .from(MEMBER_DOC_BUCKET)
-    .upload(pdfPath, pdfBuffer, { contentType: "application/pdf", upsert: true })
+    const { error: pdfUploadError } = await supabaseAdmin.storage
+      .from(MEMBER_DOC_BUCKET)
+      .upload(pdfPath, pdfBuffer, { contentType: "application/pdf", upsert: true })
 
-  if (!pdfUploadError) {
-    await supabaseAdmin
-      .from("member_documents")
-      .insert({
-        club_id: club.id,
-        user_id: user.id,
-        doc_type: "contract",
-        file_path: pdfPath,
-        file_name: "mitgliedsvertrag.pdf",
-        file_size: pdfBuffer.length,
-        mime_type: "application/pdf",
-        ai_status: "ok",
-        review_status: "approved"
-      })
+    if (!pdfUploadError) {
+      await supabaseAdmin
+        .from("member_documents")
+        .insert({
+          club_id: club.id,
+          user_id: user.id,
+          doc_type: "contract",
+          file_path: pdfPath,
+          file_name: "mitgliedsvertrag.pdf",
+          file_size: pdfBuffer.length,
+          mime_type: "application/pdf",
+          ai_status: "ok",
+          review_status: "approved"
+        })
+      pdfUploadOk = true
+    }
+  } catch (err) {
+    console.error("Contract PDF generation failed:", err)
+    pdfUploadOk = false
+    pdfPath = null
   }
 
   await supabaseAdmin
@@ -5076,7 +5085,7 @@ export async function submitMembershipSignature(
     .eq("club_id", club.id)
     .eq("user_id", user.id)
 
-  if (!pdfUploadError && (user.email || club.admin_email)) {
+  if (pdfUploadOk && pdfPath && (user.email || club.admin_email)) {
     const { data: signed } = await supabaseAdmin.storage
       .from(MEMBER_DOC_BUCKET)
       .createSignedUrl(pdfPath, 60 * 60 * 24 * 7)
