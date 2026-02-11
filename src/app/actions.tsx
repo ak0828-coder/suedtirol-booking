@@ -2638,6 +2638,7 @@ export async function createMembershipCheckout(
 
   const metadata: any = {
     clubId: club.id,
+    clubSlug: clubSlug,
     planId: planId,
     type: 'membership_subscription'
   }
@@ -2683,7 +2684,7 @@ export async function createMembershipCheckout(
     line_items: [{ price: stripePriceId, quantity: 1 }],
     mode: 'subscription',
     subscription_data: subscriptionData,
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?membership_success=true`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}`,
     ...(customerId ? { customer: customerId } : { customer_email: email }),
     metadata: metadata

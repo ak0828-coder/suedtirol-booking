@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
 import type { Locale } from "@/lib/i18n"
+import { ensureMembershipFromCheckoutSession } from "@/app/actions"
 
 export default async function SuccessPage({
   searchParams,
@@ -30,6 +31,9 @@ export default async function SuccessPage({
   }
 
   const meta = session.metadata as any
+  if (meta?.type === "membership_subscription") {
+    await ensureMembershipFromCheckoutSession(session_id)
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-4">
@@ -49,7 +53,7 @@ export default async function SuccessPage({
           </p>
 
           <div className="bg-slate-100 p-4 rounded-lg text-sm text-left">
-            <p><strong>{t("checkout.success.amount", "Summe")}:</strong> {(session.amount_total || 0) / 100}â‚¬</p>
+            <p><strong>{t("checkout.success.amount", "Summe")}:</strong> {(session.amount_total || 0) / 100}€</p>
             <p><strong>{t("checkout.success.status_label", "Status")}:</strong> {t("checkout.success.status", "Bezahlt via Stripe")}</p>
           </div>
 
