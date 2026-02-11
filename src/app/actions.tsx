@@ -5070,7 +5070,7 @@ export async function submitMembershipSignature(
     pdfPath = null
   }
 
-  await supabaseAdmin
+  const { error: memberUpdateError } = await supabaseAdmin
     .from("club_members")
     .update({
       contract_signed_at: new Date().toISOString(),
@@ -5084,6 +5084,11 @@ export async function submitMembershipSignature(
     })
     .eq("club_id", club.id)
     .eq("user_id", user.id)
+
+  if (memberUpdateError) {
+    console.error("Member contract update failed:", memberUpdateError)
+    return { success: false, error: "Vertrag konnte nicht gespeichert werden." }
+  }
 
   if (pdfUploadOk && pdfPath && (user.email || club.admin_email)) {
     const { data: signed } = await supabaseAdmin.storage
