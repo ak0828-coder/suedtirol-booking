@@ -48,7 +48,25 @@ export default async function MemberDashboard({
     .single()
 
   if (!member) {
-    return redirect(`/${lang}/club/${slug}`)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold text-slate-900">Kein Mitgliedskonto gefunden</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Du bist als <strong>{user.email}</strong> eingeloggt. Für diesen Account existiert keine
+            Mitgliedschaft in diesem Verein.
+          </p>
+          <div className="mt-4 space-y-2">
+            <Link href={`/${lang}/login`}>
+              <Button className="w-full">Account wechseln</Button>
+            </Link>
+            <Link href={`/${lang}/club/${slug}`}>
+              <Button variant="outline" className="w-full">Zurück zum Club</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const { data: contractDocs } = await supabase
