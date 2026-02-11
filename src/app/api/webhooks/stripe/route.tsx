@@ -6,6 +6,7 @@ import { Resend } from "resend"
 import crypto from "crypto"
 import { WelcomeMemberEmailTemplate } from "@/components/emails/welcome-member-template"
 import { BookingEmailTemplate } from "@/components/emails/booking-template"
+import { findUserIdByEmail, getCheckoutEmail, writeClubMembership } from "@/lib/membership"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -132,7 +133,7 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     if (session.metadata?.type === "membership_subscription") {
       let { userId, clubId, planId } = session.metadata
-      const customerEmail = session.customer_details?.email
+      const customerEmail = getCheckoutEmail(session)
       const guestFirstName = session.metadata?.guestFirstName
       const guestLastName = session.metadata?.guestLastName
       const guestPhone = session.metadata?.guestPhone
@@ -150,17 +151,15 @@ export async function POST(req: Request) {
           email_confirm: true,
           user_metadata: {
             must_change_password: true,
-            name: "New member",
-            full_name: "New member",
+            name: `${guestFirstName || ""} ${guestLastName || ""}`.trim() || "New member",
+            full_name: `${guestFirstName || ""} ${guestLastName || ""}`.trim() || "New member",
           },
         })
 
         if (createError) {
-          const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers()
-          const found = listUsers.users.find((u) => u.email === customerEmail)
-
-          if (found) {
-            userId = found.id
+          const foundId = await findUserIdByEmail(supabaseAdmin, customerEmail)
+          if (foundId) {
+            userId = foundId
             isNewUser = false
           } else {
             console.error("User Creation Error:", createError)
@@ -185,40 +184,17 @@ export async function POST(req: Request) {
         const validUntil = new Date()
         validUntil.setFullYear(validUntil.getFullYear() + 1)
 
-        const { data: existing } = await supabaseAdmin
-          .from("club_members")
-          .select("id")
-          .eq("club_id", clubId)
-          .eq("user_id", userId)
-          .limit(1)
+        const writeResult = await writeClubMembership({
+          supabaseAdmin,
+          userId,
+          clubId,
+          planId,
+          subscriptionId: session.subscription,
+          validUntilIso: validUntil.toISOString(),
+        })
 
-        const existingId = existing?.[0]?.id
-        let writeError = null
-        if (existingId) {
-          const { error } = await supabaseAdmin
-            .from("club_members")
-            .update({
-              plan_id: planId,
-              stripe_subscription_id: session.subscription,
-              status: "active",
-              valid_until: validUntil.toISOString(),
-            })
-            .eq("id", existingId)
-          writeError = error
-        } else {
-          const { error } = await supabaseAdmin.from("club_members").insert({
-            user_id: userId,
-            club_id: clubId,
-            plan_id: planId,
-            stripe_subscription_id: session.subscription,
-            status: "active",
-            valid_until: validUntil.toISOString(),
-          })
-          writeError = error
-        }
-
-        if (writeError) {
-          console.error("DB Error Member Write:", writeError)
+        if (!writeResult?.success) {
+          console.error("DB Error Member Write:", writeResult?.error)
           return new NextResponse("DB Error", { status: 500 })
         }
 

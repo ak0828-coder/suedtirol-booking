@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
-import { getMembershipContractForMember } from "@/app/actions"
+import { getMembershipContractForMember, getMyDocuments } from "@/app/actions"
 import { MemberOnboardingForm } from "@/components/member/onboarding-form"
+import { MemberDocumentsForm } from "@/components/member-documents-form"
 
 export default async function MemberOnboardingPage({
   params,
@@ -33,6 +34,8 @@ export default async function MemberOnboardingPage({
         .single()
     : { data: null }
 
+  const documents = user ? await getMyDocuments(slug) : []
+
   const { data: plans } = await supabase
     .from("membership_plans")
     .select("id, name, price, stripe_price_id")
@@ -40,27 +43,35 @@ export default async function MemberOnboardingPage({
     .order("price", { ascending: true })
 
   return (
-    <MemberOnboardingForm
-      clubSlug={slug}
-      clubName={club?.name || "Verein"}
-      clubLogoUrl={club?.logo_url}
-      contractTitle={contract?.title || "Mitgliedschaft"}
-      contractBody={contract?.body || ""}
-      contractVersion={contract?.version || 1}
-      contractFields={contract?.membership_contract_fields || []}
-      allowSubscription={contract?.membership_allow_subscription ?? true}
-      feeEnabled={contract?.membership_fee_enabled ?? true}
-      feeAmount={contract?.membership_fee ?? 0}
-      plans={plans || []}
-      initialMember={{
-        firstName: profile?.first_name || "",
-        lastName: profile?.last_name || "",
-        email: user?.email || "",
-        phone: profile?.phone || "",
-        address: "",
-        city: "",
-      }}
-      guestMode={!user}
-    />
+    <div>
+      <MemberOnboardingForm
+        clubSlug={slug}
+        clubName={club?.name || "Verein"}
+        clubLogoUrl={club?.logo_url}
+        contractTitle={contract?.title || "Mitgliedschaft"}
+        contractBody={contract?.body || ""}
+        contractVersion={contract?.version || 1}
+        contractFields={contract?.membership_contract_fields || []}
+        allowSubscription={contract?.membership_allow_subscription ?? true}
+        feeEnabled={contract?.membership_fee_enabled ?? true}
+        feeAmount={contract?.membership_fee ?? 0}
+        plans={plans || []}
+        initialMember={{
+          firstName: profile?.first_name || "",
+          lastName: profile?.last_name || "",
+          email: user?.email || "",
+          phone: profile?.phone || "",
+          address: "",
+          city: "",
+        }}
+        guestMode={!user}
+      />
+
+      {user && (
+        <div className="mx-auto max-w-4xl px-5 pb-16">
+          <MemberDocumentsForm clubSlug={slug} documents={documents || []} />
+        </div>
+      )}
+    </div>
   )
 }

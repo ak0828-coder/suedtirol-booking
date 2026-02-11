@@ -14,6 +14,7 @@ import { stripe } from "@/lib/stripe"
 import { pdf } from "@react-pdf/renderer"
 import { ContractPDF } from "@/components/contract/contract-pdf"
 import crypto from "crypto"
+import { findUserIdByEmail, getCheckoutEmail, writeClubMembership } from "@/lib/membership"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -23,13 +24,40 @@ if (!SUPER_ADMIN_EMAIL) console.warn("âš ï¸ ACHTUNG: SUPER_ADMIN_EMAIL is
 
 const MEMBER_DOC_BUCKET = "member-documents"
 
-async function getOrCreateStripeCustomerId(email?: string | null, name?: string | null) {
+async function getOrCreateStripeCustomerId(
+  email?: string | null,
+  name?: string | null,
+  userId?: string | null
+) {
   const cleanEmail = (email || "").trim()
   if (!cleanEmail) return null
+  if (userId) {
+    try {
+      const supabaseAdmin = getAdminClient()
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("stripe_customer_id")
+        .eq("id", userId)
+        .single()
+      if (profile?.stripe_customer_id) return profile.stripe_customer_id
+    } catch {
+      // ignore lookup errors, continue to create
+    }
+  }
   const customer = await stripe.customers.create({
     email: cleanEmail,
     name: name || undefined,
   })
+  if (userId) {
+    try {
+      const supabaseAdmin = getAdminClient()
+      await supabaseAdmin
+        .from("profiles")
+        .upsert({ id: userId, stripe_customer_id: customer.id, updated_at: new Date().toISOString() })
+    } catch {
+      // ignore write errors
+    }
+  }
   return customer.id
 }
 
@@ -87,24 +115,6 @@ function getAdminClient() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
-}
-
-async function findUserIdByEmail(
-  supabaseAdmin: ReturnType<typeof getAdminClient>,
-  email: string
-) {
-  const target = (email || "").trim().toLowerCase()
-  if (!target) return null
-  const perPage = 1000
-  let page = 1
-  while (true) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
-    if (error || !data?.users) return null
-    const found = data.users.find((u) => u.email?.toLowerCase() === target)
-    if (found?.id) return found.id
-    if (data.users.length < perPage) return null
-    page += 1
-  }
 }
 
 // ==========================================
@@ -459,7 +469,10 @@ async function upsertMembershipFromCheckoutSession(session: any) {
   }
 
   let { userId, clubId, planId } = session.metadata
-  const customerEmail = session.customer_details?.email || session.customer_email
+  const customerEmail = getCheckoutEmail(session)
+  const guestFirstName = session.metadata?.guestFirstName
+  const guestLastName = session.metadata?.guestLastName
+  const guestPhone = session.metadata?.guestPhone
 
   if (!clubId || !planId) {
     return { success: false, error: "missing_metadata" }
@@ -479,14 +492,24 @@ async function upsertMembershipFromCheckoutSession(session: any) {
         email_confirm: true,
         user_metadata: {
           must_change_password: true,
-          name: "New member",
-          full_name: "New member",
+          name: `${guestFirstName || ""} ${guestLastName || ""}`.trim() || "New member",
+          full_name: `${guestFirstName || ""} ${guestLastName || ""}`.trim() || "New member",
         },
       })
       if (createError || !newUser?.user) {
         return { success: false, error: "user_create_failed" }
       }
       userId = newUser.user.id
+
+      if (guestFirstName || guestLastName || guestPhone) {
+        await supabaseAdmin.from("profiles").upsert({
+          id: userId,
+          first_name: guestFirstName || null,
+          last_name: guestLastName || null,
+          phone: guestPhone || null,
+          updated_at: new Date().toISOString(),
+        })
+      }
 
       const { data: club } = await supabaseAdmin
         .from("clubs")
@@ -522,39 +545,16 @@ async function upsertMembershipFromCheckoutSession(session: any) {
   const validUntil = new Date()
   validUntil.setFullYear(validUntil.getFullYear() + 1)
 
-  const { data: existing } = await supabaseAdmin
-    .from("club_members")
-    .select("id")
-    .eq("club_id", clubId)
-    .eq("user_id", userId)
-    .limit(1)
+  const writeResult = await writeClubMembership({
+    supabaseAdmin,
+    userId,
+    clubId,
+    planId,
+    subscriptionId: session.subscription,
+    validUntilIso: validUntil.toISOString(),
+  })
 
-  const existingId = existing?.[0]?.id
-  let writeError = null
-  if (existingId) {
-    const { error } = await supabaseAdmin
-      .from("club_members")
-      .update({
-        plan_id: planId,
-        stripe_subscription_id: session.subscription,
-        status: "active",
-        valid_until: validUntil.toISOString(),
-      })
-      .eq("id", existingId)
-    writeError = error
-  } else {
-    const { error } = await supabaseAdmin.from("club_members").insert({
-      user_id: userId,
-      club_id: clubId,
-      plan_id: planId,
-      stripe_subscription_id: session.subscription,
-      status: "active",
-      valid_until: validUntil.toISOString(),
-    })
-    writeError = error
-  }
-
-  if (writeError) {
+  if (!writeResult?.success) {
     return { success: false, error: "member_write_failed" }
   }
 
@@ -2283,7 +2283,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
 
   const paymentIntentData = buildClubPaymentIntentData(club, { captureManual: true })
 
-  const customerId = await getOrCreateStripeCustomerId(user?.email || guestEmail || null, null)
+  const customerId = await getOrCreateStripeCustomerId(user?.email || guestEmail || null, null, user?.id || null)
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [
@@ -2455,7 +2455,7 @@ export async function createCourseCheckoutSession(
 
   let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
 
-    const customerId = await getOrCreateStripeCustomerId(user?.email || null, null)
+    const customerId = await getOrCreateStripeCustomerId(user?.email || null, null, user?.id || null)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -2714,7 +2714,7 @@ export async function createMembershipCheckout(
     }
   }
 
-  const customerId = await getOrCreateStripeCustomerId(email, null)
+  const customerId = await getOrCreateStripeCustomerId(email, null, user?.id || null)
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
@@ -3276,7 +3276,7 @@ export async function createCheckoutSession(
       application_fee_cents: clubApplicationFeeCents,
     })
 
-    const customerId = await getOrCreateStripeCustomerId(user?.email || guestEmail || null, null)
+    const customerId = await getOrCreateStripeCustomerId(user?.email || guestEmail || null, null, user?.id || null)
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
