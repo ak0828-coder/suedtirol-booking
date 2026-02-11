@@ -1,6 +1,6 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
-type SupabaseAdmin = ReturnType<typeof createSupabaseClient>
+type SupabaseAdmin = SupabaseClient<any, any, any, any, any>
 
 export async function findUserIdByEmail(supabaseAdmin: SupabaseAdmin, email: string) {
   const target = (email || "").trim().toLowerCase()
