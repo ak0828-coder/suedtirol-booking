@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ContractPreview } from "@/components/contract/contract-preview"
 import { ContractData } from "@/components/contract/contract-pdf"
-import { createMembershipCheckout, submitMembershipSignature, updateProfile } from "@/app/actions"
+import { createMembershipCheckout, ensureGuestAccount, submitMembershipSignature, updateProfile } from "@/app/actions"
 import { Eraser, Loader2, PenLine } from "lucide-react"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { useParams, useSearchParams } from "next/navigation"
@@ -219,21 +219,28 @@ export function MemberOnboardingForm({
       }
       setSaving(true)
 
+      const ensured = await ensureGuestAccount({
+        email: formData.email,
+        password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+      })
+      if (!ensured?.success) {
+        setSaving(false)
+        setError(ensured?.error || t("member_onboarding.error_account", "Account konnte nicht erstellt werden."))
+        return
+      }
+
       const supabase = createClient()
-      const { data: existing } = await supabase.auth.signInWithPassword({
+      const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password,
       })
-      if (!existing?.user) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: formData.email,
-          password,
-        })
-        if (signUpError) {
-          setSaving(false)
-          setError(signUpError.message)
-          return
-        }
+      if (!sessionData?.user || signInError) {
+        setSaving(false)
+        setError(t("member_onboarding.error_login", "Login fehlgeschlagen. Bitte Passwort prüfen."))
+        return
       }
 
       const profileData = new FormData()
@@ -469,7 +476,7 @@ export function MemberOnboardingForm({
               </select>
             ) : (
               <div className="text-sm text-slate-600">
-                {plans[0]?.name} â€“ {formatPrice(plans[0]?.price || 0)}â‚¬ {t("member_onboarding.per_year", "pro Jahr")}
+                {plans[0]?.name} – {formatPrice(plans[0]?.price || 0)}€ {t("member_onboarding.per_year", "pro Jahr")}
               </div>
             )}
           </Card>

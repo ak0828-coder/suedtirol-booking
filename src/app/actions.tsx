@@ -2603,6 +2603,53 @@ export async function createMembershipCheckout(
   return { url: session.url }
 }
 
+export async function ensureGuestAccount(payload: {
+  email: string
+  password: string
+  firstName?: string
+  lastName?: string
+  phone?: string
+}) {
+  const email = (payload.email || "").trim().toLowerCase()
+  if (!email || !email.includes("@")) {
+    return { success: false, error: "Ungültige E-Mail" }
+  }
+  if (!payload.password || payload.password.length < 8) {
+    return { success: false, error: "Passwort zu kurz" }
+  }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  const existing = list.users.find((u) => u.email?.toLowerCase() === email)
+
+  let userId = existing?.id
+  if (!userId) {
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: payload.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: `${payload.firstName || ""} ${payload.lastName || ""}`.trim(),
+        must_change_password: false,
+      },
+    })
+    if (createError || !newUser?.user) {
+      return { success: false, error: createError?.message || "User konnte nicht erstellt werden." }
+    }
+    userId = newUser.user.id
+  }
+
+  await supabaseAdmin.from("profiles").upsert({
+    id: userId,
+    first_name: payload.firstName || null,
+    last_name: payload.lastName || null,
+    phone: payload.phone || null,
+    updated_at: new Date().toISOString(),
+  })
+
+  return { success: true }
+}
+
 // ==========================================
 // --- BOOKING ACTIONS (UPDATE: MULTI-USE VOUCHER) ---
 // ==========================================

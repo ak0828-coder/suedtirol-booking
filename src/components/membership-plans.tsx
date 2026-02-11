@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,7 @@ export function MembershipPlans({
   const router = useRouter()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
   const defaultTitle = t("membership.title", "Werde Mitglied")
-  const defaultCta = t("membership.cta", "Jetzt wählen")
+  const defaultCta = t("membership.cta", "Jetzt wÃ¤hlen")
   const defaultFeatures = [
     t("membership.feature.free_play", "Kostenlos spielen"),
     t("membership.feature.priority", "Bevorzugte Buchung"),
@@ -103,3 +103,4 @@ export function MembershipPlans({
     </div>
   )
 }
+
