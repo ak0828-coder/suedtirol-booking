@@ -249,7 +249,7 @@ export function MemberOnboardingForm({
       })
       if (!sessionData?.user || signInError) {
         setSaving(false)
-        setError(t("member_onboarding.error_login", "Login fehlgeschlagen. Bitte Passwort prüfen."))
+        setError(signInError?.message || t("member_onboarding.error_login", "Login fehlgeschlagen. Bitte Passwort prüfen."))
         return
       }
 

@@ -435,6 +435,95 @@ export async function getClubMembers(clubSlug: string) {
   }))
 }
 
+async function upsertMembershipFromCheckoutSession(session: any) {
+  if (!session || session.metadata?.type !== "membership_subscription") {
+    return { success: false, error: "not_membership" }
+  }
+
+  let { userId, clubId, planId } = session.metadata
+  const customerEmail = session.customer_details?.email || session.customer_email
+
+  if (!clubId || !planId) {
+    return { success: false, error: "missing_metadata" }
+  }
+
+  const supabaseAdmin = getAdminClient()
+
+  if (!userId && customerEmail) {
+    const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    const found = listUsers.users.find((u) => u.email?.toLowerCase() === customerEmail.toLowerCase())
+    if (found) {
+      userId = found.id
+    } else {
+      const tempPassword = Math.random().toString(36).slice(-8) + "Aa1!"
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: customerEmail,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          must_change_password: true,
+          name: "New member",
+          full_name: "New member",
+        },
+      })
+      if (createError || !newUser?.user) {
+        return { success: false, error: "user_create_failed" }
+      }
+      userId = newUser.user.id
+
+      const { data: club } = await supabaseAdmin
+        .from("clubs")
+        .select("name, default_language")
+        .eq("id", clubId)
+        .single()
+      const clubName = club?.name || "Club"
+      const lang = isLocale(club?.default_language ?? "") ? club!.default_language : defaultLocale
+
+      try {
+        await resend.emails.send({
+          from: "Avaimo <info@avaimo.com>",
+          to: [customerEmail],
+          subject: `${clubName}`,
+          react: (
+            <WelcomeMemberEmailTemplate
+              clubName={clubName}
+              email={customerEmail}
+              password={tempPassword}
+              loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login`}
+              lang={lang}
+            />
+          ),
+        })
+      } catch (emailError) {
+        console.error("Member email error:", emailError)
+      }
+    }
+  }
+
+  if (!userId) return { success: false, error: "missing_user" }
+
+  const validUntil = new Date()
+  validUntil.setFullYear(validUntil.getFullYear() + 1)
+
+  const { error } = await supabaseAdmin.from("club_members").upsert(
+    {
+      user_id: userId,
+      club_id: clubId,
+      plan_id: planId,
+      stripe_subscription_id: session.subscription,
+      status: "active",
+      valid_until: validUntil.toISOString(),
+    },
+    { onConflict: "club_id, user_id" }
+  )
+
+  if (error) {
+    return { success: false, error: "member_upsert_failed" }
+  }
+
+  return { success: true }
+}
+
 export async function getImportedMembersCount(clubSlug: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -2619,8 +2708,8 @@ export async function ensureGuestAccount(payload: {
   }
 
   const supabaseAdmin = getAdminClient()
-  const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
-  const existing = list.users.find((u) => u.email?.toLowerCase() === email)
+  const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email)
+  const existing = existingUser?.user || null
 
   let userId = existing?.id
   let created = false
@@ -2650,6 +2739,19 @@ export async function ensureGuestAccount(payload: {
   })
 
   return { success: true, created, exists: !!existing }
+}
+
+export async function ensureMembershipFromCheckoutSession(sessionId: string) {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    if (session.payment_status !== "paid") {
+      return { success: false, error: "not_paid" }
+    }
+    return await upsertMembershipFromCheckoutSession(session)
+  } catch (err) {
+    console.error("ensureMembershipFromCheckoutSession error:", err)
+    return { success: false, error: "session_fetch_failed" }
+  }
 }
 
 // ==========================================
