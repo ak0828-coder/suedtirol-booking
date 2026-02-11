@@ -74,6 +74,7 @@ export function MemberOnboardingForm({
   const langRaw = params?.lang
   const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
   const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
+  const isPostPayment = searchParams?.get("post_payment") === "1"
 
   const sigPad = useRef<SignatureCanvas>(null)
   const signatureInterval = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -324,6 +325,11 @@ export function MemberOnboardingForm({
       return
     }
 
+    if (isPostPayment) {
+      window.location.href = `/${lang}/club/${clubSlug}/dashboard`
+      return
+    }
+
     const plan = plans.find((p) => p.id === selectedPlanId)
     if (!plan) {
       setSaving(false)
@@ -497,7 +503,13 @@ export function MemberOnboardingForm({
             disabled={(guestMode ? saving : !accepted || saving)}
             onClick={handleSubmit}
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("member_onboarding.cta", "Jetzt zahlungspflichtig beitreten")}
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isPostPayment ? (
+              t("member_onboarding.cta_finish", "Onboarding abschließen")
+            ) : (
+              t("member_onboarding.cta", "Jetzt zahlungspflichtig beitreten")
+            )}
           </Button>
         </div>
       </div>

@@ -96,6 +96,16 @@ export default async function MemberOnboardingPage({
   }
 
   const documents = user ? await getMyDocuments(slug) : []
+  const safeDocuments = (documents || []).map((d: any) => ({
+    id: String(d?.id || ""),
+    doc_type: String(d?.doc_type || ""),
+    file_name: String(d?.file_name || ""),
+    ai_status: String(d?.ai_status || ""),
+    review_status: String(d?.review_status || ""),
+    temp_valid_until: d?.temp_valid_until || null,
+    valid_until: d?.valid_until || null,
+    created_at: String(d?.created_at || ""),
+  }))
 
   const { data: plans } = await supabase
     .from("membership_plans")
@@ -150,7 +160,7 @@ export default async function MemberOnboardingPage({
 
       {user && (
         <div className="mx-auto max-w-4xl px-5 pb-16">
-          <MemberDocumentsForm clubSlug={slug} documents={documents || []} />
+          <MemberDocumentsForm clubSlug={slug} documents={safeDocuments} />
         </div>
       )}
     </div>
