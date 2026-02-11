@@ -65,20 +65,40 @@ export default async function MemberOnboardingPage({
     .eq("club_id", club?.id)
     .order("price", { ascending: true })
 
+  const safePlans = (plans || []).map((p: any) => ({
+    id: String(p.id),
+    name: String(p.name || ""),
+    price: Number(p.price || 0),
+    stripe_price_id: p.stripe_price_id ?? null,
+  }))
+
+  const safeFields = Array.isArray(contract?.membership_contract_fields)
+    ? contract!.membership_contract_fields.map((f: any) => ({
+        key: String(f?.key || ""),
+        label: String(f?.label || ""),
+        type: f?.type === "textarea" || f?.type === "checkbox" ? f.type : "text",
+        required: !!f?.required,
+        placeholder: f?.placeholder ? String(f.placeholder) : null,
+      }))
+    : []
+
+  const safeContractTitle = typeof contract?.title === "string" ? contract.title : "Mitgliedschaft"
+  const safeContractBody = typeof contract?.body === "string" ? contract.body : ""
+
   return (
     <div>
       <MemberOnboardingForm
         clubSlug={slug}
         clubName={club?.name || "Verein"}
         clubLogoUrl={club?.logo_url}
-        contractTitle={contract?.title || "Mitgliedschaft"}
-        contractBody={contract?.body || ""}
+        contractTitle={safeContractTitle}
+        contractBody={safeContractBody}
         contractVersion={contract?.version || 1}
-        contractFields={contract?.membership_contract_fields || []}
+        contractFields={safeFields}
         allowSubscription={contract?.membership_allow_subscription ?? true}
         feeEnabled={contract?.membership_fee_enabled ?? true}
         feeAmount={contract?.membership_fee ?? 0}
-        plans={plans || []}
+        plans={safePlans}
         initialMember={{
           firstName: profile?.first_name || "",
           lastName: profile?.last_name || "",
