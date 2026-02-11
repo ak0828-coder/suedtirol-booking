@@ -89,6 +89,24 @@ function getAdminClient() {
   )
 }
 
+async function findUserIdByEmail(
+  supabaseAdmin: ReturnType<typeof getAdminClient>,
+  email: string
+) {
+  const target = (email || "").trim().toLowerCase()
+  if (!target) return null
+  const perPage = 1000
+  let page = 1
+  while (true) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
+    if (error || !data?.users) return null
+    const found = data.users.find((u) => u.email?.toLowerCase() === target)
+    if (found?.id) return found.id
+    if (data.users.length < perPage) return null
+    page += 1
+  }
+}
+
 // ==========================================
 // --- GUTSCHEIN / VOUCHER SYSTEM ---
 // ==========================================
@@ -450,10 +468,9 @@ async function upsertMembershipFromCheckoutSession(session: any) {
   const supabaseAdmin = getAdminClient()
 
   if (!userId && customerEmail) {
-    const { data: listUsers } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
-    const found = listUsers.users.find((u) => u.email?.toLowerCase() === customerEmail.toLowerCase())
-    if (found) {
-      userId = found.id
+    const foundId = await findUserIdByEmail(supabaseAdmin, customerEmail)
+    if (foundId) {
+      userId = foundId
     } else {
       const tempPassword = Math.random().toString(36).slice(-8) + "Aa1!"
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -2709,8 +2726,8 @@ export async function ensureGuestAccount(payload: {
   }
 
   const supabaseAdmin = getAdminClient()
-  const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
-  const existing = list.users.find((u) => u.email?.toLowerCase() === email) || null
+  const existingId = await findUserIdByEmail(supabaseAdmin, email)
+  const existing = existingId ? { id: existingId } : null
 
   let userId = existing?.id
   let created = false
