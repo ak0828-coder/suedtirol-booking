@@ -70,9 +70,8 @@ export default function LoginPage() {
         const roles = result.roles || []
 
         if (roles.length === 0) {
-          setErrorMessage(t("auth.login.no_club", "Keine Vereine gefunden. Bitte registriere dich erst."))
-          await supabase.auth.signOut()
-          setIsLoading(false)
+          router.push(`/${lang}`)
+          return
         } else if (roles.length === 1) {
           const r = roles[0]
           if (r.role === "club_admin") router.push(`/${lang}/club/${r.slug}/admin`)
