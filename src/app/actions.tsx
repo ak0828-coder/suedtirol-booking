@@ -2708,8 +2708,8 @@ export async function ensureGuestAccount(payload: {
   }
 
   const supabaseAdmin = getAdminClient()
-  const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email)
-  const existing = existingUser?.user || null
+  const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  const existing = list.users.find((u) => u.email?.toLowerCase() === email) || null
 
   let userId = existing?.id
   let created = false
