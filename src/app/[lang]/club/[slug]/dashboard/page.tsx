@@ -28,7 +28,23 @@ export default async function MemberDashboard({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return redirect(`/${lang}/login`)
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold text-slate-900">Bitte einloggen</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Für den Mitgliederbereich musst du eingeloggt sein.
+          </p>
+          <div className="mt-4">
+            <Link href={`/${lang}/login?next=/${lang}/club/${slug}/dashboard`}>
+              <Button className="w-full">Zum Login</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const { data: club } = await supabase
     .from("clubs")
@@ -37,7 +53,21 @@ export default async function MemberDashboard({
     .single()
 
   if (!club) {
-    return redirect(`/${lang}/club/${slug}`)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold text-slate-900">Verein nicht gefunden</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Der Club <strong>{slug}</strong> existiert nicht (oder du hast keinen Zugriff).
+          </p>
+          <div className="mt-4">
+            <Link href={`/${lang}`}>
+              <Button className="w-full">Zur Startseite</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const { data: member } = await supabase
