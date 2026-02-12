@@ -54,6 +54,17 @@ export function middleware(request: NextRequest) {
 
   const firstSegment = pathname.split("/")[1];
   if (locales.includes(firstSegment as any)) {
+    const isLocaleRoot = pathname === `/${firstSegment}` || pathname === `/${firstSegment}/`;
+    const hasAuthCode = request.nextUrl.searchParams.has("code");
+    const hasTokenHash = request.nextUrl.searchParams.has("token_hash");
+
+    // Supabase can fall back to /{lang}?code=... if redirect URLs are misconfigured.
+    // Route those links through auth/callback so code exchange always happens.
+    if (isLocaleRoot && (hasAuthCode || hasTokenHash)) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${firstSegment}/auth/callback`;
+      return NextResponse.redirect(url, 307);
+    }
     return NextResponse.next();
   }
 
