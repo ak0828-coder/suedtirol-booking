@@ -35,12 +35,37 @@ export function ContractPreview({
   data: ContractData
   className?: string
 }) {
-  const [debouncedData, setDebouncedData] = useState(data)
+  const [debouncedData, setDebouncedData] = useState<ContractData>(data)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedData(data), 250)
+    setIsReady(true)
+  }, [])
+
+  useEffect(() => {
+    const normalized: ContractData = {
+      clubName: data?.clubName || "",
+      clubLogoUrl: data?.clubLogoUrl || null,
+      clubAddress: data?.clubAddress || "",
+      contractTitle: data?.contractTitle || "",
+      memberName: data?.memberName || "",
+      memberAddress: data?.memberAddress || "",
+      memberEmail: data?.memberEmail || "",
+      memberPhone: data?.memberPhone || "",
+      customFields: Array.isArray(data?.customFields) ? data.customFields : [],
+      contractText: data?.contractText || "",
+      signatureUrl: data?.signatureUrl || null,
+      signedAt: data?.signedAt || "",
+      signedCity: data?.signedCity || "",
+      lang: data?.lang,
+    }
+    const t = setTimeout(() => setDebouncedData(normalized), 250)
     return () => clearTimeout(t)
   }, [data])
+
+  if (!isReady) {
+    return <div className={className}><p className="text-sm text-slate-500">Lade Vorschau...</p></div>
+  }
 
   return (
     <div className={className}>

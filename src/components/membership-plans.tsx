@@ -3,9 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
-import { useEffect, useState } from "react"
 import { useI18n } from "@/components/i18n/locale-provider"
-import { createClient } from "@/lib/supabase/client"
 import { useParams, useRouter } from "next/navigation"
 
 export function MembershipPlans({
@@ -21,24 +19,16 @@ export function MembershipPlans({
   subtitle?: string
   ctaLabel?: string
 }) {
-  const [hasSession, setHasSession] = useState<boolean | null>(null)
   const { t } = useI18n()
   const params = useParams()
   const router = useRouter()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
   const defaultTitle = t("membership.title", "Werde Mitglied")
-  const defaultCta = t("membership.cta", "Jetzt wÃ¤hlen")
+  const defaultCta = t("membership.cta", "Jetzt wählen")
   const defaultFeatures = [
     t("membership.feature.free_play", "Kostenlos spielen"),
     t("membership.feature.priority", "Bevorzugte Buchung"),
   ]
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      setHasSession(!!data?.user)
-    })
-  }, [])
 
   const handleSubscribe = (planId: string) => {
     const next = `/${lang}/club/${clubSlug}/onboarding?plan=${encodeURIComponent(planId)}`

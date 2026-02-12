@@ -60,7 +60,7 @@ export default async function MemberOnboardingPage({
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Bitte einloggen</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Um dein Onboarding abzuschlieÃŸen, musst du eingeloggt sein.
+            Um dein Onboarding abzuschließen, musst du eingeloggt sein.
           </p>
           <a
             href={`/${lang || "de"}/club/${slug}/login?next=${encodeURIComponent(
@@ -90,14 +90,14 @@ export default async function MemberOnboardingPage({
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Zahlung erforderlich</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Deine Zahlung wurde noch nicht bestÃ¤tigt oder es gibt keine aktive Mitgliedschaft.
+            Deine Zahlung wurde noch nicht bestätigt oder es gibt keine aktive Mitgliedschaft.
           </p>
           {reason ? <p className="mt-2 text-xs text-red-600">Details: {reason}</p> : null}
           <a
             href={`/${lang || "de"}/club/${slug}`}
             className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white"
           >
-            ZurÃ¼ck zum Club
+            Zurück zum Club
           </a>
         </div>
       </div>

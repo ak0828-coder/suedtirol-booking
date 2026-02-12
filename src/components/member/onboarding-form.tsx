@@ -246,11 +246,11 @@ export function MemberOnboardingForm({
     const missingRequired = contractFields.find((field) => {
       if (!field.required) return false
       const value = customValues[field.key]
-      if (field.type === "checkbox") return value === true
+      if (field.type === "checkbox") return value !== true
       return typeof value === "string" ? value.trim().length === 0 : true
     })
     if (missingRequired) {
-      const message = t("member_onboarding.error_missing", "Bitte fÃ¼lle das Feld {field} aus.")
+      const message = t("member_onboarding.error_missing", "Bitte fülle das Feld {field} aus.")
       setError(message.replace("{field}", missingRequired.label))
       return
     }
@@ -298,7 +298,7 @@ export function MemberOnboardingForm({
     const plan = plans.find((p) => p.id === selectedPlanId)
     if (!plan) {
       setSaving(false)
-      setError(t("member_onboarding.error_plan", "Bitte wÃ¤hle einen Tarif."))
+      setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
       return
     }
     const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
@@ -317,7 +317,7 @@ export function MemberOnboardingForm({
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t("member_onboarding.kicker", "Avaimo Vertrag")}</p>
             <h1 className="text-3xl font-semibold text-slate-900">{contractTitle}</h1>
             <p className="text-slate-500">
-              {t("member_onboarding.subhead", "PrÃ¼fe deine Angaben, unterschreibe und sieh live, wie dein Vertrag aussieht.")}
+              {t("member_onboarding.subhead", "Prüfe deine Angaben, unterschreibe und sieh live, wie dein Vertrag aussieht.")}
             </p>
           </div>
 
@@ -400,7 +400,7 @@ export function MemberOnboardingForm({
                 </Label>
                 <Button variant="ghost" size="sm" onClick={clearSignature} className="h-8 text-red-500">
                   <Eraser className="mr-1 h-3 w-3" />
-                  {t("member_onboarding.clear", "LÃ¶schen")}
+                  {t("member_onboarding.clear", "Löschen")}
                 </Button>
               </div>
               <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-sm transition-colors hover:border-slate-400">
@@ -431,7 +431,7 @@ export function MemberOnboardingForm({
 
           {prePayment && (
             <Card className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm">
-              <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wÃ¤hlen")}</div>
+              <div className="text-sm font-semibold text-slate-900">{t("member_onboarding.plan_title", "Abo wählen")}</div>
               {plans.length > 1 ? (
                 <select
                   className="w-full rounded-md border px-3 py-2 text-sm"
@@ -440,7 +440,7 @@ export function MemberOnboardingForm({
                 >
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} â€“ {formatPrice(p.price)}â‚¬
+                      {p.name} – {formatPrice(p.price)}€
                     </option>
                   ))}
                 </select>

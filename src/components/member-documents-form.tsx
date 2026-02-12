@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { getMemberDocumentSignedUrl, uploadMemberDocument } from "@/app/actions"
 import { useI18n } from "@/components/i18n/locale-provider"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 
 type MemberDocument = {
   id: string
@@ -23,6 +23,7 @@ type MemberDocumentsFormProps = {
 }
 
 export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsFormProps) {
+  const router = useRouter()
   const [message, setMessage] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [openingId, setOpeningId] = useState<string | null>(null)
@@ -44,7 +45,8 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
     if (res?.success) {
       setMessage(t("member_docs.upload_success", "Upload erfolgreich. Prüfung läuft."))
       form.reset()
-      window.location.reload()
+      setPreviewUrl(null)
+      router.refresh()
     } else {
       setMessage(res?.error || t("member_docs.upload_error", "Upload fehlgeschlagen."))
     }

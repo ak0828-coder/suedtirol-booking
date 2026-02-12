@@ -30,7 +30,7 @@ export default async function SuccessPage({
   const session = await stripe.checkout.sessions.retrieve(session_id)
 
   if (session.payment_status !== "paid") {
-    return <div>{t("checkout.success.pending", "Zahlung noch nicht bestÃ¤tigt.")}</div>
+    return <div>{t("checkout.success.pending", "Zahlung noch nicht bestätigt.")}</div>
   }
 
   const meta = session.metadata as any
@@ -52,9 +52,9 @@ export default async function SuccessPage({
               <p className="text-sm text-red-600">
                 {t("checkout.success.member_error", "Die Mitgliedschaft wird gerade finalisiert. Bitte kurz warten oder erneut laden.")}
               </p>
-              <Link href={`/${lang}/checkout/success?session_id=${encodeURIComponent(session_id)}`}>
-                <Button className="w-full">{t("checkout.success.retry", "Erneut versuchen")}</Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link href={`/${lang}/checkout/success?session_id=${encodeURIComponent(session_id)}`}>{t("checkout.success.retry", "Erneut versuchen")}</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -117,19 +117,25 @@ export default async function SuccessPage({
               <p className="text-xs text-slate-500">
                 {t("checkout.success.magic_hint", "Kein Passwort nötig. Nutze den E-Mail-Link für den direkten Einstieg ins Onboarding.")}
               </p>
-              <Link
-                href={`/${lang}/club/${meta.clubSlug}/login?next=${encodeURIComponent(
-                  `/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${session_id}`
-                )}`}
+              <Button
+                asChild
+                variant="ghost"
+                className="w-full"
               >
-                <Button variant="ghost" className="w-full">{t("checkout.success.login_fallback", "Ich habe bereits ein Passwort")}</Button>
-              </Link>
+                <Link
+                  href={`/${lang}/club/${meta.clubSlug}/login?next=${encodeURIComponent(
+                    `/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${session_id}`
+                  )}`}
+                >
+                  {t("checkout.success.login_fallback", "Ich habe bereits ein Passwort")}
+                </Link>
+              </Button>
             </div>
           )}
 
-          <Link href={backHref}>
-            <Button className="w-full">{t("checkout.success.back", "ZurÃ¼ck zum Club")}</Button>
-          </Link>
+          <Button asChild className="w-full">
+            <Link href={backHref}>{t("checkout.success.back", "Zurück zum Club")}</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

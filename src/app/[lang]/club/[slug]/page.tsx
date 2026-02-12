@@ -135,14 +135,15 @@ export default async function ClubPage({
                 </Button>
               </Link>
             ) : (
-              <Link href={`/${lang}/login`}>
-                <Button
-                  variant="default"
-                  className="gap-2 rounded-full club-primary-bg hover:opacity-90 btn-press"
-                >
+              <Button
+                asChild
+                variant="default"
+                className="gap-2 rounded-full club-primary-bg hover:opacity-90 btn-press"
+              >
+                <Link href={`/${lang}/club/${slug}/login?next=/${lang}/club/${slug}/dashboard`}>
                   <LogIn className="w-4 h-4" /> {t("club.nav.login", "Login")}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
           </div>
 

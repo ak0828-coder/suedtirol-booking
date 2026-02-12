@@ -52,7 +52,7 @@ export function ContractPdfDocument({
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Dieses Dokument wurde digital Über Avaimo erstellt.
+            Dieses Dokument wurde digital über Avaimo erstellt.
           </Text>
         </View>
       </Page>
