@@ -34,6 +34,7 @@ export default async function SuccessPage({
   }
 
   const meta = session.metadata as any
+  const backHref = meta?.clubSlug ? `/${lang}/club/${meta.clubSlug}` : `/${lang}`
   let showLogin = false
   if (meta?.type === "membership_subscription") {
     const ensured = await ensureMembershipFromCheckoutSession(session_id)
@@ -126,7 +127,7 @@ export default async function SuccessPage({
             </div>
           )}
 
-          <Link href={`/${lang}/club/${meta.clubSlug}`}>
+          <Link href={backHref}>
             <Button className="w-full">{t("checkout.success.back", "ZurÃ¼ck zum Club")}</Button>
           </Link>
         </CardContent>

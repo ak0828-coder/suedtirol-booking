@@ -17,6 +17,7 @@ export default function LoginClient() {
   const searchParams = useSearchParams()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
   const nextParam = searchParams?.get("next")
+  const safeNext = nextParam && /^\/(?!\/)/.test(nextParam) ? nextParam : null
   const forceLogout = searchParams?.get("force_logout") === "1"
   const { t } = useI18n()
   const supabase = createClient()
@@ -56,8 +57,8 @@ export default function LoginClient() {
     router.refresh()
 
     try {
-      if (nextParam) {
-        router.push(nextParam)
+      if (safeNext) {
+        router.push(safeNext)
         return
       }
 
@@ -79,7 +80,7 @@ export default function LoginClient() {
         const roles = result.roles || []
 
         if (roles.length === 0) {
-          router.push(nextParam || `/${lang}`)
+          router.push(safeNext || `/${lang}`)
           return
         } else if (roles.length === 1) {
           const r = roles[0]

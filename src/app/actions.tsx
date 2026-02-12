@@ -24,14 +24,42 @@ if (!SUPER_ADMIN_EMAIL) console.warn("âš ï¸ ACHTUNG: SUPER_ADMIN_EMAIL is
 
 const MEMBER_DOC_BUCKET = "member-documents"
 const MAGIC_LINK_COOLDOWN_MS = 60_000
+const MAGIC_LINK_MAX_SESSION_AGE_MS = 1000 * 60 * 60 * 24
 
-type MagicCooldownStore = Map<string, number>
+async function checkAndStoreMagicLinkCooldown(sessionId: string, email: string) {
+  const supabaseAdmin = getAdminClient()
+  const normalizedEmail = email.trim().toLowerCase()
+  const now = Date.now()
+  const nowIso = new Date(now).toISOString()
 
-function getMagicCooldownStore(): MagicCooldownStore {
-  const key = "__avaimoMagicCooldownStore"
-  const g = globalThis as any
-  if (!g[key]) g[key] = new Map<string, number>()
-  return g[key] as MagicCooldownStore
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from("magic_link_requests")
+    .select("last_sent_at")
+    .eq("session_id", sessionId)
+    .eq("email", normalizedEmail)
+    .maybeSingle()
+
+  // If table is missing or query fails, do not block onboarding UX.
+  if (existingError) return { allowed: true as const, waitSeconds: 0 }
+
+  const lastSentAtMs = existing?.last_sent_at ? new Date(existing.last_sent_at).getTime() : 0
+  if (lastSentAtMs && now - lastSentAtMs < MAGIC_LINK_COOLDOWN_MS) {
+    const waitSeconds = Math.ceil((MAGIC_LINK_COOLDOWN_MS - (now - lastSentAtMs)) / 1000)
+    return { allowed: false as const, waitSeconds }
+  }
+
+  await supabaseAdmin
+    .from("magic_link_requests")
+    .upsert(
+      {
+        session_id: sessionId,
+        email: normalizedEmail,
+        last_sent_at: nowIso,
+      },
+      { onConflict: "session_id,email" }
+    )
+
+  return { allowed: true as const, waitSeconds: 0 }
 }
 
 async function getOrCreateStripeCustomerId(
@@ -2713,12 +2741,6 @@ export async function createMembershipCheckout(
     return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
 
-  const paymentIntentData = buildClubPaymentIntentData(club)
-
-  if (!(club as any).stripe_account_id) {
-    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
-  }
-
   const subscriptionData: any = {
     transfer_data: { destination: (club as any).stripe_account_id }
   }
@@ -2821,6 +2843,10 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     if (session.payment_status !== "paid") {
       return { success: false, error: "not_paid" }
     }
+    if (!meta.clubSlug) return { success: false, error: "missing_club_slug" }
+    if (session.created && (Date.now() - session.created * 1000 > MAGIC_LINK_MAX_SESSION_AGE_MS)) {
+      return { success: false, error: "session_expired" }
+    }
 
     const ensured = await ensureMembershipFromCheckoutSession(sessionId)
     if (!ensured?.success) {
@@ -2830,12 +2856,9 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     const email = getCheckoutEmail(session)
     if (!email) return { success: false, error: "missing_email" }
 
-    const cooldownStore = getMagicCooldownStore()
-    const cooldownKey = `${sessionId}:${email.toLowerCase()}`
-    const now = Date.now()
-    const nextAllowedAt = cooldownStore.get(cooldownKey) || 0
-    if (now < nextAllowedAt) {
-      const waitSeconds = Math.ceil((nextAllowedAt - now) / 1000)
+    const cooldown = await checkAndStoreMagicLinkCooldown(sessionId, email)
+    if (!cooldown.allowed) {
+      const waitSeconds = cooldown.waitSeconds
       return { success: false, error: `Bitte ${waitSeconds}s warten, bevor du erneut sendest.` }
     }
 
@@ -2853,7 +2876,6 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     })
 
     if (error) return { success: false, error: error.message }
-    cooldownStore.set(cooldownKey, now + MAGIC_LINK_COOLDOWN_MS)
     return { success: true, email }
   } catch (err: any) {
     return { success: false, error: err?.message || "magic_link_failed" }
