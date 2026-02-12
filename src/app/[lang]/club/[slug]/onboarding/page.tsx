@@ -13,6 +13,7 @@ export default async function MemberOnboardingPage({
 }) {
   const { slug, lang } = await params
   const { post_payment, session_id } = (await searchParams) || {}
+  const isPostPayment = post_payment === "1"
   const supabase = await createClient()
 
   const {
@@ -24,7 +25,7 @@ export default async function MemberOnboardingPage({
   }
 
   let contract = user ? await getMembershipContractForMember(slug) : null
-  if (user && !contract && post_payment === "1") {
+  if (!contract) {
     const { data: fallback } = await supabase
       .from("clubs")
       .select(
@@ -44,7 +45,6 @@ export default async function MemberOnboardingPage({
       } as any
     }
   }
-  if (user && !contract && post_payment !== "1") return notFound()
 
   const { data: club } = await supabase
     .from("clubs")
@@ -53,7 +53,7 @@ export default async function MemberOnboardingPage({
     .single()
   if (!club) return notFound()
 
-  if (!user && post_payment === "1") {
+  if (!user && isPostPayment) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -82,7 +82,7 @@ export default async function MemberOnboardingPage({
         .single()
     : { data: null }
 
-  if (!contract && post_payment === "1") {
+  if (!contract && isPostPayment) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -161,11 +161,11 @@ export default async function MemberOnboardingPage({
           address: "",
           city: "",
         }}
-        guestMode={post_payment !== "1"}
-        prePayment={post_payment !== "1"}
+        guestMode={!isPostPayment}
+        prePayment={!isPostPayment}
       />
 
-      {user && post_payment === "1" && (
+      {user && isPostPayment && (
         <div className="mx-auto max-w-4xl px-5 pb-16">
           <MemberDocumentsForm clubSlug={slug} documents={safeDocuments} />
         </div>
