@@ -2801,6 +2801,45 @@ export async function ensureMembershipFromCheckoutSession(sessionId: string) {
   }
 }
 
+export async function sendPostPaymentMagicLink(sessionId: string, lang: string) {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    const meta = session.metadata as any
+    if (!meta || meta.type !== "membership_subscription") {
+      return { success: false, error: "not_membership" }
+    }
+    if (session.payment_status !== "paid") {
+      return { success: false, error: "not_paid" }
+    }
+
+    const ensured = await ensureMembershipFromCheckoutSession(sessionId)
+    if (!ensured?.success) {
+      return { success: false, error: "membership_not_ready" }
+    }
+
+    const email = getCheckoutEmail(session)
+    if (!email) return { success: false, error: "missing_email" }
+
+    const safeLang = isLocale(lang) ? lang : defaultLocale
+    const nextPath = `/${safeLang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${encodeURIComponent(sessionId)}`
+    const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
+    const redirectTo = `${base}/auth/callback?next=${encodeURIComponent(nextPath)}`
+
+    const supabase = await createClient()
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
+    })
+
+    if (error) return { success: false, error: error.message }
+    return { success: true, email }
+  } catch (err: any) {
+    return { success: false, error: err?.message || "magic_link_failed" }
+  }
+}
+
 // ==========================================
 // --- BOOKING ACTIONS (UPDATE: MULTI-USE VOUCHER) ---
 // ==========================================

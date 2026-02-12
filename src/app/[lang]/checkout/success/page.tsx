@@ -9,6 +9,7 @@ import type { Locale } from "@/lib/i18n"
 import { ensureMembershipFromCheckoutSession } from "@/app/actions"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { PostPaymentMagicLink } from "@/components/checkout/post-payment-magic-link"
 
 export default async function SuccessPage({
   searchParams,
@@ -111,12 +112,13 @@ export default async function SuccessPage({
               <p className="text-sm text-slate-600">
                 {t("checkout.success.login_needed", "Bitte einloggen, um den Mitgliedsvertrag zu unterschreiben und Dokumente hochzuladen.")}
               </p>
+              <PostPaymentMagicLink sessionId={session_id} lang={lang} />
               <Link
                 href={`/${lang}/login?next=${encodeURIComponent(
                   `/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${session_id}`
                 )}`}
               >
-                <Button className="w-full">{t("checkout.success.login", "Jetzt einloggen")}</Button>
+                <Button variant="outline" className="w-full">{t("checkout.success.login", "Mit Passwort einloggen")}</Button>
               </Link>
             </div>
           )}
