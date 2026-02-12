@@ -23,6 +23,16 @@ const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase() || ""
 if (!SUPER_ADMIN_EMAIL) console.warn("âš ï¸ ACHTUNG: SUPER_ADMIN_EMAIL ist nicht in .env gesetzt!")
 
 const MEMBER_DOC_BUCKET = "member-documents"
+const MAGIC_LINK_COOLDOWN_MS = 60_000
+
+type MagicCooldownStore = Map<string, number>
+
+function getMagicCooldownStore(): MagicCooldownStore {
+  const key = "__avaimoMagicCooldownStore"
+  const g = globalThis as any
+  if (!g[key]) g[key] = new Map<string, number>()
+  return g[key] as MagicCooldownStore
+}
 
 async function getOrCreateStripeCustomerId(
   email?: string | null,
@@ -2820,6 +2830,15 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     const email = getCheckoutEmail(session)
     if (!email) return { success: false, error: "missing_email" }
 
+    const cooldownStore = getMagicCooldownStore()
+    const cooldownKey = `${sessionId}:${email.toLowerCase()}`
+    const now = Date.now()
+    const nextAllowedAt = cooldownStore.get(cooldownKey) || 0
+    if (now < nextAllowedAt) {
+      const waitSeconds = Math.ceil((nextAllowedAt - now) / 1000)
+      return { success: false, error: `Bitte ${waitSeconds}s warten, bevor du erneut sendest.` }
+    }
+
     const safeLang = isLocale(lang) ? lang : defaultLocale
     const nextPath = `/${safeLang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${encodeURIComponent(sessionId)}`
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
@@ -2834,6 +2853,7 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     })
 
     if (error) return { success: false, error: error.message }
+    cooldownStore.set(cooldownKey, now + MAGIC_LINK_COOLDOWN_MS)
     return { success: true, email }
   } catch (err: any) {
     return { success: false, error: err?.message || "magic_link_failed" }

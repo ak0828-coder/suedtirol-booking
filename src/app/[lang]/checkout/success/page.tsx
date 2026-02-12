@@ -51,9 +51,9 @@ export default async function SuccessPage({
               <p className="text-sm text-red-600">
                 {t("checkout.success.member_error", "Die Mitgliedschaft wird gerade finalisiert. Bitte kurz warten oder erneut laden.")}
               </p>
-              <Button className="w-full" onClick={() => location.reload()}>
-                {t("checkout.success.retry", "Erneut versuchen")}
-              </Button>
+              <Link href={`/${lang}/checkout/success?session_id=${encodeURIComponent(session_id)}`}>
+                <Button className="w-full">{t("checkout.success.retry", "Erneut versuchen")}</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
