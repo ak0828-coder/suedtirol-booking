@@ -5225,7 +5225,7 @@ export async function submitMembershipSignature(
     pdfPath = null
   }
 
-  const { error: memberUpdateError } = await supabaseAdmin
+  const { data: updatedMembers, error: memberUpdateError } = await supabaseAdmin
     .from("club_members")
     .update({
       contract_signed_at: new Date().toISOString(),
@@ -5239,10 +5239,15 @@ export async function submitMembershipSignature(
     })
     .eq("club_id", club.id)
     .eq("user_id", user.id)
+    .select("id")
+    .limit(1)
 
   if (memberUpdateError) {
     console.error("Member contract update failed:", memberUpdateError)
     return { success: false, error: "Vertrag konnte nicht gespeichert werden." }
+  }
+  if (!updatedMembers || updatedMembers.length === 0) {
+    return { success: false, error: "Keine aktive Mitgliedschaft für dieses Konto gefunden." }
   }
 
   if (pdfUploadOk && pdfPath && (user.email || club.admin_email)) {

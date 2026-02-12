@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+﻿import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { ensureMembershipFromCheckoutSession, getMembershipContractForMember, getMyDocuments } from "@/app/actions"
 import { MemberOnboardingForm } from "@/components/member/onboarding-form"
@@ -20,12 +20,13 @@ export default async function MemberOnboardingPage({
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user && session_id) {
-    await ensureMembershipFromCheckoutSession(session_id)
+  let ensureResult: { success?: boolean; error?: string } | null = null
+  if (user && session_id && isPostPayment) {
+    ensureResult = await ensureMembershipFromCheckoutSession(session_id)
   }
 
   let contract = user ? await getMembershipContractForMember(slug) : null
-  if (!contract) {
+  if (!contract && !isPostPayment) {
     const { data: fallback } = await supabase
       .from("clubs")
       .select(
@@ -59,7 +60,7 @@ export default async function MemberOnboardingPage({
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Bitte einloggen</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Um dein Onboarding abzuschließen, musst du eingeloggt sein.
+            Um dein Onboarding abzuschlieÃŸen, musst du eingeloggt sein.
           </p>
           <a
             href={`/${lang || "de"}/club/${slug}/login?next=${encodeURIComponent(
@@ -83,18 +84,20 @@ export default async function MemberOnboardingPage({
     : { data: null }
 
   if (!contract && isPostPayment) {
+    const reason = ensureResult?.error || null
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Zahlung erforderlich</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Deine Zahlung wurde noch nicht bestätigt oder es gibt keine aktive Mitgliedschaft.
+            Deine Zahlung wurde noch nicht bestÃ¤tigt oder es gibt keine aktive Mitgliedschaft.
           </p>
+          {reason ? <p className="mt-2 text-xs text-red-600">Details: {reason}</p> : null}
           <a
             href={`/${lang || "de"}/club/${slug}`}
             className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white"
           >
-            Zurück zum Club
+            ZurÃ¼ck zum Club
           </a>
         </div>
       </div>
@@ -173,3 +176,6 @@ export default async function MemberOnboardingPage({
     </div>
   )
 }
+
+
+
