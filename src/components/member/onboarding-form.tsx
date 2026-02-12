@@ -9,11 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ContractPreview } from "@/components/contract/contract-preview"
 import { ContractData } from "@/components/contract/contract-pdf"
-import { createMembershipCheckout, ensureGuestAccount, submitMembershipSignature, updateProfile } from "@/app/actions"
+import { createMembershipCheckout, submitMembershipSignature, updateProfile } from "@/app/actions"
 import { Eraser, Loader2, PenLine } from "lucide-react"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { useParams, useSearchParams } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 
 type Plan = {
   id: string
@@ -87,24 +86,10 @@ export function MemberOnboardingForm({
   const initialPlanId = searchParams?.get("plan") || plans[0]?.id || ""
   const [selectedPlanId, setSelectedPlanId] = useState(initialPlanId)
   const [formData, setFormData] = useState(initialMember)
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [customValues, setCustomValues] = useState<Record<string, string | boolean>>({})
-  const [hasSession, setHasSession] = useState(false)
   useEffect(() => {
     if (plans.length === 1) setSelectedPlanId(plans[0].id)
   }, [plans])
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data?.user?.email || ""
-      setHasSession(!!data?.user)
-      if (email && !formData.email) {
-        setFormData((prev) => ({ ...prev, email }))
-      }
-    })
-  }, [])
 
   useEffect(() => {
     return () => {
@@ -220,135 +205,26 @@ export function MemberOnboardingForm({
         setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
         return
       }
-      if (!hasSession) {
-        if (!formData.email || !formData.email.includes("@")) {
-          setError(t("member_onboarding.error_email", "Bitte eine gültige E-Mail angeben."))
-          return
-        }
-        if (!password || password.length < 8) {
-          setError(t("member_onboarding.error_password", "Bitte ein Passwort mit mindestens 8 Zeichen angeben."))
-          return
-        }
-        if (password !== confirmPassword) {
-          setError(t("member_onboarding.error_password_match", "Passwörter stimmen nicht überein."))
-          return
-        }
-      }
-      setSaving(true)
-
-      if (!hasSession) {
-        const ensured = await ensureGuestAccount({
-          email: formData.email,
-          password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
-        })
-        if (!ensured?.success) {
-          setSaving(false)
-          setError(ensured?.error || t("member_onboarding.error_account", "Account konnte nicht erstellt werden."))
-          return
-        }
-        if (ensured?.exists) {
-          setSaving(false)
-          setError(
-            t(
-              "member_onboarding.error_existing",
-              "Es gibt bereits ein Konto mit dieser E-Mail. Bitte einloggen oder Passwort zurücksetzen."
-            )
-          )
-          return
-        }
-
-        const supabase = createClient()
-        const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password,
-        })
-        if (!sessionData?.user || signInError) {
-          setSaving(false)
-          setError(signInError?.message || t("member_onboarding.error_login", "Login fehlgeschlagen. Bitte Passwort prüfen."))
-          return
-        }
-      }
-
-      const profileData = new FormData()
-      profileData.set("firstName", formData.firstName)
-      profileData.set("lastName", formData.lastName)
-      profileData.set("phone", formData.phone)
-      await updateProfile(profileData)
-
-      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
-      if (result?.url) {
-        window.location.href = result.url
-        return
-      }
-      setSaving(false)
-      setError(result?.error || t("member_onboarding.error_payment", "Zahlungslink konnte nicht erstellt werden."))
-      return
-    }
-
-    if (guestMode) {
       if (!formData.email || !formData.email.includes("@")) {
         setError(t("member_onboarding.error_email", "Bitte eine gültige E-Mail angeben."))
         return
       }
-      if (!password || password.length < 8) {
-        setError(t("member_onboarding.error_password", "Bitte ein Passwort mit mindestens 8 Zeichen angeben."))
+      if (!formData.firstName.trim() || !formData.lastName.trim()) {
+        setError(t("member_onboarding.error_name", "Bitte Vor- und Nachname angeben."))
         return
       }
-      if (password !== confirmPassword) {
-        setError(t("member_onboarding.error_password_match", "Passwörter stimmen nicht überein."))
-        return
-      }
-      const plan = plans.find((p) => p.id === selectedPlanId)
-      if (!plan) {
-        setError(t("member_onboarding.error_plan", "Bitte wähle einen Tarif."))
+      if (!formData.phone.trim()) {
+        setError(t("member_onboarding.error_phone", "Bitte Telefonnummer angeben."))
         return
       }
       setSaving(true)
 
-      const ensured = await ensureGuestAccount({
+      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "", {
         email: formData.email,
-        password,
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone,
       })
-      if (!ensured?.success) {
-        setSaving(false)
-        setError(ensured?.error || t("member_onboarding.error_account", "Account konnte nicht erstellt werden."))
-        return
-      }
-      if (ensured?.exists) {
-        setSaving(false)
-        setError(
-          t(
-            "member_onboarding.error_existing",
-            "Es gibt bereits ein Konto mit dieser E-Mail. Bitte einloggen oder Passwort zurücksetzen."
-          )
-        )
-        return
-      }
-
-      const supabase = createClient()
-      const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password,
-      })
-      if (!sessionData?.user || signInError) {
-        setSaving(false)
-        setError(signInError?.message || t("member_onboarding.error_login", "Login fehlgeschlagen. Bitte Passwort prüfen."))
-        return
-      }
-
-      const profileData = new FormData()
-      profileData.set("firstName", formData.firstName)
-      profileData.set("lastName", formData.lastName)
-      profileData.set("phone", formData.phone)
-      await updateProfile(profileData)
-
-      const result = await createMembershipCheckout(clubSlug, plan.id, plan.stripe_price_id || "")
       if (result?.url) {
         window.location.href = result.url
         return
@@ -357,6 +233,7 @@ export function MemberOnboardingForm({
       setError(result?.error || t("member_onboarding.error_payment", "Zahlungslink konnte nicht erstellt werden."))
       return
     }
+
     if (!accepted) {
       setError(t("member_onboarding.error_accept", "Bitte akzeptiere den Vertrag, um fortzufahren."))
       return
@@ -463,18 +340,6 @@ export function MemberOnboardingForm({
               <Label>{t("member_onboarding.phone", "Telefon")}</Label>
               <Input value={formData.phone} onChange={(e) => setField("phone", e.target.value)} />
             </div>
-            {guestMode && !hasSession ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>{t("member_onboarding.password", "Passwort")}</Label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("member_onboarding.password_confirm", "Passwort bestätigen")}</Label>
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                </div>
-              </div>
-            ) : null}
             {!guestMode ? (
               <>
                 <div className="space-y-2">
