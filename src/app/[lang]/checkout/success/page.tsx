@@ -113,12 +113,15 @@ export default async function SuccessPage({
                 {t("checkout.success.login_needed", "Bitte einloggen, um den Mitgliedsvertrag zu unterschreiben und Dokumente hochzuladen.")}
               </p>
               <PostPaymentMagicLink sessionId={session_id} lang={lang} />
+              <p className="text-xs text-slate-500">
+                {t("checkout.success.magic_hint", "Kein Passwort nötig. Nutze den E-Mail-Link für den direkten Einstieg ins Onboarding.")}
+              </p>
               <Link
                 href={`/${lang}/login?next=${encodeURIComponent(
                   `/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${session_id}`
                 )}`}
               >
-                <Button variant="outline" className="w-full">{t("checkout.success.login", "Mit Passwort einloggen")}</Button>
+                <Button variant="ghost" className="w-full">{t("checkout.success.login_fallback", "Ich habe bereits ein Passwort")}</Button>
               </Link>
             </div>
           )}
