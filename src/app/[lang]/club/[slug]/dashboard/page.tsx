@@ -37,7 +37,7 @@ export default async function MemberDashboard({
             Für den Mitgliederbereich musst du eingeloggt sein.
           </p>
           <div className="mt-4">
-            <Link href={`/${lang}/login?next=/${lang}/club/${slug}/dashboard`}>
+            <Link href={`/${lang}/club/${slug}/login?next=/${lang}/club/${slug}/dashboard`}>
               <Button className="w-full">Zum Login</Button>
             </Link>
           </div>

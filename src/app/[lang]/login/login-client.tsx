@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
@@ -77,15 +77,16 @@ export default function LoginClient() {
       }
 
       if (result.type === "multi") {
-        const roles = result.roles || []
+        const roles = (result.roles || []).filter((r: any) => r.role === "club_admin")
 
         if (roles.length === 0) {
-          router.push(safeNext || `/${lang}`)
+          setErrorMessage("Kein Admin-Zugang. FÃ¼r Mitglieder bitte den Club-Login verwenden.")
+          await supabase.auth.signOut()
+          setIsLoading(false)
           return
         } else if (roles.length === 1) {
           const r = roles[0]
-          if (r.role === "club_admin") router.push(`/${lang}/club/${r.slug}/admin`)
-          else router.push(`/${lang}/club/${r.slug}/dashboard`)
+          router.push(`/${lang}/club/${r.slug}/admin`)
         } else {
           setAvailableRoles(roles)
           setShowSelection(true)
@@ -104,8 +105,8 @@ export default function LoginClient() {
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
         <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
           <div className="text-center">
-            <h1 className="text-2xl font-semibold">{t("auth.portal.title", "Willkommen zurück")}</h1>
-            <p className="text-slate-500 mt-2">{t("auth.portal.subtitle", "Wähle, wohin du möchtest:")}</p>
+            <h1 className="text-2xl font-semibold">{t("auth.portal.title", "Willkommen zurÃ¼ck")}</h1>
+            <p className="text-slate-500 mt-2">{t("auth.portal.subtitle", "WÃ¤hle, wohin du mÃ¶chtest:")}</p>
           </div>
 
           <div className="space-y-3">
@@ -114,8 +115,7 @@ export default function LoginClient() {
                 key={index}
                 onClick={() => {
                   setIsLoading(true)
-                  if (role.role === "club_admin") router.push(`/${lang}/club/${role.slug}/admin`)
-                  else router.push(`/${lang}/club/${role.slug}/dashboard`)
+                  router.push(`/${lang}/club/${role.slug}/admin`)
                 }}
                 className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all group"
               >
@@ -145,8 +145,8 @@ export default function LoginClient() {
     <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">{t("auth.login.title", "Login")}</h1>
-          <p className="text-slate-500 mt-2">{t("auth.login.subtitle", "Südtirol Booking")}</p>
+          <h1 className="text-2xl font-bold">{t("auth.login.title", "Admin Login")}</h1>
+          <p className="text-slate-500 mt-2">{t("auth.login.subtitle", "Vereinsverwaltung")}</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -191,3 +191,4 @@ export default function LoginClient() {
     </div>
   )
 }
+

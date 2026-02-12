@@ -118,7 +118,7 @@ export default async function SuccessPage({
                 {t("checkout.success.magic_hint", "Kein Passwort nötig. Nutze den E-Mail-Link für den direkten Einstieg ins Onboarding.")}
               </p>
               <Link
-                href={`/${lang}/login?next=${encodeURIComponent(
+                href={`/${lang}/club/${meta.clubSlug}/login?next=${encodeURIComponent(
                   `/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${session_id}`
                 )}`}
               >

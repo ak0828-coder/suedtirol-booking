@@ -501,6 +501,31 @@ export async function getClubMembers(clubSlug: string) {
   }))
 }
 
+export async function getMemberAccessForClub(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, reason: "not_logged_in" }
+
+  const { data: club } = await supabase
+    .from("clubs")
+    .select("id, slug")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { ok: false, reason: "club_not_found" }
+
+  const { data: member } = await supabase
+    .from("club_members")
+    .select("id, status")
+    .eq("club_id", club.id)
+    .eq("user_id", user.id)
+    .single()
+
+  if (!member) return { ok: false, reason: "not_member" }
+  if (member.status !== "active") return { ok: false, reason: "member_inactive" }
+
+  return { ok: true }
+}
+
 async function upsertMembershipFromCheckoutSession(session: any) {
   if (!session || session.metadata?.type !== "membership_subscription") {
     return { success: false, error: "not_membership" }
