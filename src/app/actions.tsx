@@ -2923,12 +2923,19 @@ export async function createBooking(
         // Wenn das Limit erreicht ist, wird der Code "vollstÃ¤ndig eingelÃ¶st"
         const isFullyRedeemed = newCount >= limit
 
-        await supabaseAdmin.from('credit_codes')
+        const { data: updatedRows } = await supabaseAdmin
+          .from('credit_codes')
           .update({ 
               usage_count: newCount,
               is_redeemed: isFullyRedeemed
           })
           .eq('code', creditCode.toUpperCase())
+          .eq('usage_count', current.usage_count || 0)
+          .select('id')
+
+        if (!updatedRows || updatedRows.length === 0) {
+          return { success: false, error: "Code wurde gerade verwendet. Bitte erneut versuchen." }
+        }
     }
 
       usedCreditAmount = check.amount || 0
@@ -3270,11 +3277,17 @@ export async function createCheckoutSession(
         const newCount = (current.usage_count || 0) + 1
         const limit = current.usage_limit || 1
         const isFullyRedeemed = newCount >= limit
-        await supabaseAdmin
+        const { data: updatedRows } = await supabaseAdmin
           .from("credit_codes")
           .update({ usage_count: newCount, is_redeemed: isFullyRedeemed })
           .eq("code", creditCode.toUpperCase())
           .eq("club_id", club.id)
+          .eq("usage_count", current.usage_count || 0)
+          .select("id")
+
+        if (!updatedRows || updatedRows.length === 0) {
+          return { error: "Code wurde gerade verwendet. Bitte erneut versuchen." }
+        }
       }
     }
 
@@ -5016,6 +5029,13 @@ export async function submitMembershipSignature(
     .eq("slug", clubSlug)
     .single()
   if (!club) return { success: false, error: "Club nicht gefunden" }
+
+  if (!payload.memberName || !payload.memberEmail) {
+    return { success: false, error: "Bitte Name und E-Mail angeben." }
+  }
+  if (!payload.memberAddress || !payload.signedCity) {
+    return { success: false, error: "Bitte Adresse und Ort ausfüllen." }
+  }
 
   const base64 = signatureDataUrl.split(",")[1]
   if (!base64) return { success: false, error: "UngÃ¼ltige Signatur" }

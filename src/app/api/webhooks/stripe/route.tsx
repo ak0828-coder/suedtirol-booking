@@ -282,11 +282,17 @@ export async function POST(req: Request) {
             const newCount = (current.usage_count || 0) + 1
             const limit = current.usage_limit || 1
             const isFullyRedeemed = newCount >= limit
-            await supabaseAdmin
+            const { data: updatedRows } = await supabaseAdmin
               .from("credit_codes")
               .update({ usage_count: newCount, is_redeemed: isFullyRedeemed })
               .eq("code", creditCode.toUpperCase())
               .eq("club_id", club.id)
+              .eq("usage_count", current.usage_count || 0)
+              .select("id")
+
+            if (!updatedRows || updatedRows.length === 0) {
+              console.warn("Credit code already redeemed concurrently:", creditCode)
+            }
           }
         }
 

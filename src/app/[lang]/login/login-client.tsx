@@ -17,6 +17,7 @@ export default function LoginClient() {
   const searchParams = useSearchParams()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
   const nextParam = searchParams?.get("next")
+  const forceLogout = searchParams?.get("force_logout") === "1"
   const { t } = useI18n()
   const supabase = createClient()
 
@@ -29,11 +30,12 @@ export default function LoginClient() {
   const [availableRoles, setAvailableRoles] = useState<any[]>([])
 
   useEffect(() => {
+    if (!forceLogout) return
     const signOut = async () => {
       await supabase.auth.signOut()
     }
     signOut()
-  }, [supabase])
+  }, [forceLogout, supabase])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
