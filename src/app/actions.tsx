@@ -2890,7 +2890,7 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     const safeLang = isLocale(lang) ? lang : defaultLocale
     const nextPath = `/${safeLang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${encodeURIComponent(sessionId)}`
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
-    const redirectTo = `${base}/auth/callback?next=${encodeURIComponent(nextPath)}`
+    const redirectTo = `${base}/${safeLang}/auth/callback?next=${encodeURIComponent(nextPath)}`
 
     const supabase = await createClient()
     const { error } = await supabase.auth.signInWithOtp({
