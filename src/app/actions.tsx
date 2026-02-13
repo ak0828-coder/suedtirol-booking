@@ -2892,15 +2892,40 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
     const redirectTo = `${base}/${safeLang}/auth/callback?next=${encodeURIComponent(nextPath)}`
 
-    const supabase = await createClient()
-    const { error } = await supabase.auth.signInWithOtp({
+    // We deliberately do NOT rely on Supabase's SMTP here, because OTP emails are sent by Supabase Auth.
+    // Instead, we generate the magic link with the Admin API and send it via Resend (our mail provider).
+    const supabaseAdmin = getAdminClient()
+
+    const { data, error } = await (supabaseAdmin.auth.admin as any).generateLink({
+      type: "magiclink",
       email,
-      options: {
-        emailRedirectTo: redirectTo,
-      },
+      options: { redirectTo },
     })
 
     if (error) return { success: false, error: error.message }
+
+    const actionLink =
+      data?.properties?.action_link || data?.action_link || data?.properties?.email_otp_link || null
+    if (!actionLink) return { success: false, error: "magic_link_missing" }
+
+    await resend.emails.send({
+      from: "Avaimo <info@avaimo.com>",
+      to: [email],
+      subject: "Dein Login-Link",
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #0f172a;">
+          <h2>Login-Link</h2>
+          <p>Klicke auf den Button, um dich einzuloggen und dein Onboarding abzuschließen:</p>
+          <p style="margin: 20px 0;">
+            <a href="${actionLink}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 16px;border-radius:9999px;text-decoration:none;font-weight:600;">
+              Jetzt einloggen
+            </a>
+          </p>
+          <p style="font-size:12px;color:#64748b;">Falls du das nicht warst, kannst du diese E-Mail ignorieren.</p>
+        </div>
+      `,
+    })
+
     return { success: true, email }
   } catch (err: any) {
     return { success: false, error: err?.message || "magic_link_failed" }
