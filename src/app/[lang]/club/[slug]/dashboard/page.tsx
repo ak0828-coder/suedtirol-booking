@@ -14,6 +14,7 @@ import { TourLauncher } from "@/components/tours/tour-launcher"
 import { Suspense } from "react"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
+import { getAdminClient } from "@/lib/supabase/admin"
 
 export default async function MemberDashboard({
   params,
@@ -70,7 +71,9 @@ export default async function MemberDashboard({
     )
   }
 
-  const { data: member } = await supabase
+  // Use admin client for membership lookup to avoid false negatives when RLS select policies are missing.
+  const supabaseAdmin = getAdminClient()
+  const { data: member } = await supabaseAdmin
     .from("club_members")
     .select("*, membership_plans(name), contract_signed_at")
     .eq("user_id", user.id)

@@ -506,14 +506,17 @@ export async function getMemberAccessForClub(clubSlug: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, reason: "not_logged_in" }
 
-  const { data: club } = await supabase
+  // Use admin client for membership checks to avoid false negatives if RLS policies are incomplete.
+  const supabaseAdmin = getAdminClient()
+
+  const { data: club } = await supabaseAdmin
     .from("clubs")
     .select("id, slug")
     .eq("slug", clubSlug)
     .single()
   if (!club) return { ok: false, reason: "club_not_found" }
 
-  const { data: member } = await supabase
+  const { data: member } = await supabaseAdmin
     .from("club_members")
     .select("id, status")
     .eq("club_id", club.id)
@@ -5103,14 +5106,17 @@ export async function getMembershipContractForMember(clubSlug: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: club } = await supabase
+  // Use admin client here so post-payment onboarding isn't blocked by RLS read policies on club_members.
+  const supabaseAdmin = getAdminClient()
+
+  const { data: club } = await supabaseAdmin
     .from("clubs")
     .select("id, membership_contract_title, membership_contract_body, membership_contract_version, membership_contract_updated_at, membership_contract_fields, membership_fee, membership_fee_currency, membership_fee_enabled, membership_allow_subscription")
     .eq("slug", clubSlug)
     .single()
   if (!club) return null
 
-  const { data: member } = await supabase
+  const { data: member } = await supabaseAdmin
     .from("club_members")
     .select("id, user_id, status")
     .eq("club_id", club.id)
