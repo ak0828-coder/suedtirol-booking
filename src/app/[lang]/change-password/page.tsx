@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { updateUserPassword } from "@/app/actions"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,14 @@ import { Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function ChangePasswordPage() {
+  return (
+    <Suspense>
+      <ChangePasswordForm />
+    </Suspense>
+  )
+}
+
+function ChangePasswordForm() {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
