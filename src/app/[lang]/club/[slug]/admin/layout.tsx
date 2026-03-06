@@ -8,26 +8,14 @@ import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
 
-const navItems = [
-  { href: "", label: "Übersicht" },
-  { href: "/bookings", label: "Buchungen" },
-  { href: "/courts", label: "Plätze" },
-  { href: "/blocks", label: "Sperrzeiten" },
-  { href: "/plans", label: "Abos" },
-  { href: "/members", label: "Mitglieder" },
-  { href: "/vouchers", label: "Gutscheine" },
-  { href: "/settings", label: "Einstellungen" },
-  { href: "/export", label: "Export" },
-]
-
 export default async function AdminLayout({
   children,
   params,
 }: {
   children: React.ReactNode
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string; lang: string }>
 }) {
-  const { slug } = await params
+  const { slug, lang } = await params
   const { club, user, isSuperAdmin, hasAccess, features, locks } = await getAdminContext(slug)
 
   if (!hasAccess) {
@@ -35,7 +23,7 @@ export default async function AdminLayout({
         <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
         <div className="text-center p-8 bg-white rounded-3xl shadow-lg border border-red-100 max-w-md">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Zugriff verweigert</h1>
-          <Link href="/login">
+          <Link href={`/${lang}/login`}>
             <Button variant="default">Zum Login</Button>
           </Link>
         </div>
@@ -94,13 +82,13 @@ export default async function AdminLayout({
             <Suspense fallback={null}>
               <AdminTourButton />
             </Suspense>
-            <Link href={`/club/${slug}`} target="_blank">
+            <Link href={`/${lang}/club/${slug}`} target="_blank">
               <Button variant="outline" className="gap-2 rounded-full">
                 <ExternalLink className="w-4 h-4" /> Vorschau
               </Button>
             </Link>
 
-            <Link href="/login">
+            <Link href={`/${lang}/login`}>
               <Button variant="ghost" size="icon" title="Abmelden" className="rounded-full">
                 <LogOut className="h-5 w-5" />
               </Button>

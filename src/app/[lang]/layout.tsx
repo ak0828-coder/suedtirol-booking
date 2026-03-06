@@ -4,6 +4,7 @@ import { defaultLocale, isLocale, locales } from "@/lib/i18n";
 import { getDictionary } from "@/lib/dictionaries";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { Toaster } from "sonner";
+import { CookieBanner } from "@/components/cookie-banner";
 
 export function generateStaticParams() {
   return locales.map((lang) => ({ lang }));
@@ -30,6 +31,7 @@ export default async function RootLayout({
         <TourShell>{children}</TourShell>
       </LocaleProvider>
       <Toaster richColors position="top-right" />
+      <CookieBanner />
     </ThemeProvider>
   );
 }

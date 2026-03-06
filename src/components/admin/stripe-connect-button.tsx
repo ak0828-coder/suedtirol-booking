@@ -6,6 +6,7 @@ import { createStripeConnectAccount, checkStripeStatus } from "@/app/actions"
 import { Loader2, CheckCircle, CreditCard, AlertCircle } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
+import { toast } from "sonner"
 
 export function StripeConnectButton({
   clubSlug,
@@ -43,7 +44,7 @@ export function StripeConnectButton({
       return
     }
     setLoading(false)
-    alert(`${t("admin_stripe.error", "Fehler")}: ${res?.error || t("admin_stripe.unknown", "Unbekannter Fehler")}`)
+    toast.error(`${t("admin_stripe.error", "Fehler")}: ${res?.error || t("admin_stripe.unknown", "Unbekannter Fehler")}`)
   }
 
   if (connected) {
@@ -78,8 +79,8 @@ export function StripeConnectButton({
 
       <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-md mb-6 flex gap-2">
         <AlertCircle className="w-5 h-5 shrink-0" />
-        <p>{t("admin_stripe.note", "Du wirst zu Stripe weitergeleitet, um die Identit�t des Vereins zu best�tigen.")}</p>
-      </div>
+        <p>{t("admin_stripe.note", "Du wirst zu Stripe weitergeleitet, um die Identität des Vereins zu bestätigen.")}</p>
+              </div>
 
       <Button
         onClick={handleConnect}

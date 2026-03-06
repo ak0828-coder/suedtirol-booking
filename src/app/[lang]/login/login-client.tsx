@@ -80,7 +80,7 @@ export default function LoginClient() {
         const roles = (result.roles || []).filter((r: any) => r.role === "club_admin")
 
         if (roles.length === 0) {
-          setErrorMessage("Kein Admin-Zugang. FÃ¼r Mitglieder bitte den Club-Login verwenden.")
+          setErrorMessage("Kein Admin-Zugang. Für Mitglieder bitte den Club-Login verwenden.")
           await supabase.auth.signOut()
           setIsLoading(false)
           return
@@ -105,8 +105,8 @@ export default function LoginClient() {
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
         <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
           <div className="text-center">
-            <h1 className="text-2xl font-semibold">{t("auth.portal.title", "Willkommen zurÃ¼ck")}</h1>
-            <p className="text-slate-500 mt-2">{t("auth.portal.subtitle", "WÃ¤hle, wohin du mÃ¶chtest:")}</p>
+            <h1 className="text-2xl font-semibold">{t("auth.portal.title", "Willkommen zurück")}</h1>
+            <p className="text-slate-500 mt-2">{t("auth.portal.subtitle", "Wähle, wohin du möchtest:")}</p>
           </div>
 
           <div className="space-y-3">

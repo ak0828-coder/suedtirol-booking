@@ -9,6 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, Plus, CreditCard } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type Plan = {
   id: string
@@ -27,6 +32,7 @@ export function PlanManager({
 }) {
   const router = useRouter()
   const [plans, setPlans] = useState<Plan[]>(initialPlans)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   
   // Form States
   const [newName, setNewName] = useState("")
@@ -46,18 +52,18 @@ export function PlanManager({
       newInterval
     )
 
-    if (result.success && result.plan) {
+    if ("success" in result && result.success && "plan" in result && result.plan) {
       setPlans([...plans, result.plan])
       setNewName("")
       router.refresh()
     } else {
-      alert("Fehler: " + (result.error || "Unbekannter Fehler"))
+      toast.error("Fehler: " + (result.error || "Unbekannter Fehler"))
     }
     setIsLoading(false)
   }
 
   async function handleDelete(id: string) {
-    if(!confirm("Tarif wirklich löschen?")) return;
+    setPendingDeleteId(null)
     const result = await deletePlan(id)
     if (result.success) {
       setPlans(plans.filter(p => p.id !== id))
@@ -66,6 +72,7 @@ export function PlanManager({
   }
 
   return (
+    <>
     <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -89,7 +96,7 @@ export function PlanManager({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(plan.id)}
+                  onClick={() => setPendingDeleteId(plan.id)}
                   className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -144,5 +151,21 @@ export function PlanManager({
         </div>
       </CardContent>
     </Card>
+
+    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tarif löschen?</AlertDialogTitle>
+          <AlertDialogDescription>Der Tarif wird unwiderruflich gelöscht.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+          <AlertDialogAction onClick={() => pendingDeleteId && handleDelete(pendingDeleteId)} className="bg-red-600 hover:bg-red-700">
+            Löschen
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

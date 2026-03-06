@@ -12,13 +12,20 @@ import { Badge } from "@/components/ui/badge"
 import { Ticket, Trash2, Plus, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { useI18n } from "@/components/i18n/locale-provider"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import { toast } from "sonner"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSlug: string }) {
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
     const { t } = useI18n()
     const params = useParams()
+    const router = useRouter()
     const langRaw = params?.lang
     const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
     const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
@@ -30,12 +37,14 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
         setLoading(false)
         if (res.success) {
             setIsOpen(false)
+            router.refresh()
         } else {
-            alert(res.error)
+            toast.error(res.error)
         }
     }
 
     return (
+        <>
         <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -116,9 +125,7 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                                             variant="ghost"
                                             size="icon"
                                             className="text-red-500 hover:text-red-700 rounded-full"
-                                            onClick={async () => {
-                                                if(confirm(t("admin_vouchers.confirm", "Löschen?"))) await deleteVoucher(v.id, clubSlug)
-                                            }}
+                                            onClick={() => setPendingDeleteId(v.id)}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -135,5 +142,24 @@ export function VoucherManager({ vouchers, clubSlug }: { vouchers: any[], clubSl
                 </Table>
             </CardContent>
         </Card>
+
+        <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{t("admin_vouchers.confirm", "Gutschein löschen?")}</AlertDialogTitle>
+                    <AlertDialogDescription>Der Gutschein wird unwiderruflich gelöscht.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={async () => { if (pendingDeleteId) { await deleteVoucher(pendingDeleteId, clubSlug); setPendingDeleteId(null); router.refresh() } }}
+                        className="bg-red-600 hover:bg-red-700"
+                    >
+                        Löschen
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }

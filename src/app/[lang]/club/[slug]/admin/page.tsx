@@ -13,9 +13,9 @@ export const dynamic = "force-dynamic"
 export default async function AdminPage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string; lang: string }>
 }) {
-  const { slug } = await params
+  const { slug, lang } = await params
   const { club, features, locks } = await getAdminContext(slug)
   if (!features.admin.overview && !locks.admin.overview) return notFound()
   const locked = !features.admin.overview && locks.admin.overview
@@ -101,61 +101,61 @@ export default async function AdminPage({
             <CardContent>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <Link
-                  href={`/club/${slug}/admin/settings`}
+                  href={`/${lang}/club/${slug}/admin/settings`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Einstellungen
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/vouchers`}
+                  href={`/${lang}/club/${slug}/admin/vouchers`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Gutscheine
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/courts`}
+                  href={`/${lang}/club/${slug}/admin/courts`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Plätze
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/blocks`}
+                  href={`/${lang}/club/${slug}/admin/blocks`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Sperrzeiten
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/plans`}
+                  href={`/${lang}/club/${slug}/admin/plans`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Abos
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/members`}
+                  href={`/${lang}/club/${slug}/admin/members`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Mitglieder
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/trainers`}
+                  href={`/${lang}/club/${slug}/admin/trainers`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Trainer
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/courses`}
+                  href={`/${lang}/club/${slug}/admin/courses`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Kurse
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/finance`}
+                  href={`/${lang}/club/${slug}/admin/finance`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
                 >
                   Finanzen
                 </Link>
                 <Link
-                  href={`/club/${slug}/admin/export`}
+                  href={`/${lang}/club/${slug}/admin/export`}
                   className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 col-span-2"
                 >
                   CSV Export

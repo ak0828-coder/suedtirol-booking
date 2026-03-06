@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function ChangePasswordPage() {
   const router = useRouter()
@@ -19,7 +20,7 @@ export default function ChangePasswordPage() {
     setIsLoading(true)
 
     if (password.length < 6) {
-        alert("Passwort muss mindestens 6 Zeichen haben")
+        toast.warning("Passwort muss mindestens 6 Zeichen haben")
         setIsLoading(false)
         return
     }
@@ -36,7 +37,7 @@ export default function ChangePasswordPage() {
         else if (slug) router.push(`/club/${slug}/admin`)
         else router.push("/")
     } else {
-        alert("Fehler: " + res.error)
+        toast.error("Fehler: " + res.error)
         setIsLoading(false)
     }
   }

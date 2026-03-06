@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Settings, Loader2, Upload, Palette } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { defaultFeatures, mergeFeatures, type FeatureTree } from "@/lib/club-features"
 import { useI18n } from "@/components/i18n/locale-provider"
 
@@ -88,7 +89,7 @@ export function EditClubDialog({ club }: { club: any }) {
       setOpen(false)
       router.refresh()
     } else {
-      alert(t("admin_edit.error", "Fehler") + ": " + result.error)
+      toast.error(t("admin_edit.error", "Fehler") + ": " + result.error)
     }
   }
 

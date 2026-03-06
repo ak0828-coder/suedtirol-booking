@@ -14,6 +14,10 @@ import { MoreHorizontal, Trash, Ban, KeyRound, CheckCircle } from "lucide-react"
 import { resetMemberPassword, blockMember, deleteMember } from "@/app/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface MemberActionDialogProps {
   memberId?: string
@@ -33,6 +37,7 @@ export function MemberActionDialog({
   trigger,
 }: MemberActionDialogProps) {
   const [loading, setLoading] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const router = useRouter()
   const resolvedMemberId = member?.id ?? memberId
   const resolvedName =
@@ -71,12 +76,11 @@ export function MemberActionDialog({
 
   const handleDelete = async () => {
     if (!resolvedMemberId) return
-    if (!confirm(`Möchtest du ${resolvedName} wirklich entfernen?`)) return
-    
+    setConfirmDelete(false)
     setLoading(true)
     const res = await deleteMember(clubSlug, resolvedMemberId)
     setLoading(false)
-    
+
     if (res.success) {
       toast.success("Mitglied gelöscht")
       router.refresh()
@@ -86,6 +90,7 @@ export function MemberActionDialog({
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {trigger ? (
@@ -127,10 +132,28 @@ export function MemberActionDialog({
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={handleDelete} disabled={loading} className="text-red-600 focus:text-red-600">
+        <DropdownMenuItem onClick={() => setConfirmDelete(true)} disabled={loading} className="text-red-600 focus:text-red-600">
           <Trash className="mr-2 h-4 w-4" /> Mitglied Löschen
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Mitglied entfernen?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Möchtest du {resolvedName} wirklich entfernen? Diese Aktion kann nicht rückgängig gemacht werden.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            Entfernen
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

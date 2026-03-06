@@ -8,12 +8,18 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarIcon, Trash2, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { useI18n } from "@/components/i18n/locale-provider"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: string, courts: any[], initialBlocks: any[] }) {
   const [blocks, setBlocks] = useState(initialBlocks)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [reason, setReason] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -28,7 +34,10 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
   }, [initialBlocks])
 
   const handleAdd = async () => {
-    if (!reason || !startDate || !endDate) return alert(t("admin_blocks.fill", "Bitte alle Felder ausfüllen"))
+    if (!reason || !startDate || !endDate) {
+      toast.warning(t("admin_blocks.fill", "Bitte alle Felder ausfüllen"))
+      return
+    }
 
     setIsLoading(true)
     const res = await createBlockedPeriod(clubSlug, targetCourt, new Date(startDate), new Date(endDate), reason)
@@ -40,13 +49,12 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
       setEndDate("")
       router.refresh()
     } else {
-      alert(t("admin_blocks.error", "Fehler") + ": " + res.error)
+      toast.error(t("admin_blocks.error", "Fehler") + ": " + res.error)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t("admin_blocks.confirm", "Sperre aufheben?"))) return
-
+    setPendingDeleteId(null)
     setIsDeletingId(id)
     setBlocks(prev => prev.filter(b => b.id !== id))
     await deleteBlockedPeriod(id)
@@ -55,6 +63,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
   }
 
   return (
+    <>
     <Card className="rounded-2xl border border-orange-200/70 bg-orange-50/60 shadow-sm">
       <CardHeader>
         <CardTitle className="text-orange-900 flex items-center gap-2">
@@ -77,7 +86,7 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleDelete(block.id)}
+                onClick={() => setPendingDeleteId(block.id)}
                 disabled={isDeletingId === block.id}
                 className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full"
               >
@@ -118,5 +127,21 @@ export function BlockManager({ clubSlug, courts, initialBlocks }: { clubSlug: st
         </Button>
       </CardContent>
     </Card>
+
+    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("admin_blocks.confirm", "Sperre aufheben?")}</AlertDialogTitle>
+          <AlertDialogDescription>Die Sperrzeit wird unwiderruflich entfernt.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+          <AlertDialogAction onClick={() => pendingDeleteId && handleDelete(pendingDeleteId)} className="bg-red-600 hover:bg-red-700">
+            Entfernen
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

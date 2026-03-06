@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2, FileSpreadsheet } from "lucide-react"
+import { toast } from "sonner"
 
 export function ExportManager({ clubSlug }: { clubSlug: string }) {
   const currentYear = new Date().getFullYear()
@@ -29,7 +30,7 @@ export function ExportManager({ clubSlug }: { clubSlug: string }) {
       link.click()
       document.body.removeChild(link)
     } else {
-      alert(res.error || "Fehler beim Export")
+      toast.error(res.error || "Fehler beim Export")
     }
   }
 
@@ -48,7 +49,7 @@ export function ExportManager({ clubSlug }: { clubSlug: string }) {
       link.click()
       document.body.removeChild(link)
     } else {
-      alert(res.error || "Fehler beim Export")
+      toast.error(res.error || "Fehler beim Export")
     }
   }
 
@@ -67,7 +68,7 @@ export function ExportManager({ clubSlug }: { clubSlug: string }) {
       link.click()
       document.body.removeChild(link)
     } else {
-      alert(res.error || "Fehler beim Export")
+      toast.error(res.error || "Fehler beim Export")
     }
   }
 

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Save, Settings } from "lucide-react"
+import { toast } from "sonner"
 import { locales } from "@/lib/i18n"
 import { useI18n } from "@/components/i18n/locale-provider"
 
@@ -51,9 +52,9 @@ export function ClubSettings({
     const res = await updateClub(patched)
     setLoading(false)
     if (res.success) {
-      alert(t("admin_club.saved", "Gespeichert!"))
+      toast.success(t("admin_club.saved", "Gespeichert!"))
     } else {
-      alert(res.error)
+      toast.error(res.error)
     }
   }
 
@@ -129,7 +130,8 @@ export function ClubSettings({
                 {t("admin_club.languages_help", "Wähle, welche Sprachen für Mitglieder verfügbar sind. Nicht erlaubte Sprachen leiten automatisch weiter.")}
               </p>
             </div>
-            <div className="flex flex-wrap gap-3 text-sm">`n              {[
+            <div className="flex flex-wrap gap-3 text-sm">
+              {[
                 { id: "de", label: t("admin_club.lang_de", "Deutsch") },
                 { id: "it", label: t("admin_club.lang_it", "Italienisch") },
                 { id: "en", label: t("admin_club.lang_en", "Englisch") },
@@ -154,7 +156,8 @@ export function ClubSettings({
                   />
                   {lang.label}
                 </label>
-              ))}`n            </div>
+              ))}
+            </div>
             {supportedLanguages.map((lang) => (
               <input key={lang} type="hidden" name="supported_languages" value={lang} />
             ))}

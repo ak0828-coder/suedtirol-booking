@@ -145,7 +145,7 @@ function parseDateIsoLocal(dateIso: string) {
 }
 
 // --- HELPER: ADMIN CLIENT ---
-// Wird benÃ¶tigt, um Gutscheine zu validieren (fÃ¼r GÃ¤ste ohne Account) 
+// Wird benötigt, um Gutscheine zu validieren (für Gäste ohne Account) 
 // oder Updates zu machen, die RLS verbietet.
 function getAdminClient() {
   return createSupabaseClient(
@@ -159,10 +159,10 @@ function getAdminClient() {
 // --- GUTSCHEIN / VOUCHER SYSTEM ---
 // ==========================================
 
-// 1. UPDATE: Validierung mit Admin Client (damit auch GÃ¤ste checken kÃ¶nnen)
+// 1. UPDATE: Validierung mit Admin Client (damit auch Gäste checken können)
 export async function validateCreditCode(clubSlug: string, code: string) {
-  // Wir nutzen hier den Admin Client, damit auch normale Mitglieder/GÃ¤ste
-  // prÃ¼fen kÃ¶nnen, ob ein Code existiert (bypassed RLS).
+  // Wir nutzen hier den Admin Client, damit auch normale Mitglieder/Gäste
+  // prüfen können, ob ein Code existiert (bypassed RLS).
   const supabaseAdmin = getAdminClient()
 
   // Club ID holen
@@ -181,12 +181,12 @@ export async function validateCreditCode(clubSlug: string, code: string) {
     return { success: false, error: "Code existiert nicht." }
   }
 
-  // Check 1: Wurde er bereits final als "vollstÃ¤ndig eingelÃ¶st" markiert?
+  // Check 1: Wurde er bereits final als "vollständig eingelöst" markiert?
   if (credit.is_redeemed) {
-    return { success: false, error: "Code wurde bereits vollstÃ¤ndig eingelÃ¶st." }
+    return { success: false, error: "Code wurde bereits vollständig eingelöst." }
   }
 
-  // Check 2: Ist das Ablaufdatum Ã¼berschritten?
+  // Check 2: Ist das Ablaufdatum überschritten?
   if (credit.expires_at && new Date(credit.expires_at) < new Date()) {
     return { success: false, error: "Code ist abgelaufen." }
   }
@@ -204,7 +204,7 @@ export async function validateCreditCode(clubSlug: string, code: string) {
 
 // 2. UPDATE: Gutschein erstellen (Admin Logic)
 export async function createVoucher(formData: FormData) {
-    const supabase = await createClient() // Normaler Client fÃ¼r Auth Check
+    const supabase = await createClient() // Normaler Client für Auth Check
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) return { success: false, error: "Nicht eingeloggt" }
@@ -219,7 +219,7 @@ export async function createVoucher(formData: FormData) {
 
     const supabaseAdmin = getAdminClient()
 
-    // 1. Club laden & Berechtigung prÃ¼fen (Ist der User der Owner?)
+    // 1. Club laden & Berechtigung prüfen (Ist der User der Owner?)
     const { data: club } = await supabaseAdmin
         .from('clubs')
         .select('id, owner_id')
@@ -257,7 +257,7 @@ export async function createVoucher(formData: FormData) {
     return { success: true }
 }
 
-// 3. UPDATE: Gutschein lÃ¶schen (Admin Logic)
+// 3. UPDATE: Gutschein löschen (Admin Logic)
 export async function deleteVoucher(id: string, clubSlug: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -309,7 +309,7 @@ export async function getClubVouchers(clubSlug: string) {
     return data || []
 }
 
-// --- PASSWORT Ã„NDERN (FÃ¼r den 1. Login) ---
+// --- PASSWORT ÄNDERN (Für den 1. Login) ---
 export async function updateUserPassword(newPassword: string) {
   const supabase = await createClient()
 
@@ -323,7 +323,7 @@ export async function updateUserPassword(newPassword: string) {
   return { success: true }
 }
 
-// --- HELPER: FINDE DEN SLUG FÃœR DEN EINGELOGGTEN USER ---
+// --- HELPER: FINDE DEN SLUG FÜR DEN EINGELOGGTEN USER ---
 export async function getMyClubSlug() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -343,7 +343,7 @@ export async function getMyClubSlug() {
   return club?.slug || null
 }
 
-// --- HELPER FÃœR DAS LOGIN SYSTEM (MULTI-ROLE) ---
+// --- HELPER FÜR DAS LOGIN SYSTEM (MULTI-ROLE) ---
 export async function getUserRole() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -695,7 +695,7 @@ export async function activateImportedMembers(clubSlug: string) {
       ? `Avaimo access for ${club.name}`
       : lang === "it"
       ? `Accesso Avaimo per ${club.name}`
-      : `Avaimo Zugang fÃ¼r ${club.name}`
+      : `Avaimo Zugang für ${club.name}`
 
     const headline = lang === "en"
       ? "Welcome to Avaimo"
@@ -965,7 +965,7 @@ export async function resendMembershipContract(clubSlug: string, memberId: strin
       <div style="font-family: Arial, sans-serif; color: #0f172a;">
         <h2>Dein Mitgliedsvertrag</h2>
         <p>Hier kannst du deinen Vertrag erneut herunterladen.</p>
-        ${signed?.signedUrl ? `<p><a href="${signed.signedUrl}">PDF Ã¶ffnen</a></p>` : ""}
+        ${signed?.signedUrl ? `<p><a href="${signed.signedUrl}">PDF öffnen</a></p>` : ""}
       </div>
     `,
   })
@@ -1225,7 +1225,7 @@ export async function deleteClub(clubId: string) {
   }
 
   revalidatePathAllLocales('/super-admin')
-  return { success: true, message: "Verein gelÃ¶scht." }
+  return { success: true, message: "Verein gelöscht." }
 }
 
 // --- MEMBERSHIP PLANS & ABO CHECKOUT ---
@@ -2211,7 +2211,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
         return slotStart >= rangeStart && slotEnd <= rangeEnd
       })
       if (!ok) {
-        return { error: "Trainer ist zu dieser Zeit nicht VerfÃ¼gbar." }
+        return { error: "Trainer ist zu dieser Zeit nicht Verfügbar." }
       }
     }
 
@@ -2223,7 +2223,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
     .lt("start_time", endTime.toISOString())
     .gt("end_time", startTime.toISOString())
   if (trainerConflicts && trainerConflicts.length > 0) {
-    return { error: "Trainer ist zu dieser Zeit nicht VerfÃ¼gbar." }
+    return { error: "Trainer ist zu dieser Zeit nicht Verfügbar." }
   }
 
   const { data: courts } = await supabase
@@ -2231,7 +2231,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
     .select("id, name, price_per_hour")
     .eq("club_id", club.id)
     .order("name")
-  if (!courts || courts.length === 0) return { error: "Keine PlÃ¤tze vorhanden." }
+  if (!courts || courts.length === 0) return { error: "Keine Plätze vorhanden." }
 
   const { data: bookings } = await supabase
     .from("bookings")
@@ -2242,7 +2242,7 @@ export async function exportCourseParticipantsCsv(courseId: string) {
 
   const bookedCourtIds = new Set((bookings || []).map((b: any) => b.court_id))
   const freeCourt = courts.find((c: any) => !bookedCourtIds.has(c.id))
-  if (!freeCourt) return { error: "Kein freier Platz VerfÃ¼gbar." }
+  if (!freeCourt) return { error: "Kein freier Platz Verfügbar." }
 
     const baseCourtFee = trainer.include_court_fee ? Number(freeCourt.price_per_hour || 0) : 0
     let courtFee = baseCourtFee
@@ -2318,12 +2318,12 @@ export async function exportCourseParticipantsCsv(courseId: string) {
               <h2>Neue Traineranfrage</h2>
               <p>Ein Mitglied moechte eine Trainerstunde buchen.</p>
               <p><strong>Termin:</strong> ${startText} (${courtName})</p>
-              <p>Bitte BestÃ¤tigen oder ablehnen:</p>
+              <p>Bitte Bestätigen oder ablehnen:</p>
               <p>
                 <a href="${acceptUrl}" style="display:inline-block;margin-right:8px;padding:10px 16px;background:#0f172a;color:#fff;border-radius:20px;text-decoration:none;">Annehmen</a>
                 <a href="${rejectUrl}" style="display:inline-block;padding:10px 16px;background:#e2e8f0;color:#0f172a;border-radius:20px;text-decoration:none;">Ablehnen</a>
               </p>
-              <p>Der Link ist 48 Stunden gÃ¼ltig.</p>
+              <p>Der Link ist 48 Stunden gültig.</p>
             `,
           })
         } catch (emailError) {
@@ -2339,8 +2339,8 @@ export async function exportCourseParticipantsCsv(courseId: string) {
             subject: "Traineranfrage erhalten",
             html: `
               <h2>Deine Traineranfrage ist eingegangen</h2>
-              <p>Die Stunde wird erst nach BestÃ¤tigung durch den Trainer final.</p>
-              <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu BestÃ¤tigen.</p>
+              <p>Die Stunde wird erst nach Bestätigung durch den Trainer final.</p>
+              <p>Der Trainer hat bis zu <strong>48 Stunden</strong>, um die Stunde zu Bestätigen.</p>
               <p>Bei Ablehnung wird nichts belastet.</p>
             `,
           })
@@ -2353,44 +2353,48 @@ export async function exportCourseParticipantsCsv(courseId: string) {
     }
 
   if (finalPrice > 0 && !(club as any)?.stripe_account_id) {
-    return { error: "Verein ist noch nicht fÃ¼r Stripe eingerichtet." }
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
 
   const paymentIntentData = buildClubPaymentIntentData(club, { captureManual: true })
 
   const customerId = await getOrCreateStripeCustomerId(user?.email || guestEmail || null, null, user?.id || null)
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: "eur",
-          product_data: { name: `Trainerstunde: ${trainer.first_name} ${trainer.last_name}` },
-          unit_amount: Math.round(finalPrice * 100),
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: { name: `Trainerstunde: ${trainer.first_name} ${trainer.last_name}` },
+            unit_amount: Math.round(finalPrice * 100),
+          },
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+      mode: "payment",
+      payment_intent_data: paymentIntentData,
+      metadata: {
+        type: "trainer_session",
+        bookingId: booking.id,
+        trainerId: trainer.id,
+        clubSlug,
+        date: date.toISOString(),
+        time,
+        durationMinutes: durationMinutes.toString(),
+        guestName: guestName || "",
+        userId: user?.id || "",
       },
-    ],
-    mode: "payment",
-    payment_intent_data: paymentIntentData,
-    metadata: {
-      type: "trainer_session",
-      bookingId: booking.id,
-      trainerId: trainer.id,
-      clubSlug,
-      date: date.toISOString(),
-      time,
-      durationMinutes: durationMinutes.toString(),
-      guestName: guestName || "",
-      userId: user?.id || "",
-    },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
-    ...(customerId ? { customer: customerId } : { customer_email: user?.email || guestEmail }),
-    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
-  })
-
-  return { url: session.url }
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
+      ...(customerId ? { customer: customerId } : { customer_email: user?.email || guestEmail }),
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    })
+    return { url: session.url }
+  } catch (err: any) {
+    console.error("createTrainerSessionCheckout Stripe error:", err)
+    return { error: "Zahlungslink konnte nicht erstellt werden." }
+  }
 }
 
 export async function createCourseCheckoutSession(
@@ -2433,7 +2437,7 @@ export async function createCourseCheckoutSession(
       .eq("course_id", courseId)
 
     if (!sessionRows || sessionRows.length !== selected.length) {
-      return { error: "Ausgewaehlte Termine sind UngÃ¼ltig." }
+      return { error: "Ausgewaehlte Termine sind Ungültig." }
     }
 
     const { data: existingParticipants } = await supabase
@@ -2443,7 +2447,7 @@ export async function createCourseCheckoutSession(
       .in("course_session_id", selected)
       .neq("status", "cancelled")
     if (existingParticipants && existingParticipants.length > 0) {
-      return { error: "Du bist bereits fÃ¼r einen der Termine angemeldet." }
+      return { error: "Du bist bereits für einen der Termine angemeldet." }
     }
 
     const { data: sessionParticipants } = await supabase
@@ -2509,10 +2513,10 @@ export async function createCourseCheckoutSession(
           await resend.emails.send({
             from: "Avaimo <info@avaimo.com>",
             to: [user.email],
-            subject: `Kurs BestÃ¤tigt - ${course.title}`,
+            subject: `Kurs Bestätigt - ${course.title}`,
             html: `
-              <h2>Deine Kursanmeldung ist BestÃ¤tigt</h2>
-              <p>Du bist fÃ¼r den Kurs <strong>${course.title}</strong> angemeldet.</p>
+              <h2>Deine Kursanmeldung ist Bestätigt</h2>
+              <p>Du bist für den Kurs <strong>${course.title}</strong> angemeldet.</p>
               <p><strong>Termine:</strong><br/>${list}</p>
               <p>Verein: ${club.name}</p>
             `,
@@ -2525,41 +2529,45 @@ export async function createCourseCheckoutSession(
     }
 
   if (totalPrice > 0 && !(club as any)?.stripe_account_id) {
-    return { error: "Verein ist noch nicht fÃ¼r Stripe eingerichtet." }
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
 
   let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
 
     const customerId = await getOrCreateStripeCustomerId(user?.email || null, null, user?.id || null)
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: { name: `Kurs: ${course.title}` },
-            unit_amount: Math.round(pricePerSession * 100),
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "eur",
+              product_data: { name: `Kurs: ${course.title}` },
+              unit_amount: Math.round(pricePerSession * 100),
+            },
+            quantity: selected.length,
           },
-          quantity: selected.length,
+        ],
+        mode: "payment",
+        payment_intent_data: coursePaymentIntentData,
+        metadata: {
+          type: "course_enrollment",
+          courseId: course.id,
+          clubSlug,
+          userId: user.id,
+          pricingMode: "per_session",
+          sessionIds: selected.join(","),
         },
-      ],
-      mode: "payment",
-      payment_intent_data: coursePaymentIntentData,
-      metadata: {
-        type: "course_enrollment",
-        courseId: course.id,
-        clubSlug,
-        userId: user.id,
-        pricingMode: "per_session",
-        sessionIds: selected.join(","),
-      },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
-      ...(customerId ? { customer: customerId } : { customer_email: user.email || undefined }),
-      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
-    })
-
-    return { url: session.url }
+        success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
+        ...(customerId ? { customer: customerId } : { customer_email: user.email || undefined }),
+        expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      })
+      return { url: session.url }
+    } catch (err: any) {
+      console.error("createCourseCheckoutSession Stripe error:", err)
+      return { error: "Zahlungslink konnte nicht erstellt werden." }
+    }
   }
 
   const { count: participantCount } = await supabase
@@ -2596,10 +2604,10 @@ export async function createCourseCheckoutSession(
         await resend.emails.send({
           from: "Avaimo <info@avaimo.com>",
           to: [user.email],
-          subject: `Kurs BestÃ¤tigt - ${course.title}`,
+          subject: `Kurs Bestätigt - ${course.title}`,
           html: `
-            <h2>Deine Kursanmeldung ist BestÃ¤tigt</h2>
-            <p>Du bist fÃ¼r den Kurs <strong>${course.title}</strong> angemeldet.</p>
+            <h2>Deine Kursanmeldung ist Bestätigt</h2>
+            <p>Du bist für den Kurs <strong>${course.title}</strong> angemeldet.</p>
             <p>Verein: ${club.name}</p>
           `,
         })
@@ -2611,40 +2619,44 @@ export async function createCourseCheckoutSession(
   }
 
   if (Number(course.price || 0) > 0 && !(club as any)?.stripe_account_id) {
-    return { error: "Verein ist noch nicht fÃ¼r Stripe eingerichtet." }
+    return { error: "Verein ist noch nicht für Stripe eingerichtet." }
   }
 
   let coursePaymentIntentData: any = buildClubPaymentIntentData(club)
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: "eur",
-          product_data: { name: `Kurs: ${course.title}` },
-          unit_amount: Math.round(Number(course.price) * 100),
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: { name: `Kurs: ${course.title}` },
+            unit_amount: Math.round(Number(course.price) * 100),
+          },
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+      mode: "payment",
+      payment_intent_data: coursePaymentIntentData,
+      metadata: {
+        type: "course_enrollment",
+        courseId: course.id,
+        clubSlug,
+        participantId: participant.id,
+        userId: user.id,
+        pricingMode: "full_course",
       },
-    ],
-    mode: "payment",
-    payment_intent_data: coursePaymentIntentData,
-    metadata: {
-      type: "course_enrollment",
-      courseId: course.id,
-      clubSlug,
-      participantId: participant.id,
-      userId: user.id,
-      pricingMode: "full_course",
-    },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
-    customer_email: user.email || undefined,
-    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
-  })
-
-  return { url: session.url }
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
+      customer_email: user.email || undefined,
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    })
+    return { url: session.url }
+  } catch (err: any) {
+    console.error("enrollCourse Stripe error:", err)
+    return { error: "Zahlungslink konnte nicht erstellt werden." }
+  }
 }
 
 export async function confirmTrainerBooking(formData: FormData) {
@@ -2785,18 +2797,22 @@ export async function createMembershipCheckout(
 
   const customerId = await getOrCreateStripeCustomerId(email, null, user?.id || null)
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{ price: stripePriceId, quantity: 1 }],
-    mode: 'subscription',
-    subscription_data: subscriptionData,
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}`,
-    ...(customerId ? { customer: customerId } : { customer_email: email }),
-    metadata: metadata
-  })
-
-  return { url: session.url }
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{ price: stripePriceId, quantity: 1 }],
+      mode: 'subscription',
+      subscription_data: subscriptionData,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}`,
+      ...(customerId ? { customer: customerId } : { customer_email: email }),
+      metadata: metadata
+    })
+    return { url: session.url }
+  } catch (err: any) {
+    console.error("createMembershipCheckout Stripe error:", err)
+    return { error: "Zahlungslink konnte nicht erstellt werden: " + (err?.message || "Unbekannter Fehler") }
+  }
 }
 
 export async function ensureGuestAccount(payload: {
@@ -3023,7 +3039,7 @@ export async function createBooking(
       }
     }
 
-    // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlÃ¶sen)
+    // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlösen)
     const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)
 
   const { data: existing } = await supabase
@@ -3037,7 +3053,7 @@ export async function createBooking(
     return { success: false, error: "Dieser Termin ist leider schon vergeben!" }
   }
 
-  // 3. UPDATE: Gutschein einlÃ¶sen (Mit ZÃ¤hler Logik & Admin Client fÃ¼r RLS Bypass)
+  // 3. UPDATE: Gutschein einlösen (Mit Zähler Logik & Admin Client für RLS Bypass)
     if (finalPrice > 0 && creditCode) {
       const check = await validateCreditCode(clubSlug, creditCode)
       if (!check.success) return { success: false, error: check.error }
@@ -3054,7 +3070,7 @@ export async function createBooking(
     if(current) {
         const newCount = (current.usage_count || 0) + 1
         const limit = current.usage_limit || 1
-        // Wenn das Limit erreicht ist, wird der Code "vollstÃ¤ndig eingelÃ¶st"
+        // Wenn das Limit erreicht ist, wird der Code "vollständig eingelöst"
         const isFullyRedeemed = newCount >= limit
 
         const { data: updatedRows } = await supabaseAdmin
@@ -3161,7 +3177,7 @@ export async function createBooking(
   return { success: true }
 }
 
-// UPDATE: Cancel Booking mit usage_limit: 1 fÃ¼r Refunds
+// UPDATE: Cancel Booking mit usage_limit: 1 für Refunds
 export async function cancelBooking(bookingId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -3189,7 +3205,7 @@ export async function cancelBooking(bookingId: string) {
   const limitHours = bookingWithClub.clubs?.cancellation_buffer_hours ?? 24
 
   if (diffInHours < limitHours) {
-    return { success: false, error: `Stornierung nur bis ${limitHours}h vor Termin mÃ¶glich.` }
+    return { success: false, error: `Stornierung nur bis ${limitHours}h vor Termin möglich.` }
   }
 
   const clubId = bookingWithClub.clubs?.id || null
@@ -3205,13 +3221,13 @@ export async function cancelBooking(bookingId: string) {
       code: code,
       amount: booking.price_paid,
       created_for_email: user.email,
-      // WICHTIG: Refund Codes sind nur 1x gÃ¼ltig
+      // WICHTIG: Refund Codes sind nur 1x gültig
       usage_limit: 1,
       usage_count: 0,
       is_redeemed: false
     })
 
-    message = `Storniert. Dein Gutschein-Code Ã¼ber ${booking.price_paid}â‚¬ lautet: ${code}`
+    message = `Storniert. Dein Gutschein-Code über ${booking.price_paid}â‚¬ lautet: ${code}`
 
     await supabase.from('bookings').delete().eq('id', bookingId)
   } else {
@@ -3328,7 +3344,7 @@ export async function createCheckoutSession(
   }
   let memberAdjusted = false
 
-  // Club & Member prÃ¼fen, um Mitgliedspreis anzuwenden
+  // Club & Member prüfen, um Mitgliedspreis anzuwenden
   const { data: club } = await supabaseAdmin
     .from('clubs')
     .select('id, member_booking_pricing_mode, member_booking_pricing_value, stripe_account_id, application_fee_cents')
@@ -3393,7 +3409,7 @@ export async function createCheckoutSession(
       hint: (bookingError as any).hint || null,
     })
     if (bookingError.code === '23505') {
-      return { error: "Dieser Termin wurde gerade gebucht. Bitte wÃ¤hle eine andere Zeit." }
+      return { error: "Dieser Termin wurde gerade gebucht. Bitte wähle eine andere Zeit." }
     }
     return { error: "Fehler beim Reservieren des Slots: " + bookingError.message }
   }
@@ -3444,7 +3460,7 @@ export async function createCheckoutSession(
     const clubApplicationFeeCents = (club as any)?.application_fee_cents ?? null
 
     if (finalPrice > 0 && !clubStripeAccountId) {
-      return { error: "Verein ist noch nicht fÃ¼r Stripe eingerichtet." }
+      return { error: "Verein ist noch nicht für Stripe eingerichtet." }
     }
 
     const paymentIntentData = buildClubPaymentIntentData({
@@ -3691,13 +3707,13 @@ async function analyzeMedicalCertificateImage(imageUrl: string): Promise<Medical
         {
           role: "system",
           content:
-            "Du bist eine strenge PrÃ¼f-KI fÃ¼r medizinische Sportatteste in Italien. " +
-            "Gib ausschlieÃŸlich ein JSON-Objekt mit den geforderten Feldern zurÃ¼ck.",
+            "Du bist eine strenge Prüf-KI für medizinische Sportatteste in Italien. " +
+            "Gib ausschließlich ein JSON-Objekt mit den geforderten Feldern zurück.",
         },
         {
           role: "user",
           content: [
-            { type: "input_text", text: "PrÃ¼fe dieses Dokument. Ist es ein italienisches sportmedizinisches Attest? FÃ¼lle das JSON aus." },
+            { type: "input_text", text: "Prüfe dieses Dokument. Ist es ein italienisches sportmedizinisches Attest? Fülle das JSON aus." },
             { type: "input_image", image_url: imageUrl },
           ],
         },
@@ -3792,7 +3808,7 @@ export async function uploadMemberDocument(formData: FormData) {
   }
 
   if (file.size > MAX_FILE_BYTES) {
-    return { success: false, error: `Datei zu groÃŸ (max. ${MAX_FILE_MB}MB).` }
+    return { success: false, error: `Datei zu groß (max. ${MAX_FILE_MB}MB).` }
   }
 
   const { data: club } = await supabase
@@ -3915,10 +3931,10 @@ export async function uploadMemberDocument(formData: FormData) {
         await resend.emails.send({
           from: "Avaimo <info@avaimo.com>",
           to: [adminEmail],
-          subject: `Neues Ã¤rztliches Zeugnis (${clubSlug})`,
+          subject: `Neues ärztliches Zeugnis (${clubSlug})`,
           react: (
             <div>
-              <p>Ein Mitglied hat ein neues Ã¤rztliches Zeugnis hochgeladen.</p>
+              <p>Ein Mitglied hat ein neues ärztliches Zeugnis hochgeladen.</p>
               <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
               <p><strong>Telefon:</strong> {profile?.phone || "-"}</p>
               <p><strong>Datei:</strong> {file.name}</p>
@@ -4071,15 +4087,15 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
           React.createElement(
             "p",
             null,
-            "Dein Ã¤rztliches Zeugnis wurde ",
-            React.createElement("strong", null, approve ? "bestÃ¤tigt" : "abgelehnt"),
+            "Dein ärztliches Zeugnis wurde ",
+            React.createElement("strong", null, approve ? "bestätigt" : "abgelehnt"),
             "."
           ),
           approve
             ? React.createElement(
                 "p",
                 null,
-                "GÃ¼ltig bis: ",
+                "Gültig bis: ",
                 new Date(finalValid).toLocaleDateString("de-DE")
               )
             : null
@@ -4088,7 +4104,7 @@ export async function reviewMemberDocument(clubSlug: string, documentId: string,
         await resend.emails.send({
           from: "Avaimo <info@avaimo.com>",
           to: [memberEmail],
-          subject: approve ? "Ã„rztliches Zeugnis bestÃ¤tigt" : "Ã„rztliches Zeugnis abgelehnt",
+          subject: approve ? "Ärztliches Zeugnis bestätigt" : "Ärztliches Zeugnis abgelehnt",
           react: emailReact,
         })
     }
@@ -4166,7 +4182,7 @@ export async function getMemberDocumentSignedUrl(clubSlug: string, documentId: s
 export async function createPlan(clubSlug: string, name: string, price: number, interval: string) {
   if (interval && interval !== "year") {
     // Currently only yearly plans are supported in Stripe setup
-    return { error: "Nur jÃ¤hrliche Tarife sind aktuell unterstÃ¼tzt." }
+    return { error: "Nur jährliche Tarife sind aktuell unterstützt." }
   }
   return createMembershipPlan(clubSlug, name, price)
 }
@@ -4189,7 +4205,7 @@ export async function submitMatchRecap(token: string, payload: {
     .eq('token', token)
     .single()
 
-  if (!recap) return { success: false, error: "UngÃ¼ltiger Link." }
+  if (!recap) return { success: false, error: "Ungültiger Link." }
 
   const { error } = await supabaseAdmin
     .from('match_recaps')
@@ -4581,7 +4597,7 @@ export async function inviteMember(formData: FormData) {
   const lastName = formData.get("lastName") as string
 
   // E-Mail Format Check
-  if (!email || !email.includes('@')) return { success: false, error: "UngÃ¼ltige E-Mail" }
+  if (!email || !email.includes('@')) return { success: false, error: "Ungültige E-Mail" }
 
   const supabaseAdmin = getAdminClient()
 
@@ -4637,7 +4653,7 @@ export async function inviteMember(formData: FormData) {
 
   // 3. Member Status setzen (Active)
   const validUntil = new Date()
-  validUntil.setFullYear(validUntil.getFullYear() + 1) // Standard: 1 Jahr gÃ¼ltig
+  validUntil.setFullYear(validUntil.getFullYear() + 1) // Standard: 1 Jahr gültig
 
   const { error: memberError } = await supabaseAdmin.from('club_members').upsert({
     club_id: club.id,
@@ -4676,12 +4692,12 @@ export async function inviteMember(formData: FormData) {
       await resend.emails.send({
         from: 'Avaimo <info@avaimo.com>',
         to: [email],
-        subject: `Du wurdest zu ${club.name} hinzugefÃ¼gt`,
+        subject: `Du wurdest zu ${club.name} hinzugefügt`,
         html: `
           <div style="font-family: sans-serif; color: #333;">
             <h1>Hallo ${firstName}!</h1>
-            <p>Du wurdest vom Administrator zum Verein <strong>${club.name}</strong> hinzugefÃ¼gt.</p>
-            <p>Da du bereits einen Account bei uns hast, kannst du dich einfach einloggen und sofort PlÃ¤tze buchen.</p>
+            <p>Du wurdest vom Administrator zum Verein <strong>${club.name}</strong> hinzugefügt.</p>
+            <p>Da du bereits einen Account bei uns hast, kannst du dich einfach einloggen und sofort Plätze buchen.</p>
             <br/>
             <a href="${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Zum Verein</a>
           </div>
@@ -4777,8 +4793,8 @@ export async function analyzeCsvHeaders(headers: string[]) {
         {
           role: "system",
           content:
-            "Du bist ein Daten-Experte fÃ¼r eine Sport-SaaS. " +
-            "Mappe CSV-Spalten auf unsere Felder. Gib ausschlieÃŸlich JSON zurÃ¼ck.",
+            "Du bist ein Daten-Experte für eine Sport-SaaS. " +
+            "Mappe CSV-Spalten auf unsere Felder. Gib ausschließlich JSON zurück.",
         },
         {
           role: "user",
@@ -4786,7 +4802,7 @@ export async function analyzeCsvHeaders(headers: string[]) {
             "CSV-Header: " +
             JSON.stringify(headers) +
             "\n\nFelder: first_name, last_name, email, phone, credit_balance, membership_start_date, membership_end_date." +
-            "\nGib ein JSON-Objekt zurÃ¼ck, z.B. {\"first_name\":\"Vorname\",\"email\":\"E-Mail\"}.",
+            "\nGib ein JSON-Objekt zurück, z.B. {\"first_name\":\"Vorname\",\"email\":\"E-Mail\"}.",
         },
       ],
       response_format: {
@@ -4958,7 +4974,7 @@ export async function importMembersBatch(
             ? `Avaimo access for ${club.name}`
             : lang === "it"
             ? `Accesso Avaimo per ${club.name}`
-            : `Avaimo Zugang fÃ¼r ${club.name}`
+            : `Avaimo Zugang für ${club.name}`
 
           const headline = lang === "en"
             ? "Welcome to Avaimo"
@@ -5175,7 +5191,7 @@ export async function submitMembershipSignature(
   }
 
   const base64 = signatureDataUrl.split(",")[1]
-  if (!base64) return { success: false, error: "UngÃ¼ltige Signatur" }
+  if (!base64) return { success: false, error: "Ungültige Signatur" }
   const buffer = Uint8Array.from(Buffer.from(base64, "base64"))
   const filePath = `${club.id}/${user.id}/contract-signature-${Date.now()}.png`
 
@@ -5291,7 +5307,7 @@ export async function submitMembershipSignature(
     const html = `
       <div style="font-family: Arial, sans-serif; color: #0f172a;">
         <h2>Dein Mitgliedsvertrag</h2>
-        <p>Vielen Dank fÃ¼r deine Unterschrift. Dein Vertrag wurde erfolgreich erstellt.</p>
+        <p>Vielen Dank für deine Unterschrift. Dein Vertrag wurde erfolgreich erstellt.</p>
         ${downloadUrl ? `<p><a href="${downloadUrl}">PDF herunterladen</a></p>` : ""}
         <p>Verein: <strong>${club.name}</strong></p>
       </div>
@@ -5316,7 +5332,7 @@ export async function submitMembershipSignature(
           <div style="font-family: Arial, sans-serif; color: #0f172a;">
             <h2>Neuer Mitgliedsvertrag unterschrieben</h2>
             <p>Mitglied: ${payload.memberName}</p>
-            ${downloadUrl ? `<p><a href="${downloadUrl}">PDF Ã¶ffnen</a></p>` : ""}
+            ${downloadUrl ? `<p><a href="${downloadUrl}">PDF öffnen</a></p>` : ""}
           </div>
         `,
       })
@@ -5334,7 +5350,7 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
   const { data: { user } } = await supabase.auth.getUser()
 
   // 1. Admin Check (Owner oder Super Admin)
-  const supabaseAdmin = getAdminClient() // Wir nutzen den Admin Client fÃ¼r vollen Zugriff
+  const supabaseAdmin = getAdminClient() // Wir nutzen den Admin Client für vollen Zugriff
   const { data: club } = await supabaseAdmin.from('clubs').select('id, owner_id').eq('slug', clubSlug).single()
   const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
 
@@ -5375,7 +5391,7 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
     const dateStr = date.toLocaleDateString('de-DE')
     const timeStr = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 
-    // Payment Status Ã¼bersetzen
+    // Payment Status übersetzen
     let payStatus = "Unbekannt"
     if (b.status === 'awaiting_payment' || b.payment_status === 'unpaid') payStatus = "Ausstehend"
     if (b.payment_status === 'paid_stripe') payStatus = "Online (Stripe)"
@@ -5385,12 +5401,12 @@ export async function exportBookingsCsv(clubSlug: string, year: number, month: n
     return [
       dateStr,
       timeStr,
-      b.courts?.name || "GelÃ¶schter Platz",
-      `"${b.guest_name || '-'}"`, // AnfÃ¼hrungszeichen fÃ¼r Namen mit Kommas
+      b.courts?.name || "Gelöschter Platz",
+      `"${b.guest_name || '-'}"`, // Anführungszeichen für Namen mit Kommas
       payStatus,
-      (b.price_paid || 0).toString().replace('.', ','), // Deutsches Format fÃ¼r Excel
+      (b.price_paid || 0).toString().replace('.', ','), // Deutsches Format für Excel
       b.status
-    ].join(";") // Semikolon ist besser fÃ¼r Excel in DE
+    ].join(";") // Semikolon ist besser für Excel in DE
   })
 
   const csvContent = [header.join(";"), ...rows].join("\n")
@@ -5605,7 +5621,7 @@ export async function blockMember(clubSlug: string, memberId: string, shouldBloc
     .eq("club_id", club.id)
     .eq("user_id", memberId)
 
-  if (error) return { success: false, error: "Status konnte nicht geÃ¤ndert werden" }
+  if (error) return { success: false, error: "Status konnte nicht geändert werden" }
   revalidatePathAllLocales(`/club/${clubSlug}/admin/members/${memberId}`)
   revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
@@ -5634,7 +5650,7 @@ export async function deleteMember(clubSlug: string, memberId: string) {
     .eq("club_id", club.id)
     .eq("user_id", memberId)
 
-  if (error) return { success: false, error: "LÃ¶schen fehlgeschlagen" }
+  if (error) return { success: false, error: "Löschen fehlgeschlagen" }
   revalidatePathAllLocales(`/club/${clubSlug}/admin/members`)
   return { success: true }
 }

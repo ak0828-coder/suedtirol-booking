@@ -25,7 +25,7 @@ export default async function SuperAdminPlansPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-semibold">Abos</h2>
-            <p className="text-slate-500 text-sm">MitgliedschaftsplÃ¤ne verwalten.</p>
+            <p className="text-slate-500 text-sm">Mitgliedschaftspläne verwalten.</p>
           </div>
           <FeatureGateToggle
             clubId={club.id}

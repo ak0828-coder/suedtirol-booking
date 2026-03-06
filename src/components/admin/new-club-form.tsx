@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export function NewClubForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -19,10 +20,10 @@ export function NewClubForm() {
     
     setIsLoading(false)
     if (result.success) {
-      alert(`✅ ${result.message}\n\nBitte Daten notieren:\nEmail: ${formData.get('email')}\nPasswort: ${formData.get('password')}`)
+      toast.success(result.message || "Verein erstellt")
       window.location.reload()
     } else {
-      alert("❌ Fehler: " + result.error)
+      toast.error("Fehler: " + result.error)
     }
   }
 

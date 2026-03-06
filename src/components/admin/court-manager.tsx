@@ -9,6 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, Plus, MapPin, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type Court = {
   id: string
@@ -28,6 +33,7 @@ export function CourtManager({
 }) {
   const router = useRouter()
   const [courts, setCourts] = useState<Court[]>(initialCourts)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   
   // Form States
   const [newCourtName, setNewCourtName] = useState("")
@@ -52,13 +58,13 @@ export function CourtManager({
       setNewCourtName("")
       router.refresh()
     } else {
-      alert("Fehler: " + (result.error || "Unbekannter Fehler"))
+      toast.error("Fehler: " + (result.error || "Unbekannter Fehler"))
     }
     setIsLoading(false)
   }
 
   async function handleDelete(id: string) {
-    if(!confirm("Platz wirklich löschen?")) return;
+    setPendingDeleteId(null)
     const result = await deleteCourt(id)
     if (result.success) {
       setCourts(courts.filter(c => c.id !== id))
@@ -75,6 +81,7 @@ export function CourtManager({
   }
 
   return (
+    <>
     <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -120,7 +127,7 @@ export function CourtManager({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(court.id)}
+                  onClick={() => setPendingDeleteId(court.id)}
                   className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -173,5 +180,21 @@ export function CourtManager({
         </div>
       </CardContent>
     </Card>
+
+    <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Platz löschen?</AlertDialogTitle>
+          <AlertDialogDescription>Der Platz wird unwiderruflich gelöscht.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+          <AlertDialogAction onClick={() => pendingDeleteId && handleDelete(pendingDeleteId)} className="bg-red-600 hover:bg-red-700">
+            Löschen
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

@@ -35,7 +35,7 @@ export default async function MemberDashboard({
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Bitte einloggen</h1>
           <p className="mt-2 text-sm text-slate-500">
-            FÃ¼r den Mitgliederbereich musst du eingeloggt sein.
+            Für den Mitgliederbereich musst du eingeloggt sein.
           </p>
           <div className="mt-4">
             <Button asChild className="w-full">
@@ -86,7 +86,7 @@ export default async function MemberDashboard({
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">Kein Mitgliedskonto gefunden</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Du bist als <strong>{user.email}</strong> eingeloggt. FÃ¼r diesen Account existiert keine
+            Du bist als <strong>{user.email}</strong> eingeloggt. Für diesen Account existiert keine
             Mitgliedschaft in diesem Verein.
           </p>
           <div className="mt-4 space-y-2">
@@ -160,7 +160,7 @@ export default async function MemberDashboard({
       <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
         {!hasContract && (
           <Card className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5 text-sm text-amber-900 shadow-sm">
-            <div className="font-semibold">Onboarding unvollstÃ¤ndig</div>
+            <div className="font-semibold">Onboarding unvollständig</div>
             <p className="mt-1 text-amber-800">
               Bitte unterschreibe den Mitgliedsvertrag, um alle Funktionen freizuschalten.
             </p>
@@ -227,7 +227,7 @@ export default async function MemberDashboard({
             <CardContent>
               <div className="text-3xl font-semibold">{t("dashboard.status.active", "Aktiv")}</div>
               <p className="text-sm text-slate-500 mt-2">
-                {t("dashboard.valid_until", "GÃ¼ltig bis:")}{" "}
+                {t("dashboard.valid_until", "Gültig bis:")}{" "}
                 {member.valid_until
                   ? new Date(member.valid_until).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE")
                   : t("dashboard.unlimited", "Unbegrenzt")}
@@ -252,7 +252,7 @@ export default async function MemberDashboard({
           <Card id="tour-member-profile" className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
-                <Calendar className="club-primary-text" /> {t("dashboard.cards.next", "NÃ¤chster Termin")}
+                <Calendar className="club-primary-text" /> {t("dashboard.cards.next", "Nächster Termin")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -354,7 +354,7 @@ export default async function MemberDashboard({
         <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle className="flex gap-2 items-center">
-              <Calendar className="club-primary-text" /> {t("dashboard.cards.upcoming", "Deine nÃ¤chsten Spiele")}
+              <Calendar className="club-primary-text" /> {t("dashboard.cards.upcoming", "Deine nächsten Spiele")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -372,7 +372,7 @@ export default async function MemberDashboard({
                       <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3" />
                         {format(new Date(b.start_time), "HH:mm")} {t("dashboard.clock", "Uhr")}
-                        <span className="mx-1">â€¢</span>
+                        <span className="mx-1">·</span>
                         {b.courts?.name}
                       </div>
                     </div>
@@ -416,7 +416,7 @@ export default async function MemberDashboard({
                       <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
                         <Clock className="w-3 h-3" />
                         {format(new Date(b.start_time), "HH:mm")} {t("dashboard.clock", "Uhr")}
-                        <span className="mx-1">â€¢</span>
+                        <span className="mx-1">·</span>
                         {b.courts?.name}
                       </div>
                     </div>

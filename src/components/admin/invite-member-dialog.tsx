@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { inviteMember } from "@/app/actions"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,11 +16,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Mail, Plus } from "lucide-react"
 import { useI18n } from "@/components/i18n/locale-provider"
+import { toast } from "sonner"
 
 export function InviteMemberDialog({ clubSlug }: { clubSlug: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const { t } = useI18n()
+  const router = useRouter()
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -28,10 +31,11 @@ export function InviteMemberDialog({ clubSlug }: { clubSlug: string }) {
     setLoading(false)
 
     if (res.success) {
-      alert(t("admin_invite.sent", "Einladung wurde gesendet!"))
+      toast.success(t("admin_invite.sent", "Einladung wurde gesendet!"))
       setIsOpen(false)
+      router.refresh()
     } else {
-      alert(t("admin_invite.error", "Fehler") + ": " + res.error)
+      toast.error(t("admin_invite.error", "Fehler") + ": " + res.error)
     }
   }
 
