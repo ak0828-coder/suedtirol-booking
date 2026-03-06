@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button"
 import { requestPasswordReset } from "@/app/actions"
 import { Loader2, ArrowLeft, Mail } from "lucide-react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
 
 export default function ForgotPasswordPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
+  const afterRaw = searchParams?.get("after") || ""
+  const afterUrl = afterRaw.startsWith("/") && !afterRaw.startsWith("//") ? afterRaw : null
   const { t } = useI18n()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -23,7 +26,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
     setError("")
 
-    const res = await requestPasswordReset(email, lang)
+    const res = await requestPasswordReset(email, lang, afterUrl || undefined)
 
     if (res.success) {
       setIsSuccess(true)
@@ -51,7 +54,7 @@ export default function ForgotPasswordPage() {
         </p>
 
         {isSuccess ? (
-          <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg text-center">
+          <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-center">
             <Mail className="w-8 h-8 mx-auto mb-2 text-green-600" />
             <p className="font-medium">{t("auth.forgot.sent_title", "E-Mail gesendet!")}</p>
             <p className="text-sm mt-1">{t("auth.forgot.sent_subtitle", "Bitte prüfe deinen Posteingang (und Spam-Ordner).")}</p>
@@ -70,7 +73,7 @@ export default function ForgotPasswordPage() {
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-full" disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" /> : t("auth.forgot.cta", "Link senden")}
             </Button>
           </form>
@@ -79,4 +82,3 @@ export default function ForgotPasswordPage() {
     </div>
   )
 }
-

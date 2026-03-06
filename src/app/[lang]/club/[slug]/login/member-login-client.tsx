@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { getMemberAccessForClub } from "@/app/actions"
+import Link from "next/link"
 
 export default function MemberLoginClient() {
   const router = useRouter()
@@ -64,7 +65,15 @@ export default function MemberLoginClient() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Passwort</Label>
+              <Link
+                href={`/${lang}/forgot-password?after=/${lang}/club/${slug}/dashboard`}
+                className="text-xs text-slate-500 hover:text-slate-900 hover:underline"
+              >
+                Passwort vergessen?
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"

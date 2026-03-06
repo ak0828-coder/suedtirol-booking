@@ -4520,12 +4520,14 @@ export async function getBlockedDates(clubSlug: string, courtId: string) {
   return data || []
 }
 
-export async function requestPasswordReset(email: string, lang: string) {
+export async function requestPasswordReset(email: string, lang: string, afterUrl?: string) {
   const supabase = await createClient()
+  const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/change-password`,
-  })
+  const changePasswordPath = `/${lang}/change-password${afterUrl ? `?after=${encodeURIComponent(afterUrl)}` : ""}`
+  const redirectTo = `${base}/${lang}/auth/callback?next=${encodeURIComponent(changePasswordPath)}`
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
 
   if (error) return { success: false, error: error.message }
   return { success: true }
@@ -4629,7 +4631,6 @@ export async function inviteMember(formData: FormData) {
   // 2. User Check / Create
   let targetUserId = null
   let isNewUser = false
-  let tempPassword = ""
 
   // Wir suchen, ob der User global in Supabase schon existiert
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
@@ -4638,9 +4639,9 @@ export async function inviteMember(formData: FormData) {
   if (existingUser) {
     targetUserId = existingUser.id
   } else {
-    // User existiert nicht -> Erstellen
+    // User existiert nicht -> Erstellen (mit zufälligem Passwort, das nie geteilt wird)
     isNewUser = true
-    tempPassword = Math.random().toString(36).slice(-8) + "Aa1!"
+    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8) + "Aa1!"
 
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
@@ -4649,7 +4650,7 @@ export async function inviteMember(formData: FormData) {
       user_metadata: {
         name: `${firstName} ${lastName}`,
         full_name: `${firstName} ${lastName}`,
-        must_change_password: true
+        must_change_password: false,
       }
     })
 
@@ -4688,36 +4689,58 @@ export async function inviteMember(formData: FormData) {
     invitedBy: user.id,
   })
 
-  // 4. E-Mail senden
+  // 4. Magic Link generieren und E-Mail senden
   try {
+    const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
+    const dashboardUrl = `/${lang}/club/${clubSlug}/dashboard`
+    const redirectTo = `${base}/${lang}/auth/callback?next=${encodeURIComponent(dashboardUrl)}`
+
+    const { data: linkData } = await (supabaseAdmin.auth.admin as any).generateLink({
+      type: "magiclink",
+      email,
+      options: { redirectTo },
+    })
+    const magicLink =
+      linkData?.properties?.action_link ||
+      linkData?.action_link ||
+      `${base}/${lang}/club/${clubSlug}/login`
+
     if (isNewUser) {
       await resend.emails.send({
-        from: 'Avaimo <info@avaimo.com>',
+        from: "Avaimo <info@avaimo.com>",
         to: [email],
-        subject: lang === "en" ? `Welcome to ${club.name}!` : lang === "it" ? `Benvenuto in ${club.name}!` : `Willkommen im ${club.name}!`,
-        react: <WelcomeMemberEmailTemplate
-          clubName={club.name}
-          email={email}
-          password={tempPassword}
-          loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login`}
-          lang={lang}
-        />
+        subject:
+          lang === "en"
+            ? `Welcome to ${club.name}!`
+            : lang === "it"
+            ? `Benvenuto in ${club.name}!`
+            : `Willkommen im ${club.name}!`,
+        react: (
+          <WelcomeMemberEmailTemplate
+            clubName={club.name}
+            email={email}
+            magicLink={magicLink}
+            loginUrl={`${base}/${lang}/club/${clubSlug}/login`}
+            lang={lang}
+          />
+        ),
       })
     } else {
-      // Existierender User: Info Mail
+      // Existierender User: Info Mail mit Magic Link
       await resend.emails.send({
-        from: 'Avaimo <info@avaimo.com>',
+        from: "Avaimo <info@avaimo.com>",
         to: [email],
         subject: `Du wurdest zu ${club.name} hinzugefügt`,
-        html: `
-          <div style="font-family: sans-serif; color: #333;">
-            <h1>Hallo ${firstName}!</h1>
-            <p>Du wurdest vom Administrator zum Verein <strong>${club.name}</strong> hinzugefügt.</p>
-            <p>Da du bereits einen Account bei uns hast, kannst du dich einfach einloggen und sofort Plätze buchen.</p>
-            <br/>
-            <a href="${process.env.NEXT_PUBLIC_BASE_URL}/club/${clubSlug}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Zum Verein</a>
-          </div>
-        `
+        react: (
+          <WelcomeMemberEmailTemplate
+            clubName={club.name}
+            email={email}
+            magicLink={magicLink}
+            loginUrl={`${base}/${lang}/club/${clubSlug}/login`}
+            lang={lang}
+            existingUser
+          />
+        ),
       })
     }
   } catch (err) {
