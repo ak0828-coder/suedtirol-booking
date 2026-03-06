@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { requestPasswordReset } from "@/app/actions"
@@ -10,6 +10,14 @@ import { useParams, useSearchParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
 
 export default function ForgotPasswordPage() {
+  return (
+    <Suspense>
+      <ForgotPasswordForm />
+    </Suspense>
+  )
+}
+
+function ForgotPasswordForm() {
   const params = useParams()
   const searchParams = useSearchParams()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
