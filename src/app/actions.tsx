@@ -4693,7 +4693,14 @@ export async function inviteMember(formData: FormData) {
   try {
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
     const dashboardUrl = `/${lang}/club/${clubSlug}/dashboard`
-    const redirectTo = `${base}/${lang}/auth/callback?next=${encodeURIComponent(dashboardUrl)}`
+
+    // Neue Mitglieder: Magic Link → zuerst Passwort festlegen, dann Dashboard
+    // Bestehende Mitglieder: Magic Link → direkt zum Dashboard (haben bereits ein Passwort)
+    const nextAfterLogin = isNewUser
+      ? `/${lang}/change-password?after=${encodeURIComponent(dashboardUrl)}`
+      : dashboardUrl
+
+    const redirectTo = `${base}/${lang}/auth/callback?next=${encodeURIComponent(nextAfterLogin)}`
 
     const { data: linkData } = await (supabaseAdmin.auth.admin as any).generateLink({
       type: "magiclink",
@@ -4705,44 +4712,27 @@ export async function inviteMember(formData: FormData) {
       linkData?.action_link ||
       `${base}/${lang}/club/${clubSlug}/login`
 
-    if (isNewUser) {
-      await resend.emails.send({
-        from: "Avaimo <info@avaimo.com>",
-        to: [email],
-        subject:
-          lang === "en"
-            ? `Welcome to ${club.name}!`
-            : lang === "it"
-            ? `Benvenuto in ${club.name}!`
-            : `Willkommen im ${club.name}!`,
-        react: (
-          <WelcomeMemberEmailTemplate
-            clubName={club.name}
-            email={email}
-            magicLink={magicLink}
-            loginUrl={`${base}/${lang}/club/${clubSlug}/login`}
-            lang={lang}
-          />
-        ),
-      })
-    } else {
-      // Existierender User: Info Mail mit Magic Link
-      await resend.emails.send({
-        from: "Avaimo <info@avaimo.com>",
-        to: [email],
-        subject: `Du wurdest zu ${club.name} hinzugefügt`,
-        react: (
-          <WelcomeMemberEmailTemplate
-            clubName={club.name}
-            email={email}
-            magicLink={magicLink}
-            loginUrl={`${base}/${lang}/club/${clubSlug}/login`}
-            lang={lang}
-            existingUser
-          />
-        ),
-      })
-    }
+    await resend.emails.send({
+      from: "Avaimo <info@avaimo.com>",
+      to: [email],
+      subject:
+        lang === "en"
+          ? `Welcome to ${club.name}!`
+          : lang === "it"
+          ? `Benvenuto in ${club.name}!`
+          : `Willkommen im ${club.name}!`,
+      react: (
+        <WelcomeMemberEmailTemplate
+          clubName={club.name}
+          email={email}
+          magicLink={magicLink}
+          loginUrl={`${base}/${lang}/club/${clubSlug}/login`}
+          lang={lang}
+          existingUser={!isNewUser}
+          needsPassword={isNewUser}
+        />
+      ),
+    })
   } catch (err) {
     console.error("Mail Error", err)
     // Wir returnen trotzdem success, da der DB Eintrag geklappt hat

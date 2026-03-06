@@ -7,6 +7,7 @@ export function WelcomeMemberEmailTemplate({
   loginUrl,
   lang = "de",
   existingUser = false,
+  needsPassword = false,
 }: {
   clubName: string
   email: string
@@ -14,38 +15,45 @@ export function WelcomeMemberEmailTemplate({
   loginUrl: string
   lang?: string
   existingUser?: boolean
+  needsPassword?: boolean
   /** @deprecated use magicLink instead */
   password?: string
 }) {
   const copy = {
     de: {
       title: existingUser ? `Du wurdest zu ${clubName} hinzugefügt!` : `Willkommen im ${clubName}!`,
-      intro: existingUser
+      intro: needsPassword
+        ? `Deine Mitgliedschaft wurde bestätigt. Klicke auf den Button, um dein Passwort festzulegen und dich einzuloggen.`
+        : existingUser
         ? `Du hast nun Zugang zum Verein ${clubName}. Klicke auf den Button, um dich einzuloggen.`
         : "Deine Mitgliedschaft wurde erfolgreich bestätigt. Klicke auf den Button, um dich einzuloggen.",
-      linkNote: "Dieser Link ist 24 Stunden gültig. Danach kannst du dich mit „Passwort vergessen" einen neuen Link anfordern.",
+      linkNote: "Dieser Link ist 24 Stunden gültig. Danach kannst du dich mit „Passwort vergessen" anmelden.",
       email_label: "E-Mail",
-      cta: "Jetzt einloggen",
+      cta: needsPassword ? "Passwort festlegen & einloggen" : "Jetzt einloggen",
       fallback: "Falls der Button nicht funktioniert, kopiere diesen Link:",
     },
     en: {
       title: existingUser ? `You've been added to ${clubName}!` : `Welcome to ${clubName}!`,
-      intro: existingUser
+      intro: needsPassword
+        ? "Your membership has been confirmed. Click the button to set your password and log in."
+        : existingUser
         ? `You now have access to ${clubName}. Click the button to log in.`
         : "Your membership has been confirmed. Click the button to log in.",
-      linkNote: "This link is valid for 24 hours. Afterwards, use "Forgot password" to request a new link.",
+      linkNote: "This link is valid for 24 hours. Afterwards, use \"Forgot password\" to log in.",
       email_label: "Email",
-      cta: "Log in now",
+      cta: needsPassword ? "Set password & log in" : "Log in now",
       fallback: "If the button doesn't work, copy this link:",
     },
     it: {
       title: existingUser ? `Sei stato aggiunto a ${clubName}!` : `Benvenuto in ${clubName}!`,
-      intro: existingUser
+      intro: needsPassword
+        ? "La tua iscrizione è stata confermata. Clicca il bottone per impostare la password e accedere."
+        : existingUser
         ? `Hai ora accesso al club ${clubName}. Clicca il bottone per accedere.`
         : "La tua iscrizione è stata confermata. Clicca il bottone per accedere.",
-      linkNote: "Questo link è valido per 24 ore. Dopodiché usa "Password dimenticata" per richiederne uno nuovo.",
+      linkNote: "Questo link è valido per 24 ore. Dopodiché usa \"Password dimenticata\" per accedere.",
       email_label: "Email",
-      cta: "Accedi ora",
+      cta: needsPassword ? "Imposta password e accedi" : "Accedi ora",
       fallback: "Se il bottone non funziona, copia questo link:",
     },
   }
