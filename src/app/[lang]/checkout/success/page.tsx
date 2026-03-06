@@ -111,23 +111,20 @@ export default async function SuccessPage({
           {showLogin && meta?.clubSlug && (
             <div className="space-y-3">
               <p className="text-sm text-slate-600">
-                {t("checkout.success.login_needed", "Bitte einloggen, um den Mitgliedsvertrag zu unterschreiben und Dokumente hochzuladen.")}
+                {t("checkout.success.login_needed", "Wir haben dir soeben einen Login-Link per E-Mail gesendet. Klicke ihn an, um dein Passwort festzulegen und das Onboarding abzuschließen.")}
               </p>
               <PostPaymentMagicLink sessionId={session_id} lang={lang} />
-              <p className="text-xs text-slate-500">
-                {t("checkout.success.magic_hint", "Kein Passwort nötig. Nutze den E-Mail-Link für den direkten Einstieg ins Onboarding.")}
-              </p>
               <Button
                 asChild
                 variant="ghost"
-                className="w-full"
+                className="w-full text-sm"
               >
                 <Link
                   href={`/${lang}/club/${meta.clubSlug}/login?next=${encodeURIComponent(
                     `/${lang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${session_id}`
                   )}`}
                 >
-                  {t("checkout.success.login_fallback", "Ich habe bereits ein Passwort")}
+                  {t("checkout.success.login_fallback", "Ich habe bereits ein Passwort → Direkt einloggen")}
                 </Link>
               </Button>
             </div>
