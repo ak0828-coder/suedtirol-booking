@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trophy, Calendar, Clock, User, Sparkles, ArrowRight } from "lucide-react"
 import { format } from "date-fns"
 import { getClubRanking, getMyBadges, getMyMemberStats, getProfile } from "@/app/actions"
-import { ProfileForm } from "@/components/profile-form"
 import { CancelBookingButton } from "@/components/cancel-booking-button"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -207,9 +206,9 @@ export default async function MemberDashboard({
                     {t("dashboard.actions.documents", "Dokumente")}
                   </Button>
                 </Link>
-                <Link href={`/${lang}/club/${slug}`}>
+                <Link href={`/${lang}/club/${slug}/dashboard/book`}>
                   <Button id="tour-member-book" variant="outline" className="gap-2 rounded-full btn-press w-full sm:w-auto">
-                    {t("dashboard.actions.booking", "Zur Buchung")} <ArrowRight className="w-4 h-4" />
+                    {t("dashboard.actions.booking", "Platz buchen")} <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
               </div>
@@ -280,9 +279,14 @@ export default async function MemberDashboard({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-slate-500 mb-4">
                 {t("dashboard.profile_desc", "Pflege deine Kontaktdaten und Angaben.")}
               </div>
+              <Link href={`/${lang}/club/${slug}/dashboard/settings`}>
+                <Button variant="outline" size="sm" className="rounded-full">
+                  {t("dashboard.profile_cta", "Einstellungen öffnen")}
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -385,7 +389,7 @@ export default async function MemberDashboard({
             ) : (
               <div className="text-center py-4">
                 <p className="text-slate-500 italic mb-2">{t("dashboard.no_open", "Keine offenen Buchungen.")}</p>
-                <Link href={`/${lang}/club/${slug}`}>
+                <Link href={`/${lang}/club/${slug}/dashboard/book`}>
                   <Button variant="outline" className="rounded-full">
                     {t("dashboard.book_now", "Jetzt buchen")}
                   </Button>
@@ -440,16 +444,6 @@ export default async function MemberDashboard({
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex gap-2 items-center">
-              <User className="text-slate-600" /> {t("dashboard.cards.profile_data", "Meine Daten")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProfileForm profile={profile} />
-          </CardContent>
-        </Card>
       </div>
       <MobileBottomNav slug={slug} active="dashboard" />
     </div>

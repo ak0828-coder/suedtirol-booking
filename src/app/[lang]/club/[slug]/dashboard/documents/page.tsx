@@ -10,6 +10,7 @@ import { TourLauncher } from "@/components/tours/tour-launcher"
 import { Suspense } from "react"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
+import { getAdminClient } from "@/lib/supabase/admin"
 
 export default async function MemberDocumentsPage({
   params,
@@ -34,14 +35,15 @@ export default async function MemberDocumentsPage({
 
   if (!club) return notFound()
 
-  const { data: member } = await supabase
+  const adminClient = getAdminClient()
+  const { data: member } = await adminClient
     .from("club_members")
     .select("status")
     .eq("club_id", club.id)
     .eq("user_id", user.id)
     .single()
 
-  if (!member || member.status !== "active") return notFound()
+  if (!member) return notFound()
 
   const documents = await getMyDocuments(slug)
 

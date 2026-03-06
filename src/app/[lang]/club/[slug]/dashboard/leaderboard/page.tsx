@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getAdminClient } from "@/lib/supabase/admin"
 import { getClubRanking } from "@/app/actions"
 import { notFound } from "next/navigation"
 import Link from "next/link"
@@ -34,14 +35,15 @@ export default async function ClubLeaderboardPage({
 
   if (!club) return notFound()
 
-  const { data: member } = await supabase
+  const adminClient = getAdminClient()
+  const { data: member } = await adminClient
     .from("club_members")
     .select("id, status")
     .eq("club_id", club.id)
     .eq("user_id", user.id)
     .single()
 
-  if (!member || member.status !== "active") return notFound()
+  if (!member) return notFound()
 
   const ranking = await getClubRanking(club.id, 50)
 
