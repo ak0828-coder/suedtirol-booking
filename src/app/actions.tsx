@@ -3948,7 +3948,23 @@ export async function uploadMemberDocument(formData: FormData) {
   }
 
   revalidatePathAllLocales(`/club/${clubSlug}/dashboard/documents`)
-  return { success: true }
+
+  // Re-read updated doc to return current AI status to the client
+  const { data: updatedDoc } = await supabaseAdmin
+    .from("member_documents")
+    .select("ai_status, ai_reason, ai_confidence, temp_valid_until, valid_until, review_status")
+    .eq("id", doc.id)
+    .single()
+
+  return {
+    success: true,
+    aiStatus: updatedDoc?.ai_status ?? null,
+    aiReason: updatedDoc?.ai_reason ?? null,
+    aiConfidence: updatedDoc?.ai_confidence ?? null,
+    tempValidUntil: updatedDoc?.temp_valid_until ?? null,
+    validUntil: updatedDoc?.valid_until ?? null,
+    reviewStatus: updatedDoc?.review_status ?? null,
+  }
 }
 
 export async function getMemberDocumentsForAdmin(clubSlug: string, memberId: string) {
