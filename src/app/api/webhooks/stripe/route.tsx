@@ -265,6 +265,18 @@ export async function POST(req: Request) {
       const locale = localeMap[lang]
 
       if (club && bookingId) {
+        // Idempotency: check if booking is already confirmed
+        const { data: existingBooking } = await supabaseAdmin
+          .from("bookings")
+          .select("status")
+          .eq("id", bookingId)
+          .single()
+
+        if (existingBooking?.status === "confirmed") {
+          console.log("checkout.session.completed: booking already confirmed:", bookingId)
+          return new NextResponse(null, { status: 200 })
+        }
+
         const [hours, minutes] = time.split(":").map(Number)
         const startTime = new Date(date)
         startTime.setHours(hours, minutes, 0, 0)
@@ -604,8 +616,11 @@ export async function POST(req: Request) {
   }
 
   if (event.type === "invoice.payment_succeeded") {
-    const subscriptionId = session.subscription
+    const invoiceObj = event.data.object as any
+    const subscriptionId = invoiceObj.subscription
+    const invoiceId = invoiceObj.id
 
+    // Idempotency: skip if this invoice was already applied
     const { data: member } = await supabaseAdmin
       .from("club_members")
       .select("*")
@@ -613,18 +628,24 @@ export async function POST(req: Request) {
       .single()
 
     if (member) {
-      const currentValid = new Date(member.valid_until)
-      const now = new Date()
-      const baseDate = currentValid > now ? currentValid : now
-      baseDate.setFullYear(baseDate.getFullYear() + 1)
+      // Avoid extending valid_until multiple times for the same invoice
+      if (member.last_processed_invoice_id === invoiceId) {
+        console.log("invoice.payment_succeeded already processed:", invoiceId)
+      } else {
+        const currentValid = new Date(member.valid_until)
+        const now = new Date()
+        const baseDate = currentValid > now ? currentValid : now
+        baseDate.setFullYear(baseDate.getFullYear() + 1)
 
-      await supabaseAdmin
-        .from("club_members")
-        .update({
-          status: "active",
-          valid_until: baseDate.toISOString(),
-        })
-        .eq("id", member.id)
+        await supabaseAdmin
+          .from("club_members")
+          .update({
+            status: "active",
+            valid_until: baseDate.toISOString(),
+            last_processed_invoice_id: invoiceId,
+          })
+          .eq("id", member.id)
+      }
     }
   }
 

@@ -5779,6 +5779,91 @@ export async function blockMember(clubSlug: string, memberId: string, shouldBloc
   return { success: true }
 }
 
+// ==========================================
+// --- GDPR / ACCOUNT DELETION ---
+// ==========================================
+
+export async function deleteMyAccount() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+
+  // 1. Cancel any active Stripe subscriptions to avoid future charges
+  try {
+    const { data: memberships } = await supabaseAdmin
+      .from("club_members")
+      .select("stripe_subscription_id")
+      .eq("user_id", user.id)
+      .not("stripe_subscription_id", "is", null)
+
+    for (const m of memberships || []) {
+      if (m.stripe_subscription_id) {
+        try {
+          await stripe.subscriptions.cancel(m.stripe_subscription_id)
+        } catch {
+          // Subscription may already be cancelled
+        }
+      }
+    }
+
+    // Cancel Stripe customer to stop future charges
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("stripe_customer_id")
+      .eq("id", user.id)
+      .single()
+
+    if (profile?.stripe_customer_id) {
+      try {
+        await stripe.customers.del(profile.stripe_customer_id)
+      } catch {
+        // Customer may not exist in Stripe
+      }
+    }
+  } catch {
+    // Don't block deletion if Stripe calls fail
+  }
+
+  // 2. Anonymize bookings (keep for financial records, but strip personal data)
+  await supabaseAdmin
+    .from("bookings")
+    .update({
+      guest_name: "Gelöschter Nutzer",
+      guest_email: null,
+      user_id: null,
+    })
+    .eq("user_id", user.id)
+
+  // 3. Delete club memberships
+  await supabaseAdmin
+    .from("club_members")
+    .delete()
+    .eq("user_id", user.id)
+
+  // 4. Delete course participations
+  await supabaseAdmin
+    .from("course_participants")
+    .delete()
+    .eq("user_id", user.id)
+
+  // 5. Delete profile
+  await supabaseAdmin
+    .from("profiles")
+    .delete()
+    .eq("id", user.id)
+
+  // 6. Delete auth user (permanent)
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(user.id)
+  if (error) {
+    console.error("deleteMyAccount: deleteUser error:", error)
+    return { success: false, error: "Account-Löschung fehlgeschlagen" }
+  }
+
+  return { success: true }
+}
+
 export async function deleteMember(clubSlug: string, memberId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

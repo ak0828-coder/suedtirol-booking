@@ -7,10 +7,11 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { User, Settings, Trophy } from "lucide-react"
+import { User, Settings, Trophy, AlertTriangle } from "lucide-react"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
 import { getProfile } from "@/app/actions"
+import { DeleteAccountButton } from "@/components/dashboard/delete-account-button"
 import { getReadableTextColor } from "@/lib/color"
 
 export default async function MemberSettingsPage({
@@ -110,6 +111,24 @@ export default async function MemberSettingsPage({
                   {t("member_settings.change_password", "Passwort ändern")}
                 </Button>
               </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-red-200 bg-white/90 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Datenschutz &amp; Account löschen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-500">
+                Du hast das Recht, die Löschung aller deiner personenbezogenen Daten zu beantragen (DSGVO Art. 17).
+                Alle Mitgliedschaften und Buchungen werden dabei anonymisiert.
+              </p>
+              <DeleteAccountButton lang={lang} />
             </div>
           </CardContent>
         </Card>
