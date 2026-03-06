@@ -1,7 +1,7 @@
 "use client"
 
 import { useTransition, useState } from "react"
-import { createCourseCheckoutSession } from "@/app/actions"
+import { createCourseCheckoutSession, joinCourseWaitlist } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { useParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
@@ -19,6 +19,7 @@ export function CourseEnrollCard({
   const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
+  const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "joined">("idle")
   const { t } = useI18n()
   const params = useParams()
   const langRaw = params?.lang
@@ -197,9 +198,36 @@ export function CourseEnrollCard({
         </div>
       ) : null}
       {error ? <div className="text-xs text-red-500">{error}</div> : null}
-      <Button className="rounded-full w-full" onClick={() => setOpen(true)}>
-        {t("training.course.cta", "Details & anmelden")}
-      </Button>
+      {isCourseFull ? (
+        waitlistStatus === "joined" ? (
+          <div className="rounded-full bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-700 text-center">
+            {t("training.course.waitlist_joined", "Du bist auf der Warteliste.")}
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            className="rounded-full w-full"
+            disabled={pending}
+            onClick={() => {
+              setError(null)
+              startTransition(async () => {
+                const res = await joinCourseWaitlist(clubSlug, course.id)
+                if (res?.success) {
+                  setWaitlistStatus("joined")
+                } else if (res?.error) {
+                  setError(res.error)
+                }
+              })
+            }}
+          >
+            {t("training.course.join_waitlist", "Warteliste beitreten")}
+          </Button>
+        )
+      ) : (
+        <Button className="rounded-full w-full" onClick={() => setOpen(true)}>
+          {t("training.course.cta", "Details & anmelden")}
+        </Button>
+      )}
 
       {open ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

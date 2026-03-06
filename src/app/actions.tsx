@@ -2634,6 +2634,45 @@ export async function createCourseCheckoutSession(
   }
 }
 
+export async function joinCourseWaitlist(clubSlug: string, courseId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Bitte einloggen." }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: course } = await supabaseAdmin
+    .from("courses")
+    .select("id, title, club_id, max_participants")
+    .eq("id", courseId)
+    .single()
+  if (!course) return { error: "Kurs nicht gefunden." }
+
+  const { data: existing } = await supabaseAdmin
+    .from("course_participants")
+    .select("id, status")
+    .eq("course_id", courseId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (existing) {
+    if (existing.status === "waitlist") return { success: true, alreadyOnWaitlist: true }
+    return { error: "Du bist bereits für diesen Kurs angemeldet." }
+  }
+
+  const { error } = await supabaseAdmin
+    .from("course_participants")
+    .insert({
+      course_id: courseId,
+      user_id: user.id,
+      status: "waitlist",
+      payment_status: "unpaid",
+    })
+
+  if (error) return { error: error.message }
+  revalidatePathAllLocales(`/club/${clubSlug}/training`)
+  return { success: true }
+}
+
 export async function confirmTrainerBooking(formData: FormData) {
   const bookingId = String(formData.get("bookingId") || "")
   if (!bookingId) return
@@ -3008,27 +3047,37 @@ export async function createBooking(
 
   // 1. Check: Ist es ein aktives Mitglied?
   if (user) {
-    const { data: member } = await supabase
+    const supabaseAdmin = getAdminClient()
+    const { data: member } = await supabaseAdmin
       .from('club_members')
-      .select('*')
+      .select('*, medical_certificate_valid_until, created_at')
       .eq('club_id', club.id)
       .eq('user_id', user.id)
-      .eq('status', 'active')
       .single()
 
-    if (member) {
-        if (member.valid_until && new Date(member.valid_until) > new Date()) {
-          finalPrice = applyMemberPricing(
-            price,
-            club.member_booking_pricing_mode,
-            club.member_booking_pricing_value
-          )
-          if (finalPrice <= 0) {
-            finalPaymentStatus = 'paid_member'
-          }
+    if (member && member.status === 'active') {
+      // Medical cert check: block if cert expired and account is older than 7 days
+      if (member.medical_certificate_valid_until) {
+        const certExpired = new Date(member.medical_certificate_valid_until) < new Date()
+        const accountAgeMs = Date.now() - new Date(member.created_at).getTime()
+        const graceOver = accountAgeMs > 7 * 24 * 60 * 60 * 1000
+        if (certExpired && graceOver) {
+          return { success: false, error: "Dein ärztliches Zeugnis ist abgelaufen. Bitte lade ein neues Zeugnis hoch, um Buchungen vorzunehmen." }
+        }
+      }
+
+      if (member.valid_until && new Date(member.valid_until) > new Date()) {
+        finalPrice = applyMemberPricing(
+          price,
+          club.member_booking_pricing_mode,
+          club.member_booking_pricing_value
+        )
+        if (finalPrice <= 0) {
+          finalPaymentStatus = 'paid_member'
         }
       }
     }
+  }
 
     // 2. Zeitberechnung & Slot Check (BEVOR wir den Code einlösen)
     const { startTime, endTime } = buildBookingTimes(date, time, durationMinutes)

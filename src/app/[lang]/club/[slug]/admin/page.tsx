@@ -7,6 +7,7 @@ import { DeleteBookingButton } from "@/components/admin/delete-button"
 import { getAdminContext } from "./_lib/get-admin-context"
 import { notFound } from "next/navigation"
 import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
+import { CheckCircle2, Circle } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -33,8 +34,48 @@ export default async function AdminPage({
     .eq("club_id", club.id)
     .order("start_time", { ascending: false })
 
+  const { count: memberCount } = await supabase
+    .from("club_members")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+
+  const { count: planCount } = await supabase
+    .from("membership_plans")
+    .select("id", { count: "exact", head: true })
+    .eq("club_id", club.id)
+
+  const isNewClub = !bookings?.length && !courts?.length && !memberCount
+  const onboardingSteps = [
+    { label: "Platz/Court anlegen", href: `/${lang}/club/${slug}/admin/courts`, done: (courts?.length || 0) > 0 },
+    { label: "Abo-Modell anlegen", href: `/${lang}/club/${slug}/admin/plans`, done: (planCount || 0) > 0 },
+    { label: "Mitglieder einladen", href: `/${lang}/club/${slug}/admin/members`, done: (memberCount || 0) > 0 },
+    { label: "Einstellungen prüfen", href: `/${lang}/club/${slug}/admin/settings`, done: !!club.admin_email },
+  ]
+
   return (
     <FeatureLockWrapper locked={locked}>
+      {isNewClub && (
+        <Card className="rounded-3xl border border-blue-200/60 bg-blue-50/80 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-blue-900">Willkommen bei Avaimo!</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-blue-800 mb-4">Dein Club ist eingerichtet. Folge diesen Schritten, um loszulegen:</p>
+            <div className="space-y-2">
+              {onboardingSteps.map((step, i) => (
+                <Link key={i} href={step.href} className="flex items-center gap-3 rounded-xl border border-blue-200/60 bg-white/80 px-4 py-3 text-sm hover:bg-white transition-colors">
+                  {step.done
+                    ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    : <Circle className="w-4 h-4 text-blue-300 shrink-0" />}
+                  <span className={step.done ? "line-through text-slate-400" : "text-slate-800 font-medium"}>{step.label}</span>
+                  {!step.done && <span className="ml-auto text-xs text-blue-500">→</span>}
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {bookings && courts && <DashboardStats bookings={bookings} courts={courts} />}
 
       <div className="grid xl:grid-cols-3 gap-6">

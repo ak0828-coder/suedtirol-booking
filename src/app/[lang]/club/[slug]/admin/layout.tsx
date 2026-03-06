@@ -2,6 +2,7 @@ import Link from "next/link"
 import { LogOut, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SidebarNav } from "@/components/admin/sidebar-nav"
+import { AdminMobileNav } from "@/components/admin/admin-mobile-nav"
 import { getAdminContext } from "./_lib/get-admin-context"
 import { AdminTourButton } from "@/components/tours/admin-tour-button"
 import { Suspense } from "react"
@@ -79,11 +80,12 @@ export default async function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <AdminMobileNav slug={slug} lang={lang} items={filtered} accentColor={club.primary_color} />
             <Suspense fallback={null}>
               <AdminTourButton />
             </Suspense>
             <Link href={`/${lang}/club/${slug}`} target="_blank">
-              <Button variant="outline" className="gap-2 rounded-full">
+              <Button variant="outline" className="gap-2 rounded-full hidden sm:flex">
                 <ExternalLink className="w-4 h-4" /> Vorschau
               </Button>
             </Link>

@@ -8,19 +8,17 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
   const safeBookings = Array.isArray(bookings) ? bookings : []
   const safeCourts = Array.isArray(courts) ? courts : []
 
-  // KPI: Gesamtumsatz berechnen (vereinfachte Annahme: jede Buchung zahlt Platzpreis)
+  // KPI: Gesamtumsatz aus tatsächlich bezahlten Beträgen
   const totalRevenue = safeBookings.reduce((sum, booking) => {
-    const court = safeCourts.find((c) => c.id === booking.court_id)
-    return sum + (court ? court.price_per_hour : 0)
+    return sum + (Number(booking.price_paid) || 0)
   }, 0)
 
   const totalBookings = safeBookings.length
 
-  // Umsatz pro Tag
+  // Umsatz pro Tag (letzte 7 Tage)
   const revenueByDayMap = safeBookings.reduce((acc: any, booking) => {
     const date = new Date(booking.start_time).toLocaleDateString("de-DE", { weekday: "short" })
-    const court = safeCourts.find((c) => c.id === booking.court_id)
-    const price = court ? court.price_per_hour : 0
+    const price = Number(booking.price_paid) || 0
     acc[date] = (acc[date] || 0) + price
     return acc
   }, {})
@@ -55,8 +53,8 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
             <Euro className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totalRevenue} EUR</div>
-            <p className="text-xs text-muted-foreground">+20.1% zum Vormonat (Demo)</p>
+            <div className="text-2xl font-semibold">{totalRevenue.toFixed(2)} EUR</div>
+            <p className="text-xs text-muted-foreground">Tatsächlich vereinnahmt</p>
           </CardContent>
         </Card>
 

@@ -27,7 +27,7 @@ export function WelcomeMemberEmailTemplate({
         : existingUser
         ? `Du hast nun Zugang zum Verein ${clubName}. Klicke auf den Button, um dich einzuloggen.`
         : "Deine Mitgliedschaft wurde erfolgreich bestätigt. Klicke auf den Button, um dich einzuloggen.",
-      linkNote: "Dieser Link ist 24 Stunden gültig. Danach kannst du dich mit „Passwort vergessen" anmelden.",
+      linkNote: "Dieser Link ist 24 Stunden gültig. Danach kannst du dich mit \"Passwort vergessen\" anmelden.",
       email_label: "E-Mail",
       cta: needsPassword ? "Passwort festlegen & einloggen" : "Jetzt einloggen",
       fallback: "Falls der Button nicht funktioniert, kopiere diesen Link:",

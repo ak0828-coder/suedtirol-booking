@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trophy, Calendar, Clock, User, Sparkles, ArrowRight } from "lucide-react"
+import { Trophy, Calendar, Clock, Sparkles, ArrowRight, CreditCard, AlertTriangle, Dumbbell } from "lucide-react"
 import { format } from "date-fns"
 import { getClubRanking, getMyBadges, getMyMemberStats, getProfile } from "@/app/actions"
 import { CancelBookingButton } from "@/components/cancel-booking-button"
@@ -74,7 +74,7 @@ export default async function MemberDashboard({
   const supabaseAdmin = getAdminClient()
   const { data: member } = await supabaseAdmin
     .from("club_members")
-    .select("*, membership_plans(name), contract_signed_at")
+    .select("*, membership_plans(name, billing_interval), contract_signed_at, medical_certificate_valid_until")
     .eq("user_id", user.id)
     .eq("club_id", club.id)
     .single()
@@ -100,6 +100,13 @@ export default async function MemberDashboard({
       </div>
     )
   }
+
+  // Medical cert expiry check
+  const certValidUntil = member?.medical_certificate_valid_until ? new Date(member.medical_certificate_valid_until) : null
+  const certExpiringSoon = certValidUntil
+    ? (certValidUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24) < 30
+    : false
+  const certExpired = certValidUntil ? certValidUntil < new Date() : false
 
   const { data: contractDocs } = await supabase
     .from("member_documents")
@@ -167,6 +174,27 @@ export default async function MemberDashboard({
               <Link href={`/${lang}/club/${slug}/onboarding?post_payment=1`}>
                 <Button variant="outline" className="rounded-full">
                   Zum Onboarding
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {certValidUntil && (certExpired || certExpiringSoon) && (
+          <Card className={`rounded-2xl border p-5 text-sm shadow-sm ${certExpired ? "border-red-200/80 bg-red-50/80 text-red-900" : "border-amber-200/80 bg-amber-50/80 text-amber-900"}`}>
+            <div className="flex items-center gap-2 font-semibold">
+              <AlertTriangle className="w-4 h-4" />
+              {certExpired ? t("dashboard.cert.expired", "Ärztliches Zeugnis abgelaufen") : t("dashboard.cert.expiring", "Ärztliches Zeugnis läuft bald ab")}
+            </div>
+            <p className="mt-1 opacity-80">
+              {certExpired
+                ? t("dashboard.cert.expired_desc", "Dein ärztliches Zeugnis ist abgelaufen. Bitte lade ein neues hoch, um weiterhin buchen zu können.")
+                : t("dashboard.cert.expiring_desc", `Dein ärztliches Zeugnis läuft am ${certValidUntil.toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE")} ab. Bitte lade rechtzeitig ein neues hoch.`)}
+            </p>
+            <div className="mt-3">
+              <Link href={`/${lang}/club/${slug}/dashboard/documents`}>
+                <Button variant="outline" size="sm" className="rounded-full">
+                  {t("dashboard.cert.upload_cta", "Zeugnis hochladen")}
                 </Button>
               </Link>
             </div>
@@ -275,16 +303,37 @@ export default async function MemberDashboard({
           <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center">
-                <User className="text-slate-600" /> {t("dashboard.cards.profile", "Profil")}
+                <CreditCard className="club-primary-text" /> {t("dashboard.cards.subscription", "Mein Abo")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl font-semibold">{member.membership_plans?.name || t("dashboard.status.active", "Aktiv")}</div>
+              <div className="text-sm text-slate-500 mt-1">
+                {member.valid_until
+                  ? `${t("dashboard.valid_until", "Gültig bis:")} ${new Date(member.valid_until).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE")}`
+                  : t("dashboard.unlimited", "Unbegrenzt")}
+              </div>
+              <div className="mt-2">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${member.payment_status === "paid" || member.payment_status === "paid_cash" ? "bg-green-100 text-green-700" : member.payment_status === "unpaid" || member.payment_status === "overdue" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"}`}>
+                  {member.payment_status === "paid" || member.payment_status === "paid_cash" ? t("dashboard.subscription.paid", "Bezahlt") : member.payment_status === "unpaid" ? t("dashboard.subscription.unpaid", "Offen") : member.payment_status === "overdue" ? t("dashboard.subscription.overdue", "Überfällig") : member.payment_status || t("dashboard.status.active", "Aktiv")}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Dumbbell className="club-primary-text" /> {t("dashboard.cards.training", "Training & Kurse")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-sm text-slate-500 mb-4">
-                {t("dashboard.profile_desc", "Pflege deine Kontaktdaten und Angaben.")}
+                {t("dashboard.training_desc", "Trainerstunden buchen und Kurse entdecken.")}
               </div>
-              <Link href={`/${lang}/club/${slug}/dashboard/settings`}>
-                <Button variant="outline" size="sm" className="rounded-full">
-                  {t("dashboard.profile_cta", "Einstellungen öffnen")}
+              <Link href={`/${lang}/club/${slug}/dashboard/training`}>
+                <Button variant="outline" size="sm" className="rounded-full gap-2">
+                  {t("dashboard.training_cta", "Training entdecken")} <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>
             </CardContent>
