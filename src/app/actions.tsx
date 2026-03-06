@@ -2891,6 +2891,89 @@ export async function ensureMembershipFromCheckoutSession(sessionId: string) {
   }
 }
 
+export async function createBillingPortalSession(clubSlug: string, returnPath?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+
+  // Get club to find stripe_account_id
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id, stripe_account_id, default_language")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { error: "Club nicht gefunden" }
+
+  // Get stripe_customer_id from profiles
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("stripe_customer_id")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile?.stripe_customer_id) return { error: "Kein Stripe-Konto gefunden. Bitte wende dich an den Club." }
+
+  const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
+  const returnUrl = returnPath
+    ? `${base}${returnPath}`
+    : `${base}/${(club as any).default_language || "de"}/club/${clubSlug}/dashboard`
+
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: returnUrl,
+      ...(club.stripe_account_id ? { on_behalf_of: club.stripe_account_id } : {}),
+    })
+    return { url: portalSession.url }
+  } catch (err: any) {
+    console.error("createBillingPortalSession error:", err)
+    return { error: "Stripe Portal konnte nicht geöffnet werden." }
+  }
+}
+
+export async function cancelMembershipAtPeriodEnd(clubSlug: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("id")
+    .eq("slug", clubSlug)
+    .single()
+  if (!club) return { error: "Club nicht gefunden" }
+
+  const { data: member } = await supabaseAdmin
+    .from("club_members")
+    .select("id, stripe_subscription_id")
+    .eq("club_id", club.id)
+    .eq("user_id", user.id)
+    .single()
+  if (!member) return { error: "Keine Mitgliedschaft gefunden" }
+
+  if (member.stripe_subscription_id) {
+    try {
+      await stripe.subscriptions.update(member.stripe_subscription_id, {
+        cancel_at_period_end: true,
+      })
+    } catch (err: any) {
+      console.error("cancelMembership Stripe error:", err)
+      return { error: "Kündigung konnte nicht verarbeitet werden." }
+    }
+  }
+
+  await supabaseAdmin
+    .from("club_members")
+    .update({ payment_status: "cancelled" })
+    .eq("id", member.id)
+
+  revalidatePathAllLocales(`/club/${clubSlug}/dashboard`)
+  return { success: true }
+}
+
 export async function sendPostPaymentMagicLink(sessionId: string, lang: string) {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId)

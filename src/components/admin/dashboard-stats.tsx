@@ -15,17 +15,26 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
 
   const totalBookings = safeBookings.length
 
-  // Umsatz pro Tag (letzte 7 Tage)
-  const revenueByDayMap = safeBookings.reduce((acc: any, booking) => {
-    const date = new Date(booking.start_time).toLocaleDateString("de-DE", { weekday: "short" })
-    const price = Number(booking.price_paid) || 0
-    acc[date] = (acc[date] || 0) + price
-    return acc
-  }, {})
-
-  const chartData = Object.keys(revenueByDayMap).map((key) => ({
-    name: key,
-    total: revenueByDayMap[key],
+  // Umsatz pro Monat (letzte 6 Monate)
+  const now = new Date()
+  const months: string[] = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`)
+  }
+  const revenueByMonthMap: Record<string, number> = {}
+  months.forEach((m) => (revenueByMonthMap[m] = 0))
+  safeBookings.forEach((booking) => {
+    const d = new Date(booking.start_time)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    if (key in revenueByMonthMap) {
+      revenueByMonthMap[key] = (revenueByMonthMap[key] || 0) + (Number(booking.price_paid) || 0)
+    }
+  })
+  const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+  const chartData = months.map((key) => ({
+    name: monthNames[parseInt(key.split("-")[1]) - 1],
+    total: revenueByMonthMap[key],
   }))
 
   // Beliebteste Plätze
@@ -84,7 +93,7 @@ export function DashboardStats({ bookings, courts }: { bookings: any[]; courts: 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4 rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
-            <CardTitle>Umsatz Übersicht</CardTitle>
+            <CardTitle>Umsatz (letzte 6 Monate)</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[240px]">

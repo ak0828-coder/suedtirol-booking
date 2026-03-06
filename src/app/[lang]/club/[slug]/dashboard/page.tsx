@@ -14,6 +14,7 @@ import { Suspense } from "react"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
 import { getAdminClient } from "@/lib/supabase/admin"
+import { BillingPortalButton, CancelMembershipButton } from "@/components/dashboard/subscription-actions"
 
 export default async function MemberDashboard({
   params,
@@ -147,6 +148,13 @@ export default async function MemberDashboard({
     : { data: [] }
 
   const recapMap = new Map((recaps || []).map((r: any) => [r.booking_id, r]))
+
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("stripe_customer_id")
+    .eq("id", user.id)
+    .single()
+  const hasStripeCustomer = !!profileData?.stripe_customer_id
 
   const profile = await getProfile()
   const ranking = await getClubRanking(club.id)
@@ -306,17 +314,43 @@ export default async function MemberDashboard({
                 <CreditCard className="club-primary-text" /> {t("dashboard.cards.subscription", "Mein Abo")}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <div className="text-xl font-semibold">{member.membership_plans?.name || t("dashboard.status.active", "Aktiv")}</div>
-              <div className="text-sm text-slate-500 mt-1">
+              <div className="text-sm text-slate-500">
                 {member.valid_until
                   ? `${t("dashboard.valid_until", "Gültig bis:")} ${new Date(member.valid_until).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE")}`
                   : t("dashboard.unlimited", "Unbegrenzt")}
               </div>
-              <div className="mt-2">
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${member.payment_status === "paid" || member.payment_status === "paid_cash" ? "bg-green-100 text-green-700" : member.payment_status === "unpaid" || member.payment_status === "overdue" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"}`}>
-                  {member.payment_status === "paid" || member.payment_status === "paid_cash" ? t("dashboard.subscription.paid", "Bezahlt") : member.payment_status === "unpaid" ? t("dashboard.subscription.unpaid", "Offen") : member.payment_status === "overdue" ? t("dashboard.subscription.overdue", "Überfällig") : member.payment_status || t("dashboard.status.active", "Aktiv")}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  member.payment_status === "paid" || member.payment_status === "paid_stripe" || member.payment_status === "paid_cash"
+                    ? "bg-green-100 text-green-700"
+                    : member.payment_status === "overdue"
+                    ? "bg-red-100 text-red-700"
+                    : member.payment_status === "cancelled"
+                    ? "bg-orange-100 text-orange-700"
+                    : "bg-slate-100 text-slate-600"
+                }`}>
+                  {member.payment_status === "paid" || member.payment_status === "paid_stripe" || member.payment_status === "paid_cash"
+                    ? t("dashboard.subscription.paid", "Bezahlt")
+                    : member.payment_status === "overdue"
+                    ? t("dashboard.subscription.overdue", "Überfällig")
+                    : member.payment_status === "cancelled"
+                    ? t("dashboard.subscription.cancelled", "Gekündigt")
+                    : member.payment_status === "unpaid"
+                    ? t("dashboard.subscription.unpaid", "Offen")
+                    : t("dashboard.status.active", "Aktiv")}
                 </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <BillingPortalButton
+                  clubSlug={slug}
+                  returnPath={`/${lang}/club/${slug}/dashboard`}
+                  hasStripeCustomer={hasStripeCustomer}
+                />
+                {member.stripe_subscription_id && member.payment_status !== "cancelled" && (
+                  <CancelMembershipButton clubSlug={slug} />
+                )}
               </div>
             </CardContent>
           </Card>

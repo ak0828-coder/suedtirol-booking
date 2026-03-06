@@ -648,10 +648,43 @@ export async function POST(req: Request) {
 
   if (event.type === "invoice.payment_failed") {
     const subscriptionId = session.subscription
+    if (subscriptionId) {
+      await supabaseAdmin
+        .from("club_members")
+        .update({ status: "expired", payment_status: "overdue" })
+        .eq("stripe_subscription_id", subscriptionId)
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object as any
     await supabaseAdmin
       .from("club_members")
-      .update({ status: "expired" })
-      .eq("stripe_subscription_id", subscriptionId)
+      .update({ status: "expired", payment_status: "cancelled" })
+      .eq("stripe_subscription_id", sub.id)
+  }
+
+  if (event.type === "customer.subscription.updated") {
+    const sub = event.data.object as any
+    const status = sub.status // active, past_due, canceled, unpaid, trialing
+    const cancelAtEnd = sub.cancel_at_period_end
+
+    if (status === "active" && !cancelAtEnd) {
+      await supabaseAdmin
+        .from("club_members")
+        .update({ status: "active", payment_status: "paid_stripe" })
+        .eq("stripe_subscription_id", sub.id)
+    } else if (status === "past_due") {
+      await supabaseAdmin
+        .from("club_members")
+        .update({ payment_status: "overdue" })
+        .eq("stripe_subscription_id", sub.id)
+    } else if (cancelAtEnd) {
+      await supabaseAdmin
+        .from("club_members")
+        .update({ payment_status: "cancelled" })
+        .eq("stripe_subscription_id", sub.id)
+    }
   }
 
   return new NextResponse(null, { status: 200 })
