@@ -628,24 +628,18 @@ export async function POST(req: Request) {
       .single()
 
     if (member) {
-      // Avoid extending valid_until multiple times for the same invoice
-      if (member.last_processed_invoice_id === invoiceId) {
-        console.log("invoice.payment_succeeded already processed:", invoiceId)
-      } else {
-        const currentValid = new Date(member.valid_until)
-        const now = new Date()
-        const baseDate = currentValid > now ? currentValid : now
-        baseDate.setFullYear(baseDate.getFullYear() + 1)
+      const currentValid = new Date(member.valid_until)
+      const now = new Date()
+      const baseDate = currentValid > now ? currentValid : now
+      baseDate.setFullYear(baseDate.getFullYear() + 1)
 
-        await supabaseAdmin
-          .from("club_members")
-          .update({
-            status: "active",
-            valid_until: baseDate.toISOString(),
-            last_processed_invoice_id: invoiceId,
-          })
-          .eq("id", member.id)
-      }
+      await supabaseAdmin
+        .from("club_members")
+        .update({
+          status: "active",
+          valid_until: baseDate.toISOString(),
+        })
+        .eq("id", member.id)
     }
   }
 
