@@ -576,33 +576,8 @@ async function upsertMembershipFromCheckoutSession(session: any) {
           updated_at: new Date().toISOString(),
         })
       }
-
-      const { data: club } = await supabaseAdmin
-        .from("clubs")
-        .select("name, default_language")
-        .eq("id", clubId)
-        .single()
-      const clubName = club?.name || "Club"
-      const lang = isLocale(club?.default_language ?? "") ? club!.default_language : defaultLocale
-
-      try {
-        await resend.emails.send({
-          from: "Avaimo <info@avaimo.com>",
-          to: [customerEmail],
-          subject: `${clubName}`,
-          react: (
-            <WelcomeMemberEmailTemplate
-              clubName={clubName}
-              email={customerEmail}
-              password={tempPassword}
-              loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login`}
-              lang={lang}
-            />
-          ),
-        })
-      } catch (emailError) {
-        console.error("Member email error:", emailError)
-      }
+      // No email sent here — sendPostPaymentMagicLink handles the welcome email
+      // with a magic link that routes through change-password so the user sets a real password.
     }
   }
 
@@ -2907,13 +2882,31 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     }
 
     const safeLang = isLocale(lang) ? lang : defaultLocale
-    const nextPath = `/${safeLang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${encodeURIComponent(sessionId)}`
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
-    const redirectTo = `${base}/${safeLang}/auth/callback?next=${encodeURIComponent(nextPath)}`
 
-    // We deliberately do NOT rely on Supabase's SMTP here, because OTP emails are sent by Supabase Auth.
-    // Instead, we generate the magic link with the Admin API and send it via Resend (our mail provider).
+    // Check if the user needs to set a password (new account created during payment)
     const supabaseAdmin = getAdminClient()
+    const foundUserId = await findUserIdByEmail(supabaseAdmin, email)
+    let needsPasswordSetup = false
+    let clubNameForEmail = meta.clubSlug as string
+    if (foundUserId) {
+      const { data: userRecord } = await supabaseAdmin.auth.admin.getUserById(foundUserId)
+      needsPasswordSetup = !!(userRecord?.user?.user_metadata?.must_change_password)
+      const { data: clubRecord } = await supabaseAdmin
+        .from("clubs")
+        .select("name")
+        .eq("slug", meta.clubSlug)
+        .single()
+      if (clubRecord?.name) clubNameForEmail = clubRecord.name
+    }
+
+    const onboardingPath = `/${safeLang}/club/${meta.clubSlug}/onboarding?post_payment=1&session_id=${encodeURIComponent(sessionId)}`
+    // New users must set a password first, then continue to onboarding
+    const nextPath = needsPasswordSetup
+      ? `/${safeLang}/change-password?after=${encodeURIComponent(onboardingPath)}`
+      : onboardingPath
+
+    const redirectTo = `${base}/${safeLang}/auth/callback?next=${encodeURIComponent(nextPath)}`
 
     const { data, error } = await (supabaseAdmin.auth.admin as any).generateLink({
       type: "magiclink",
@@ -2930,19 +2923,17 @@ export async function sendPostPaymentMagicLink(sessionId: string, lang: string) 
     await resend.emails.send({
       from: "Avaimo <info@avaimo.com>",
       to: [email],
-      subject: "Dein Login-Link",
-      html: `
-        <div style="font-family: Arial, sans-serif; color: #0f172a;">
-          <h2>Login-Link</h2>
-          <p>Klicke auf den Button, um dich einzuloggen und dein Onboarding abzuschließen:</p>
-          <p style="margin: 20px 0;">
-            <a href="${actionLink}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 16px;border-radius:9999px;text-decoration:none;font-weight:600;">
-              Jetzt einloggen
-            </a>
-          </p>
-          <p style="font-size:12px;color:#64748b;">Falls du das nicht warst, kannst du diese E-Mail ignorieren.</p>
-        </div>
-      `,
+      subject: `Willkommen bei ${clubNameForEmail} – Jetzt einloggen`,
+      react: (
+        <WelcomeMemberEmailTemplate
+          clubName={clubNameForEmail}
+          email={email}
+          magicLink={actionLink}
+          loginUrl={`${base}/${safeLang}/club/${meta.clubSlug}/login`}
+          lang={safeLang}
+          needsPassword={needsPasswordSetup}
+        />
+      ),
     })
 
     return { success: true, email }
