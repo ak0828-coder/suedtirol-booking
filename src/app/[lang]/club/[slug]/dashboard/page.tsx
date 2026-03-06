@@ -81,20 +81,25 @@ export default async function MemberDashboard({
     .single()
 
   if (!member) {
+    const noMemberCopy = {
+      de: { title: "Kein Mitgliedskonto gefunden", desc: `Du bist als eingeloggt. Für diesen Account existiert keine Mitgliedschaft in diesem Verein.`, switch: "Account wechseln", back: "Zurück zum Club" },
+      en: { title: "No membership found", desc: `You are logged in as. No membership for this account exists in this club.`, switch: "Switch account", back: "Back to club" },
+      it: { title: "Nessun abbonamento trovato", desc: `Sei connesso come. Nessuna iscrizione per questo account esiste in questo club.`, switch: "Cambia account", back: "Torna al club" },
+    }
+    const nm = noMemberCopy[lang as "de" | "en" | "it"] || noMemberCopy.de
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">Kein Mitgliedskonto gefunden</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">{nm.title}</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Du bist als <strong>{user.email}</strong> eingeloggt. Für diesen Account existiert keine
-            Mitgliedschaft in diesem Verein.
+            {lang === "de" ? <>Du bist als <strong>{user.email}</strong> eingeloggt. Für diesen Account existiert keine Mitgliedschaft in diesem Verein.</> : lang === "en" ? <>You are logged in as <strong>{user.email}</strong>. No membership for this account exists in this club.</> : <>Sei connesso come <strong>{user.email}</strong>. Nessuna iscrizione per questo account esiste in questo club.</>}
           </p>
           <div className="mt-4 space-y-2">
             <Button asChild className="w-full">
-              <Link href={`/${lang}/login`}>Account wechseln</Link>
+              <Link href={`/${lang}/login`}>{nm.switch}</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
-              <Link href={`/${lang}/club/${slug}`}>Zurück zum Club</Link>
+              <Link href={`/${lang}/club/${slug}`}>{nm.back}</Link>
             </Button>
           </div>
         </div>
@@ -174,14 +179,16 @@ export default async function MemberDashboard({
       <div className="max-w-4xl mx-auto space-y-6 app-pad pt-4 sm:pt-6">
         {!hasContract && (
           <Card className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5 text-sm text-amber-900 shadow-sm">
-            <div className="font-semibold">Onboarding unvollständig</div>
+            <div className="font-semibold">
+              {t("dashboard.onboarding.title", "Onboarding unvollständig")}
+            </div>
             <p className="mt-1 text-amber-800">
-              Bitte unterschreibe den Mitgliedsvertrag, um alle Funktionen freizuschalten.
+              {t("dashboard.onboarding.desc", "Bitte unterschreibe den Mitgliedsvertrag, um alle Funktionen freizuschalten.")}
             </p>
             <div className="mt-3">
               <Link href={`/${lang}/club/${slug}/onboarding?post_payment=1`}>
                 <Button variant="outline" className="rounded-full">
-                  Zum Onboarding
+                  {t("dashboard.onboarding.cta", "Zum Onboarding")}
                 </Button>
               </Link>
             </div>

@@ -524,7 +524,19 @@
                       "book_now":  "Book now",
                       "unlimited":  "Unlimited",
                       "points":  "Points",
-                      "greeting":  "Hello"
+                      "greeting":  "Hello",
+                      "onboarding":  {
+                                         "title":  "Onboarding incomplete",
+                                         "desc":  "Please sign the membership contract to unlock all features.",
+                                         "cta":  "Go to onboarding"
+                                     },
+                      "cert":  {
+                                   "expired":  "Medical certificate expired",
+                                   "expiring":  "Medical certificate expiring soon",
+                                   "expired_desc":  "Your medical certificate has expired. Please upload a new one to continue booking.",
+                                   "expiring_desc":  "Your medical certificate is expiring soon. Please upload a new one in time.",
+                                   "upload_cta":  "Upload certificate"
+                               }
                   },
     "member_settings":  {
                             "title":  "Member settings",

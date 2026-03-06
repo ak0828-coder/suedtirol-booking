@@ -3991,59 +3991,82 @@ export async function uploadMemberDocument(formData: FormData) {
   const aiMode = (club.ai_doc_mode ?? "buffer_30") as "buffer_30" | "ai_only"
 
   if (docType === "medical_certificate" && aiEnabled) {
-    const { data: signed } = await supabaseAdmin.storage
-      .from(MEMBER_DOC_BUCKET)
-      .createSignedUrl(filePath, 60 * 10)
+    const isPdf = file.type === "application/pdf"
+    const now = new Date()
+    const tempValid = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
-    if (signed?.signedUrl) {
-      const ai = await analyzeMedicalCertificateImage(signed.signedUrl)
-      const now = new Date()
-      const tempValid = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
-
-      const isOk =
-        !!ai &&
-        ai.is_medical_certificate &&
-        ai.is_italian &&
-        ai.has_doctor_signature_or_stamp &&
-        ai.has_date
-
+    if (isPdf) {
+      // PDF: vision AI can't analyze PDFs — fall back to manual admin review with temp validity
       await supabaseAdmin
         .from("member_documents")
         .update({
-          ai_status: isOk ? "ok" : "reject",
-          ai_confidence: ai?.confidence ?? null,
-          ai_reason: ai?.reason ?? "Keine KI-Antwort",
-          temp_valid_until: isOk ? tempValid : null,
+          ai_status: "error",
+          ai_reason: "PDF-Dokumente werden manuell durch den Admin geprüft.",
+          temp_valid_until: tempValid,
         })
         .eq("id", doc.id)
+    } else {
+      const { data: signed } = await supabaseAdmin.storage
+        .from(MEMBER_DOC_BUCKET)
+        .createSignedUrl(filePath, 60 * 10)
 
-      if (isOk && aiMode === "buffer_30") {
-        await supabaseAdmin
-          .from("club_members")
-          .update({ medical_certificate_valid_until: tempValid })
-          .eq("club_id", club.id)
-          .eq("user_id", user.id)
-      } else if (isOk && aiMode === "ai_only") {
-        const finalValid = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      if (!signed?.signedUrl) {
         await supabaseAdmin
           .from("member_documents")
-          .update({
-            review_status: "approved",
-            valid_until: finalValid
-          })
+          .update({ ai_status: "error", ai_reason: "Wird manuell geprüft.", temp_valid_until: tempValid })
           .eq("id", doc.id)
+      } else {
+        const ai = await analyzeMedicalCertificateImage(signed.signedUrl)
 
-        await supabaseAdmin
-          .from("club_members")
-          .update({ medical_certificate_valid_until: finalValid })
-          .eq("club_id", club.id)
-          .eq("user_id", user.id)
+        if (!ai) {
+          // OpenAI call failed — don't reject, let admin review manually
+          await supabaseAdmin
+            .from("member_documents")
+            .update({
+              ai_status: "error",
+              ai_reason: "Automatische Prüfung nicht möglich — wird manuell geprüft.",
+              temp_valid_until: tempValid,
+            })
+            .eq("id", doc.id)
+        } else {
+          const isOk =
+            ai.is_medical_certificate &&
+            ai.is_italian &&
+            ai.has_doctor_signature_or_stamp &&
+            ai.has_date
+
+          await supabaseAdmin
+            .from("member_documents")
+            .update({
+              ai_status: isOk ? "ok" : "reject",
+              ai_confidence: ai.confidence ?? null,
+              ai_reason: isOk
+                ? (ai.reason || null)
+                : (ai.reason || "Das Dokument wurde nicht als gültiges ärztliches Sportzeugnis erkannt."),
+              temp_valid_until: isOk ? tempValid : null,
+            })
+            .eq("id", doc.id)
+
+          if (isOk && aiMode === "buffer_30") {
+            await supabaseAdmin
+              .from("club_members")
+              .update({ medical_certificate_valid_until: tempValid })
+              .eq("club_id", club.id)
+              .eq("user_id", user.id)
+          } else if (isOk && aiMode === "ai_only") {
+            const finalValid = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            await supabaseAdmin
+              .from("member_documents")
+              .update({ review_status: "approved", valid_until: finalValid })
+              .eq("id", doc.id)
+            await supabaseAdmin
+              .from("club_members")
+              .update({ medical_certificate_valid_until: finalValid })
+              .eq("club_id", club.id)
+              .eq("user_id", user.id)
+          }
+        }
       }
-    } else {
-      await supabaseAdmin
-        .from("member_documents")
-        .update({ ai_status: "error", ai_reason: "Signed URL fehlgeschlagen" })
-        .eq("id", doc.id)
     }
   }
 

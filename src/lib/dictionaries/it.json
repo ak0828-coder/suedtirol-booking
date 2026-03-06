@@ -524,7 +524,19 @@
                       "book_now":  "Prenota ora",
                       "unlimited":  "Illimitato",
                       "points":  "Punti",
-                      "greeting":  "Ciao"
+                      "greeting":  "Ciao",
+                      "onboarding":  {
+                                         "title":  "Onboarding incompleto",
+                                         "desc":  "Firma il contratto di iscrizione per sbloccare tutte le funzioni.",
+                                         "cta":  "Vai all'onboarding"
+                                     },
+                      "cert":  {
+                                   "expired":  "Certificato medico scaduto",
+                                   "expiring":  "Certificato medico in scadenza",
+                                   "expired_desc":  "Il tuo certificato medico è scaduto. Carica un nuovo per continuare a prenotare.",
+                                   "expiring_desc":  "Il tuo certificato medico sta per scadere. Carica un nuovo in tempo.",
+                                   "upload_cta":  "Carica certificato"
+                               }
                   },
     "member_settings":  {
                             "title":  "Impostazioni membro",

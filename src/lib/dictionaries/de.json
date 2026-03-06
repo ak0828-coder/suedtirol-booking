@@ -524,7 +524,19 @@
                       "book_now":  "Jetzt buchen",
                       "unlimited":  "Unbegrenzt",
                       "points":  "Punkte",
-                      "greeting":  "Hallo"
+                      "greeting":  "Hallo",
+                      "onboarding":  {
+                                         "title":  "Onboarding unvollständig",
+                                         "desc":  "Bitte unterschreibe den Mitgliedsvertrag, um alle Funktionen freizuschalten.",
+                                         "cta":  "Zum Onboarding"
+                                     },
+                      "cert":  {
+                                   "expired":  "Ärztliches Zeugnis abgelaufen",
+                                   "expiring":  "Ärztliches Zeugnis läuft bald ab",
+                                   "expired_desc":  "Dein ärztliches Zeugnis ist abgelaufen. Bitte lade ein neues hoch, um weiterhin buchen zu können.",
+                                   "expiring_desc":  "Dein ärztliches Zeugnis läuft bald ab. Bitte lade rechtzeitig ein neues hoch.",
+                                   "upload_cta":  "Zeugnis hochladen"
+                               }
                   },
     "member_settings":  {
                             "title":  "Mitglied-Einstellungen",
