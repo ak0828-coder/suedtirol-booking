@@ -30,16 +30,16 @@ export default async function MemberDashboard({
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) {
+    const loginCopy = { de: { title: "Bitte einloggen", desc: "Für den Mitgliederbereich musst du eingeloggt sein.", btn: "Zum Login" }, en: { title: "Please sign in", desc: "You need to be signed in to access the member area.", btn: "Sign in" }, it: { title: "Accedi", desc: "Devi essere connesso per accedere all'area riservata ai soci.", btn: "Accedi" } }
+    const lc = loginCopy[lang as "de" | "en" | "it"] || loginCopy.de
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">Bitte einloggen</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Für den Mitgliederbereich musst du eingeloggt sein.
-          </p>
+          <h1 className="text-2xl font-semibold text-slate-900">{lc.title}</h1>
+          <p className="mt-2 text-sm text-slate-500">{lc.desc}</p>
           <div className="mt-4">
             <Button asChild className="w-full">
-              <Link href={`/${lang}/club/${slug}/login?next=/${lang}/club/${slug}/dashboard`}>Zum Login</Link>
+              <Link href={`/${lang}/club/${slug}/login?next=/${lang}/club/${slug}/dashboard`}>{lc.btn}</Link>
             </Button>
           </div>
         </div>
@@ -54,16 +54,16 @@ export default async function MemberDashboard({
     .single()
 
   if (!club) {
+    const notFoundCopy = { de: { title: "Verein nicht gefunden", desc: `Der Club existiert nicht oder du hast keinen Zugriff.`, btn: "Zur Startseite" }, en: { title: "Club not found", desc: `This club does not exist or you don't have access.`, btn: "Go to home" }, it: { title: "Club non trovato", desc: `Questo club non esiste o non hai accesso.`, btn: "Vai alla home" } }
+    const nfc = notFoundCopy[lang as "de" | "en" | "it"] || notFoundCopy.de
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">Verein nicht gefunden</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Der Club <strong>{slug}</strong> existiert nicht (oder du hast keinen Zugriff).
-          </p>
+          <h1 className="text-2xl font-semibold text-slate-900">{nfc.title}</h1>
+          <p className="mt-2 text-sm text-slate-500">{nfc.desc}</p>
           <div className="mt-4">
             <Link href={`/${lang}`}>
-              <Button className="w-full">Zur Startseite</Button>
+              <Button className="w-full">{nfc.btn}</Button>
             </Link>
           </div>
         </div>

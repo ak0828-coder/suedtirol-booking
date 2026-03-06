@@ -11,12 +11,82 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { FeatureLockWrapper } from "@/components/admin/feature-lock-wrapper"
 
+const memberDetailCopy = {
+  de: {
+    unknown: "Unbekannt",
+    back: "Zurück",
+    status: "Status",
+    payment_status: "Zahlungsstatus",
+    email: "E-Mail",
+    next_payment: "Nächster Beitrag",
+    valid_until: "Mitglied gültig bis",
+    plan: "Mitgliedschaftsplan",
+    active: "Aktiv",
+    phone: "Telefon",
+    cert_until: "Attest gültig bis",
+    cert_missing: "Fehlt",
+    contract_signed: "Vertrag unterschrieben",
+    no: "Nein",
+    contract_version: "Vertragsversion",
+    credit: "Guthaben",
+    invite: "Einladung",
+    stripe_sub: "Stripe Abo",
+    extra_fields: "Zusatzangaben",
+    yes: "Ja",
+  },
+  en: {
+    unknown: "Unknown",
+    back: "Back",
+    status: "Status",
+    payment_status: "Payment status",
+    email: "Email",
+    next_payment: "Next payment",
+    valid_until: "Member valid until",
+    plan: "Membership plan",
+    active: "Active",
+    phone: "Phone",
+    cert_until: "Certificate valid until",
+    cert_missing: "Missing",
+    contract_signed: "Contract signed",
+    no: "No",
+    contract_version: "Contract version",
+    credit: "Credit balance",
+    invite: "Invite status",
+    stripe_sub: "Stripe subscription",
+    extra_fields: "Additional fields",
+    yes: "Yes",
+  },
+  it: {
+    unknown: "Sconosciuto",
+    back: "Indietro",
+    status: "Stato",
+    payment_status: "Stato pagamento",
+    email: "Email",
+    next_payment: "Prossimo pagamento",
+    valid_until: "Iscritto fino al",
+    plan: "Piano abbonamento",
+    active: "Attivo",
+    phone: "Telefono",
+    cert_until: "Certificato valido fino al",
+    cert_missing: "Mancante",
+    contract_signed: "Contratto firmato",
+    no: "No",
+    contract_version: "Versione contratto",
+    credit: "Saldo crediti",
+    invite: "Stato invito",
+    stripe_sub: "Abbonamento Stripe",
+    extra_fields: "Campi aggiuntivi",
+    yes: "Sì",
+  },
+}
+
 export default async function AdminMemberDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string; memberId: string }>
+  params: Promise<{ slug: string; memberId: string; lang: string }>
 }) {
-  const { slug, memberId } = await params
+  const { slug, memberId, lang } = await params
+  const mc = memberDetailCopy[(lang as keyof typeof memberDetailCopy)] || memberDetailCopy.de
   const { club, features, locks } = await getAdminContext(slug)
   if (!features.admin.members && !locks.admin.members) return notFound()
   const lockedPage = !features.admin.members && locks.admin.members
@@ -64,59 +134,59 @@ export default async function AdminMemberDetailPage({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
         <div>
           <h2 className="text-2xl font-semibold">
-            {profile?.first_name} {profile?.last_name || "Unbekannt"}
+            {profile?.first_name} {profile?.last_name || mc.unknown}
           </h2>
           <div className="text-sm text-slate-500">{profile?.id}</div>
         </div>
-        <Link href={`/club/${slug}/admin/members`}>
-          <Button variant="outline" className="rounded-full">Zurück</Button>
+        <Link href={`/${lang}/club/${slug}/admin/members`}>
+          <Button variant="outline" className="rounded-full">{mc.back}</Button>
         </Link>
       </div>
 
       <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-2">
-        <div className="text-sm text-slate-600">Status: {member.status}</div>
-        <div className="text-sm text-slate-600">Zahlungsstatus: {member.payment_status || "unbekannt"}</div>
-        <div className="text-sm text-slate-600">E-Mail: {email}</div>
+        <div className="text-sm text-slate-600">{mc.status}: {member.status}</div>
+        <div className="text-sm text-slate-600">{mc.payment_status}: {member.payment_status || "-"}</div>
+        <div className="text-sm text-slate-600">{mc.email}: {email}</div>
         <div className="text-sm text-slate-600">
-          Nächster Beitrag:{" "}
-          {member.next_payment_at ? new Date(member.next_payment_at).toLocaleDateString("de-DE") : "-"}
+          {mc.next_payment}:{" "}
+          {member.next_payment_at ? new Date(member.next_payment_at).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Mitglied gültig bis:{" "}
-          {member.valid_until ? new Date(member.valid_until).toLocaleDateString("de-DE") : "-"}
+          {mc.valid_until}:{" "}
+          {member.valid_until ? new Date(member.valid_until).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE") : "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Mitgliedschaftsplan: {plan?.name || "Aktiv"}
+          {mc.plan}: {plan?.name || mc.active}
         </div>
-        <div className="text-sm text-slate-600">Telefon: {profile?.phone || "-"}</div>
+        <div className="text-sm text-slate-600">{mc.phone}: {profile?.phone || "-"}</div>
         <div className="text-sm text-slate-600">
-          Attest gültig bis:{" "}
+          {mc.cert_until}:{" "}
           {member.medical_certificate_valid_until
-            ? new Date(member.medical_certificate_valid_until).toLocaleDateString("de-DE")
-            : "Fehlt"}
+            ? new Date(member.medical_certificate_valid_until).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE")
+            : mc.cert_missing}
         </div>
         <div className="text-sm text-slate-600">
-          Vertrag unterschrieben:{" "}
-          {member.contract_signed_at ? new Date(member.contract_signed_at).toLocaleDateString("de-DE") : "Nein"}
+          {mc.contract_signed}:{" "}
+          {member.contract_signed_at ? new Date(member.contract_signed_at).toLocaleDateString(lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE") : mc.no}
         </div>
         <div className="text-sm text-slate-600">
-          Vertragsversion: {member.contract_version || "-"}
+          {mc.contract_version}: {member.contract_version || "-"}
         </div>
         <div className="text-sm text-slate-600">
-          Guthaben: {member.credit_balance ?? 0} EUR
+          {mc.credit}: {member.credit_balance ?? 0} EUR
         </div>
         <div className="text-sm text-slate-600">
-          Einladung: {member.invite_status || "-"}</div>
+          {mc.invite}: {member.invite_status || "-"}</div>
         <div className="text-sm text-slate-600">
-          Stripe Abo: {member.stripe_subscription_id ? "Aktiv" : "-"}
+          {mc.stripe_sub}: {member.stripe_subscription_id ? mc.active : "-"}
         </div>
         {extraFields.length > 0 ? (
           <div className="pt-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Zusatzangaben</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">{mc.extra_fields}</div>
             <div className="mt-2 space-y-1">
               {extraFields.map(([key, value]) => (
                 <div key={key} className="text-sm text-slate-600">
-                  {key}: {typeof value === "boolean" ? (value ? "Ja" : "Nein") : String(value || "-")}
+                  {key}: {typeof value === "boolean" ? (value ? mc.yes : mc.no) : String(value || "-")}
                 </div>
               ))}
             </div>

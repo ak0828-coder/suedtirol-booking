@@ -45,11 +45,52 @@ export default async function AdminPage({
     .eq("club_id", club.id)
 
   const isNewClub = !bookings?.length && !courts?.length && !memberCount
+
+  const adminPageCopy = {
+    de: {
+      welcome_title: "Willkommen bei Avaimo!",
+      welcome_desc: "Dein Club ist eingerichtet. Folge diesen Schritten, um loszulegen:",
+      steps: ["Platz/Court anlegen", "Abo-Modell anlegen", "Mitglieder einladen", "Einstellungen prüfen"],
+      activity_title: "Letzte Aktivitäten",
+      entries: "Einträge",
+      unknown_court: "Unbekannter Platz",
+      no_bookings: "Noch keine Buchungen vorhanden.",
+      quick_title: "Schnellzugriff",
+      pay_pending: "Ausstehend", pay_cash: "Vor Ort", pay_member: "Abo", pay_online: "Online",
+      links: ["Einstellungen", "Gutscheine", "Plätze", "Sperrzeiten", "Abos", "Mitglieder", "Trainer", "Kurse", "Finanzen", "CSV Export"],
+    },
+    en: {
+      welcome_title: "Welcome to Avaimo!",
+      welcome_desc: "Your club is set up. Follow these steps to get started:",
+      steps: ["Create court", "Create membership plan", "Invite members", "Check settings"],
+      activity_title: "Recent activity",
+      entries: "entries",
+      unknown_court: "Unknown court",
+      no_bookings: "No bookings yet.",
+      quick_title: "Quick access",
+      pay_pending: "Pending", pay_cash: "On-site", pay_member: "Membership", pay_online: "Online",
+      links: ["Settings", "Vouchers", "Courts", "Blocked times", "Plans", "Members", "Trainers", "Courses", "Finance", "CSV Export"],
+    },
+    it: {
+      welcome_title: "Benvenuto in Avaimo!",
+      welcome_desc: "Il tuo club è pronto. Segui questi passaggi per iniziare:",
+      steps: ["Crea campo/court", "Crea piano abbonamento", "Invita soci", "Controlla impostazioni"],
+      activity_title: "Attività recenti",
+      entries: "voci",
+      unknown_court: "Campo sconosciuto",
+      no_bookings: "Nessuna prenotazione ancora.",
+      quick_title: "Accesso rapido",
+      pay_pending: "In sospeso", pay_cash: "In sede", pay_member: "Abbonamento", pay_online: "Online",
+      links: ["Impostazioni", "Voucher", "Campi", "Blocchi orari", "Piani", "Soci", "Trainer", "Corsi", "Finanze", "CSV Export"],
+    },
+  }
+  const apc = adminPageCopy[lang as keyof typeof adminPageCopy] || adminPageCopy.de
+
   const onboardingSteps = [
-    { label: "Platz/Court anlegen", href: `/${lang}/club/${slug}/admin/courts`, done: (courts?.length || 0) > 0 },
-    { label: "Abo-Modell anlegen", href: `/${lang}/club/${slug}/admin/plans`, done: (planCount || 0) > 0 },
-    { label: "Mitglieder einladen", href: `/${lang}/club/${slug}/admin/members`, done: (memberCount || 0) > 0 },
-    { label: "Einstellungen prüfen", href: `/${lang}/club/${slug}/admin/settings`, done: !!club.admin_email },
+    { label: apc.steps[0], href: `/${lang}/club/${slug}/admin/courts`, done: (courts?.length || 0) > 0 },
+    { label: apc.steps[1], href: `/${lang}/club/${slug}/admin/plans`, done: (planCount || 0) > 0 },
+    { label: apc.steps[2], href: `/${lang}/club/${slug}/admin/members`, done: (memberCount || 0) > 0 },
+    { label: apc.steps[3], href: `/${lang}/club/${slug}/admin/settings`, done: !!club.admin_email },
   ]
 
   return (
@@ -57,10 +98,10 @@ export default async function AdminPage({
       {isNewClub && (
         <Card className="rounded-3xl border border-blue-200/60 bg-blue-50/80 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-900">Willkommen bei Avaimo!</CardTitle>
+            <CardTitle className="text-blue-900">{apc.welcome_title}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-blue-800 mb-4">Dein Club ist eingerichtet. Folge diesen Schritten, um loszulegen:</p>
+            <p className="text-sm text-blue-800 mb-4">{apc.welcome_desc}</p>
             <div className="space-y-2">
               {onboardingSteps.map((step, i) => (
                 <Link key={i} href={step.href} className="flex items-center gap-3 rounded-xl border border-blue-200/60 bg-white/80 px-4 py-3 text-sm hover:bg-white transition-colors">
@@ -82,8 +123,8 @@ export default async function AdminPage({
         <div className="xl:col-span-2 space-y-6">
           <Card id="tour-admin-activity" className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Letzte Aktivitäten</CardTitle>
-              <span className="text-xs text-slate-500">{bookings?.length || 0} Einträge</span>
+              <CardTitle>{apc.activity_title}</CardTitle>
+              <span className="text-xs text-slate-500">{bookings?.length || 0} {apc.entries}</span>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[620px] overflow-auto pr-2">
@@ -98,10 +139,10 @@ export default async function AdminPage({
                       </div>
                       <div>
                         <div className="font-semibold text-slate-900">
-                          {booking.courts?.name || "Unbekannter Platz"}
+                          {booking.courts?.name || apc.unknown_court}
                         </div>
                         <div className="text-sm text-slate-500">
-                          {format(new Date(booking.start_time), "HH:mm")} Uhr - {booking.guest_name}
+                          {format(new Date(booking.start_time), "HH:mm")} – {booking.guest_name}
                         </div>
                       </div>
                     </div>
@@ -110,12 +151,12 @@ export default async function AdminPage({
                       <div className="text-right hidden sm:block">
                         <div className="font-medium text-slate-900">
                           {booking.status === "awaiting_payment" || booking.payment_status === "unpaid"
-                            ? "Ausstehend"
+                            ? apc.pay_pending
                             : booking.payment_status === "paid_cash"
-                              ? "Vor Ort"
+                              ? apc.pay_cash
                               : booking.payment_status === "paid_member"
-                                ? "Abo"
-                                : "Online"}
+                                ? apc.pay_member
+                                : apc.pay_online}
                         </div>
                         <div className="text-xs text-slate-500 capitalize">{booking.status}</div>
                       </div>
@@ -126,7 +167,7 @@ export default async function AdminPage({
 
                 {bookings?.length === 0 && (
                   <div className="text-center text-slate-500 py-10">
-                    Noch keine Buchungen vorhanden.
+                    {apc.no_bookings}
                   </div>
                 )}
               </div>
@@ -137,71 +178,34 @@ export default async function AdminPage({
         <div className="space-y-6 xl:sticky xl:top-6 h-fit">
           <Card id="tour-admin-quick" className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
-              <CardTitle>Schnellzugriff</CardTitle>
+              <CardTitle>{apc.quick_title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <Link
-                  href={`/${lang}/club/${slug}/admin/settings`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Einstellungen
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/vouchers`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Gutscheine
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/courts`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Plätze
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/blocks`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Sperrzeiten
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/plans`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Abos
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/members`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Mitglieder
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/trainers`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Trainer
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/courses`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Kurse
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/finance`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50"
-                >
-                  Finanzen
-                </Link>
-                <Link
-                  href={`/${lang}/club/${slug}/admin/export`}
-                  className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 col-span-2"
-                >
-                  CSV Export
-                </Link>
-              </div>
+              {(() => {
+                const quickLinks = [
+                  { label: apc.links[0], href: `/${lang}/club/${slug}/admin/settings` },
+                  { label: apc.links[1], href: `/${lang}/club/${slug}/admin/vouchers` },
+                  { label: apc.links[2], href: `/${lang}/club/${slug}/admin/courts` },
+                  { label: apc.links[3], href: `/${lang}/club/${slug}/admin/blocks` },
+                  { label: apc.links[4], href: `/${lang}/club/${slug}/admin/plans` },
+                  { label: apc.links[5], href: `/${lang}/club/${slug}/admin/members` },
+                  { label: apc.links[6], href: `/${lang}/club/${slug}/admin/trainers` },
+                  { label: apc.links[7], href: `/${lang}/club/${slug}/admin/courses` },
+                  { label: apc.links[8], href: `/${lang}/club/${slug}/admin/finance` },
+                ]
+                return (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {quickLinks.map((l) => (
+                      <Link key={l.href} href={l.href} className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50">
+                        {l.label}
+                      </Link>
+                    ))}
+                    <Link href={`/${lang}/club/${slug}/admin/export`} className="rounded-xl border border-slate-200/60 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50 col-span-2">
+                      {apc.links[9]}
+                    </Link>
+                  </div>
+                )
+              })()}
             </CardContent>
           </Card>
         </div>

@@ -49,7 +49,11 @@ export async function GET(req: Request) {
   const action = searchParams.get("action") || ""
 
   if (!token || !["accept", "reject"].includes(action)) {
-    return NextResponse.json({ error: copy.de.invalid }, { status: 400 })
+    // Language not yet known — return HTML so trainers see a readable page
+    return new NextResponse(
+      `<html><body style="font-family:sans-serif;max-width:520px;margin:40px auto;padding:20px"><h2>Invalid link · Ungültiger Link · Link non valido</h2><p>This link is invalid or incomplete.</p></body></html>`,
+      { status: 400, headers: { "Content-Type": "text/html" } }
+    )
   }
 
   const supabaseAdmin = getAdminClient()
@@ -60,7 +64,10 @@ export async function GET(req: Request) {
     .single()
 
   if (!booking) {
-    return NextResponse.json({ error: copy.de.missing }, { status: 404 })
+    return new NextResponse(
+      `<html><body style="font-family:sans-serif;max-width:520px;margin:40px auto;padding:20px"><h2>Request not found · Anfrage nicht gefunden · Richiesta non trovata</h2><p>This link may have already been used or has expired.</p></body></html>`,
+      { status: 404, headers: { "Content-Type": "text/html" } }
+    )
   }
 
   const lang = normalizeLang(booking.clubs?.[0]?.default_language)
@@ -68,11 +75,17 @@ export async function GET(req: Request) {
 
   const expiresAt = booking.trainer_action_expires_at
   if (expiresAt && new Date(expiresAt).getTime() < Date.now()) {
-    return NextResponse.json({ error: dict.expired }, { status: 410 })
+    return new NextResponse(
+      `<html><body style="font-family:sans-serif;max-width:520px;margin:40px auto;padding:20px;text-align:center"><div style="padding:32px;border-radius:16px;background:#fffbeb;border:1px solid #fde68a"><h2 style="color:#92400e;margin:0 0 12px">${dict.expired}</h2></div></body></html>`,
+      { status: 410, headers: { "Content-Type": "text/html" } }
+    )
   }
 
   if (booking.status !== "pending_trainer") {
-    return NextResponse.json({ error: dict.inactive }, { status: 409 })
+    return new NextResponse(
+      `<html><body style="font-family:sans-serif;max-width:520px;margin:40px auto;padding:20px;text-align:center"><div style="padding:32px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0"><h2 style="color:#475569;margin:0 0 12px">${dict.inactive}</h2></div></body></html>`,
+      { status: 409, headers: { "Content-Type": "text/html" } }
+    )
   }
 
   if (action === "accept") {
@@ -103,7 +116,10 @@ export async function GET(req: Request) {
       })
     }
 
-    return NextResponse.json({ ok: true })
+    return new NextResponse(
+      `<html><body style="font-family:sans-serif;max-width:520px;margin:40px auto;padding:20px;text-align:center"><div style="padding:32px;border-radius:16px;background:#f0fdf4;border:1px solid #bbf7d0"><h2 style="color:#15803d;margin:0 0 12px">✓ ${dict.confirmed}</h2><p style="color:#166534;margin:0">${dict.confirmedBody}</p></div></body></html>`,
+      { status: 200, headers: { "Content-Type": "text/html" } }
+    )
   }
 
   if (booking.payment_intent_id) {
@@ -133,6 +149,9 @@ export async function GET(req: Request) {
     })
   }
 
-  return NextResponse.json({ ok: true })
+  return new NextResponse(
+    `<html><body style="font-family:sans-serif;max-width:520px;margin:40px auto;padding:20px;text-align:center"><div style="padding:32px;border-radius:16px;background:#fef2f2;border:1px solid #fecaca"><h2 style="color:#dc2626;margin:0 0 12px">${dict.rejected}</h2><p style="color:#991b1b;margin:0">${dict.rejectedBody}</p></div></body></html>`,
+    { status: 200, headers: { "Content-Type": "text/html" } }
+  )
 }
 
