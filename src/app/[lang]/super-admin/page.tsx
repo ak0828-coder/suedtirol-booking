@@ -23,7 +23,7 @@ export default async function SuperAdminPage() {
   const { count: bookingsCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true })
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] p-8">
+    <div className="min-h-screen bg-[#f5f5f7] p-3 sm:p-6 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
           <div>

@@ -24,8 +24,8 @@ export default async function AdminPlansPage({
 
   return (
     <FeatureLockWrapper locked={locked}>
-      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
-        <h2 className="text-2xl md:text-3xl font-semibold">Abos</h2>
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-200/60 bg-white/80 p-4 sm:p-6 shadow-sm">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold">Abos</h2>
         <p className="text-slate-500 text-sm">Mitgliedschaftspläne verwalten.</p>
       </div>
       <PlanManager clubSlug={slug} initialPlans={plans || []} />

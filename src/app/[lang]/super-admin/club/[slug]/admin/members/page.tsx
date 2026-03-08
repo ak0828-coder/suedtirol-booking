@@ -25,9 +25,9 @@ export default async function SuperAdminMembersPage({
 
   return (
     <>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl sm:rounded-3xl border border-slate-200/60 bg-white/80 p-4 sm:p-6 shadow-sm">
         <div>
-          <h2 className="text-2xl md:text-3xl font-semibold">Mitglieder-Kartei</h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold">Mitglieder-Kartei</h2>
           <p className="text-slate-500 text-sm">Verwaltung und Einladungen an einem Ort.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

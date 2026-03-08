@@ -131,7 +131,7 @@ export default async function AdminMemberDetailPage({
 
   return (
     <FeatureLockWrapper locked={lockedPage} className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl sm:rounded-3xl border border-slate-200/60 bg-white/80 p-4 sm:p-6 shadow-sm">
         <div>
           <h2 className="text-2xl font-semibold">
             {profile?.first_name} {profile?.last_name || mc.unknown}
@@ -143,7 +143,7 @@ export default async function AdminMemberDetailPage({
         </Link>
       </div>
 
-      <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm space-y-2">
+      <div className="rounded-2xl sm:rounded-3xl border border-slate-200/60 bg-white/80 p-4 sm:p-6 shadow-sm space-y-2">
         <div className="text-sm text-slate-600">{mc.status}: {member.status}</div>
         <div className="text-sm text-slate-600">{mc.payment_status}: {member.payment_status || "-"}</div>
         <div className="text-sm text-slate-600">{mc.email}: {email}</div>

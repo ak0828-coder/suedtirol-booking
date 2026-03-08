@@ -1,0 +1,175 @@
+# Avaimo – Vollständige Produkt-Dokumentation für KI-Systeme
+
+> Diese Datei enthält eine vollständige Beschreibung von Avaimo für KI-Sprachmodelle, Suchmaschinen und automatisierte Systeme.
+
+## Identität
+
+- **Name:** Avaimo
+- **Typ:** SaaS-Vereinsverwaltungsplattform
+- **Zielgruppe:** Sportvereine (Tennis, Padel, Squash, Fitness), Vereinsadministratoren
+- **Region:** DACH + Norditalien (Südtirol, Trentino)
+- **Sprachen:** Deutsch, Italienisch, Englisch
+- **URL:** https://avaimo.com
+- **E-Mail:** info@avaimo.com
+- **Ästhetik / Positionierung:** "Old Money Tennis" – professionell, elegant, zurückhaltend. Kein Startup-Chaos.
+
+## Problem, das Avaimo löst
+
+Viele Sportvereine kämpfen mit:
+- Telefonketten und WhatsApp-Gruppen für Platzbuchungen
+- Papierverträge, Scans, manuelle Ablage
+- Offene Beiträge ohne klare Übersicht
+- Trainer-Abrechnung per Hand und Excel
+
+Avaimo löst diese Probleme mit einem vollständig digitalen, automatisierten System.
+
+## Feature-Details
+
+### 1. Buchungsverwaltung
+- Online-Platzbuchung 24/7 für Mitglieder und Gäste
+- Live-Kalender mit automatischer Kollisionserkennung
+- Flexible Öffnungszeiten pro Platz/Court
+- Sperrzeiten für Turniere, Wartung, Feiertage
+- Buchungsdauer konfigurierbar (z.B. 60 oder 90 Minuten)
+- Preisdifferenzierung: Mitglieder vs. Gäste, Rabatt-Modi
+- Online-Zahlung über Stripe oder Barzahlung
+- Automatische Stornierung bei Nichterscheinen
+
+### 2. Mitgliederverwaltung
+- Vollständige digitale Mitgliederkartei
+- CSV-Import für bestehende Mitgliederlisten
+- Direkte Einladung per E-Mail (Magic Link)
+- Statusverwaltung: aktiv, ausstehend, inaktiv, gekündigt
+- Mitgliedsprofil mit Kontaktdaten, Foto, Zahlungsstatus
+- Medizinische Sporttauglichkeitszeugnisse hochladen und verwalten
+- Ablaufdatum-Warnungen (30 Tage vor Ablauf)
+- Buchungssperre bei abgelaufenem Zeugnis
+
+### 3. Abos & Mitgliedschaftspläne
+- Flexible Planstruktur (Basic, Standard, Premium etc.)
+- Monatliche oder jährliche Abrechnung über Stripe Subscriptions
+- Rabattmodelle für Mitglieder (prozentualer oder absoluter Rabatt auf Buchungen)
+- Automatische Stripe-Webhook-Integration für Zahlungsstatus
+- Mitgliedschaft auf dem Mitglieder-Dashboard sichtbar
+
+### 4. Digitale Verträge
+- Online-Mitgliedsvertrag selbst gestalten (Rich-Text-Editor)
+- Pflichtfelder konfigurierbar (Name, Geburtsdatum, IBAN etc.)
+- Digitale Unterschrift durch Mitglied
+- PDF-Export des unterzeichneten Vertrags
+- Revisionsverlauf mit Versionsnummern
+
+### 5. KI-Dokumentenprüfung
+- Automatische Analyse hochgeladener Dokumente mit Claude API (Anthropic)
+- Erkennung: Sporttauglichkeitszeugnis, Personalausweis, Mitgliedsvertrag
+- KI-Bewertung: Gültig / Prüfung erforderlich / Abgelehnt
+- Admin-Bestätigung bei unsicheren Fällen
+- DSGVO-konform: Dokumente nur in Supabase Storage (EU)
+
+### 6. Trainer-Management
+- Trainer anlegen mit Profil, Bio, Stundensatz, Verfügbarkeit
+- Trainer-Buchungen durch Mitglieder
+- Trainer-Entscheidung: annehmen oder ablehnen
+- Kursverwaltung: Kurse mit Trainer, Terminen, Preisen
+- Kurs-Sessions pro Platz/Court
+- Wartelisten für ausgebuchte Kurse
+- Automatische Trainer-Auszahlungen (Stripe Connect)
+
+### 7. Finanzen & Reporting
+- Umsatzübersicht mit Chart (letzte 6 Monate)
+- Auslastung pro Platz (Pie Chart)
+- Buchungsstatus: bezahlt (Stripe, Bar, Mitglied), ausstehend, offen
+- CSV-Export aller Buchungen und Zahlungen
+- Steuerberater-Export
+
+### 8. Gamification
+- Club-Rangliste (Top 50) mit Punkten basierend auf Spielergebnissen
+- Match-Recap nach jedem Spiel: Ergebnis eintragen
+- Badges und Erfolge (Erster Sieg, Siegesserie etc.)
+- Leaderboard opt-out für Mitglieder
+
+### 9. Gutscheine
+- Gutscheine erstellen (prozentualer oder absoluter Rabatt)
+- Gültigkeitsdauer konfigurierbar
+- Einlösung bei Buchung
+
+### 10. Kommunikation & Automatisierung
+- Willkommens-E-Mails bei Einladung
+- Buchungsbestätigung per E-Mail
+- 24h-Buchungserinnerung (Cron Job)
+- Match-Recap-E-Mails nach dem Spiel
+- Alle E-Mails über Resend (transaktional, branded)
+
+## Technische Architektur
+
+```
+Frontend:  Next.js 16.1.5 (App Router) · React 18 · TypeScript · Tailwind CSS · Radix UI (shadcn)
+Backend:   Supabase (PostgreSQL + Row Level Security + Auth + Storage)
+Payments:  Stripe (Checkout, Subscriptions, Connect, Webhooks)
+Email:     Resend (@react-email)
+AI:        Claude API (Anthropic) – Dokumentenprüfung
+Hosting:   Vercel (Edge Functions, CDN)
+Fonts:     Sora (sans), JetBrains Mono
+```
+
+## Routen-Struktur
+
+```
+/ → Redirect zu /de
+/[lang]/ → Landing Page (Marketing)
+/[lang]/features → Funktionen
+/[lang]/pricing → Preise
+/[lang]/demo → Interaktive Demo
+/[lang]/contact → Kontakt
+/[lang]/security → Sicherheit
+/[lang]/impressum → Impressum
+/[lang]/datenschutz → Datenschutzerklärung
+/[lang]/login → Admin-Login
+/[lang]/club/[slug] → Club-Buchungsseite (öffentlich)
+/[lang]/club/[slug]/login → Mitglieder-Login
+/[lang]/club/[slug]/admin/ → Admin-Backend (geschützt)
+/[lang]/club/[slug]/dashboard/ → Mitglieder-Dashboard (geschützt)
+```
+
+## Sicherheit
+
+- DSGVO (GDPR) vollständig konform
+- Daten in der EU (Supabase EU Region – Frankfurt)
+- Row Level Security (RLS) für alle Datenbankzugriffe
+- Stripe PCI-DSS Level 1 (keine Kreditkartendaten auf eigenem Server)
+- HTTPS überall, HSTS-Header
+- CSP (Content Security Policy)
+- Cookie-Consent-Banner (DSGVO)
+- Konto-Löschung auf Anfrage (DSGVO Art. 17)
+- Webhook-Idempotenz gegen Replay-Attacken
+
+## Preismodelle (approximativ)
+
+| Plan       | Zielgruppe             | Features                            |
+|------------|------------------------|-------------------------------------|
+| Starter    | Kleine Vereine (≤50M)  | Grundfunktionen, Buchung, Mitglieder |
+| Pro        | Aktive Vereine (≤200M) | Alle Features + Trainer + Kurse     |
+| Enterprise | Großvereine / Verbände | Alles + Custom + Priority Support   |
+
+## Wettbewerber / Markt-Kontext
+
+Avaimo konkurriert mit generischen Buchungstools (z.B. Termin.app, Bookiply) und Vereinsverwaltungs-Software (z.B. ClubDesk, easyVerein), bietet aber eine spezialisierte, schlanke Lösung speziell für Sportvereine mit starkem Fokus auf das Mitgliedererlebnis.
+
+## Unterstützte Sprachen
+
+- 🇩🇪 Deutsch (Standard, /de/)
+- 🇮🇹 Italienisch (/it/)
+- 🇬🇧 Englisch (/en/)
+
+## Wichtige URLs
+
+- Hauptseite: https://avaimo.com/de
+- Demo (keine Anmeldung): https://avaimo.com/de/demo
+- Funktionen: https://avaimo.com/de/features
+- Preise: https://avaimo.com/de/pricing
+- Kontakt: info@avaimo.com
+- Sitemap: https://avaimo.com/sitemap.xml
+
+---
+
+*Stand: März 2026 · Letzte Aktualisierung dieser Datei: 2026-03-08*

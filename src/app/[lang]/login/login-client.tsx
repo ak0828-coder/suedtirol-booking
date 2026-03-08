@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
@@ -103,37 +103,44 @@ export default function LoginClient() {
   if (showSelection) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
-        <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
-          <div className="text-center">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#1F3D2B] text-white font-bold text-lg mb-4 shadow-lg">
+              A
+            </div>
             <h1 className="text-2xl font-semibold">{t("auth.portal.title", "Willkommen zurück")}</h1>
-            <p className="text-slate-500 mt-2">{t("auth.portal.subtitle", "Wähle, wohin du möchtest:")}</p>
+            <p className="text-slate-500 mt-1 text-sm">{t("auth.portal.subtitle", "Wähle, wohin du möchtest:")}</p>
           </div>
 
-          <div className="space-y-3">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-sm p-4 sm:p-5 space-y-2">
             {availableRoles.map((role, index) => (
-              <div
+              <button
                 key={index}
                 onClick={() => {
                   setIsLoading(true)
                   router.push(`/${lang}/club/${role.slug}/admin`)
                 }}
-                className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all group"
+                className="w-full flex items-center justify-between p-4 border border-slate-200/60 rounded-xl cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all group text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`p-2 rounded-full ${role.role === "club_admin" ? "bg-indigo-100 text-indigo-700" : "bg-green-100 text-green-700"}`}
-                  >
-                    {role.role === "club_admin" ? <Shield className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                  <div className="p-2 rounded-full bg-[#1F3D2B]/10">
+                    {role.role === "club_admin" ? (
+                      <Shield className="w-4 h-4 text-[#1F3D2B]" />
+                    ) : (
+                      <User className="w-4 h-4 text-[#1F3D2B]" />
+                    )}
                   </div>
                   <div>
-                    <div className="font-semibold">{role.name}</div>
+                    <div className="font-semibold text-slate-900">{role.name}</div>
                     <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">
-                      {role.role === "club_admin" ? t("auth.portal.admin", "Administrator") : t("auth.portal.member", "Mitglied")}
+                      {role.role === "club_admin"
+                        ? t("auth.portal.admin", "Administrator")
+                        : t("auth.portal.member", "Mitglied")}
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-slate-600" />
-              </div>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
+              </button>
             ))}
           </div>
         </div>
@@ -143,52 +150,79 @@ export default function LoginClient() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
-      <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-3xl shadow-lg border border-slate-200/60">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">{t("auth.login.title", "Admin Login")}</h1>
-          <p className="text-slate-500 mt-2">{t("auth.login.subtitle", "Vereinsverwaltung")}</p>
+      <div className="w-full max-w-md">
+        {/* Brand header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#1F3D2B] text-white font-bold text-lg mb-4 shadow-lg">
+            A
+          </div>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            {t("auth.login.title", "Admin Login")}
+          </h1>
+          <p className="text-slate-500 mt-1 text-sm">
+            {t("auth.login.subtitle", "Vereinsverwaltung")}
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="email">{t("auth.login.email", "E-Mail")}</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="password">{t("auth.login.password", "Passwort")}</Label>
-              <Link href={`/${lang}/forgot-password`} className="text-xs text-indigo-600 hover:underline">
-                {t("auth.login.forgot", "Vergessen?")}
-              </Link>
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/60 shadow-sm p-6 sm:p-8 space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">{t("auth.login.email", "E-Mail")}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="rounded-xl h-11"
+                autoComplete="email"
+              />
             </div>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
 
-          {errorMessage && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">
-              {errorMessage}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="password">{t("auth.login.password", "Passwort")}</Label>
+                <Link
+                  href={`/${lang}/forgot-password`}
+                  className="text-xs text-slate-500 hover:text-slate-900 hover:underline"
+                >
+                  {t("auth.login.forgot", "Vergessen?")}
+                </Link>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="rounded-xl h-11"
+                autoComplete="current-password"
+              />
             </div>
-          )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <Loader2 className="animate-spin mr-2" /> : t("auth.login.cta", "Anmelden")}
-          </Button>
-        </form>
+            {errorMessage && (
+              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">
+                {errorMessage}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-full text-sm font-medium"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                  Anmelden...
+                </>
+              ) : (
+                t("auth.login.cta", "Anmelden")
+              )}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   )
 }
-

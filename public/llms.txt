@@ -1,0 +1,72 @@
+# Avaimo
+
+> Avaimo ist die All-in-One-Vereinsplattform für Tennis- und Sportvereine – mit Buchungsverwaltung, Mitgliederverwaltung, Stripe-Zahlungen, digitalen Verträgen, Trainer-Management und KI-Dokumentenprüfung. DSGVO-konform, Daten in Europa.
+
+## Über Avaimo
+
+Avaimo ist eine SaaS-Plattform speziell für Sportvereine (Tennis, Padel, Squash, Fitness) in der Alpenregion (Südtirol / Trentino / Österreich / Schweiz). Die Plattform wird von Vereinsadministratoren genutzt, die Buchungen, Mitglieder und Finanzen in einem einzigen, eleganten System verwalten wollen – statt mit Excel-Tabellen, WhatsApp-Gruppen und Papierkram.
+
+**Zielgruppe:** Vereinsvorstände, Geschäftsführer und Administratoren von kleinen bis mittelgroßen Sportvereinen.
+
+## Features
+
+- **Buchungsverwaltung** – Online-Platzbuchung für Mitglieder und Gäste, Live-Kalender mit Kollisionserkennung, Öffnungszeiten und Sperrzeiten, flexible Preisgestaltung
+- **Mitgliederverwaltung** – Digitale Mitgliederkartei, CSV-Import/Export, Statusverwaltung (aktiv, ausstehend, inaktiv), Mitgliedereinladungen per E-Mail
+- **Abos & Pläne** – Flexible Mitgliedschaftsmodelle mit Rabatten auf Buchungen, monatlich oder jährlich, Stripe-Zahlungen
+- **Digitale Verträge** – Mitgliedsverträge digital erstellen und rechtssicher unterzeichnen lassen, PDF-Export, Revisionsverlauf
+- **KI-Dokumentenprüfung** – Automatische Prüfung hochgeladener Dokumente (Sporttauglichkeitszeugnisse, Ausweise) mit KI
+- **Trainer & Kurse** – Trainer buchen, Kursverwaltung, Wartelisten, automatische Abrechnung und Auszahlungen
+- **Gutscheine** – Gutscheinsystem für Mitglieder und Gäste
+- **Finanzen & Reporting** – Umsatzübersicht, Zahlungsstatus pro Buchung, CSV-Export für Steuerberater
+- **Buchungserinnerungen** – Automatische E-Mail-Erinnerungen 24h vor Terminen
+- **Rangliste & Badges** – Gamification: Club-Rangliste, Siegessträhnen, Auszeichnungen für Mitglieder
+- **Mobile App-Erlebnis** – Progressive Web App, optimiert für Smartphones
+
+## Preise
+
+Avaimo bietet drei Preismodelle: Starter, Pro und Enterprise. Alle Modelle beinhalten eine kostenlose Demo. Keine versteckten Kosten. Weitere Informationen unter https://avaimo.com/de/pricing.
+
+## Technologie
+
+- **Frontend:** Next.js 16 (App Router), React, TypeScript, Tailwind CSS
+- **Backend:** Supabase (PostgreSQL + Auth), Stripe (Zahlungen), Resend (E-Mails)
+- **KI:** Claude API (Anthropic) für Dokumentenprüfung
+- **Sicherheit:** DSGVO-konform, Daten in der EU, Row Level Security (RLS), HTTPS
+- **Sprachen:** Deutsch (Standard), Italienisch, Englisch
+
+## Häufig gestellte Fragen (FAQ)
+
+**Ist Avaimo DSGVO-konform?**
+Ja. Alle Daten werden in der EU gespeichert (Supabase EU Region). Avaimo bietet vollständige DSGVO-Compliance inklusive Datenlöschung auf Anfrage.
+
+**Wie lange dauert die Einrichtung?**
+In der Regel unter 48 Stunden. Der Verein wird eingerichtet, Plätze und Preise konfiguriert, Mitglieder importiert.
+
+**Welche Zahlungsmethoden unterstützt Avaimo?**
+Stripe (Kredit- und Debitkarte, SEPA), Barzahlung, Abonnements, Gutscheine.
+
+**Gibt es eine kostenlose Demo?**
+Ja, unter https://avaimo.com/de/demo ist eine vollständige interaktive Demo verfügbar – ohne Registrierung.
+
+**In welchen Ländern ist Avaimo verfügbar?**
+Aktuell primär in der DACH-Region (Deutschland, Österreich, Schweiz) und Italien (Südtirol, Trentino). Die Plattform ist dreisprachig (DE, IT, EN).
+
+## Kontakt
+
+- E-Mail: info@avaimo.com
+- Website: https://avaimo.com
+- Demo: https://avaimo.com/de/demo
+- Preise: https://avaimo.com/de/pricing
+- Funktionen: https://avaimo.com/de/features
+- Sicherheit: https://avaimo.com/de/security
+
+## Rechtliches
+
+- Impressum: https://avaimo.com/de/impressum
+- Datenschutzerklärung: https://avaimo.com/de/datenschutz
+- Datenhaltung: EU (Supabase EU Region)
+- DSGVO: vollständig konform
+
+---
+
+*Avaimo ist ein Produkt der Old Money Tennis Ästhetik – professionell, elegant, zuverlässig.*

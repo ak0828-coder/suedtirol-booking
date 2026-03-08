@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -14,6 +15,49 @@ import { SiteHeader } from "@/components/marketing/site-header"
 import { SiteFooter } from "@/components/marketing/site-footer"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
+import {
+  OrganizationSchema,
+  SoftwareApplicationSchema,
+  WebSiteSchema,
+  FAQSchema,
+} from "@/components/seo/structured-data"
+
+const BASE_URL = "https://avaimo.com"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>
+}): Promise<Metadata> {
+  const { lang } = await params
+
+  const titles: Record<string, string> = {
+    de: "Avaimo – Vereinsverwaltung für Sportvereine",
+    it: "Avaimo – Gestione Club Sportivi",
+    en: "Avaimo – Sports Club Management Software",
+  }
+  const descriptions: Record<string, string> = {
+    de: "Die All-in-One-Vereinsplattform für Tennis- und Sportvereine. Buchung, Mitglieder, Zahlungen, Verträge und Trainer. DSGVO-konform, in unter 48h startklar.",
+    it: "La piattaforma all-in-one per club sportivi: prenotazioni, soci, pagamenti, contratti e istruttori. Conforme al GDPR, operativo in meno di 48 ore.",
+    en: "The all-in-one platform for sports clubs: bookings, members, payments, contracts and trainers. GDPR-compliant, up and running in under 48 hours.",
+  }
+
+  const title = titles[lang] ?? titles.de
+  const description = descriptions[lang] ?? descriptions.de
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `${BASE_URL}/${lang}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${BASE_URL}/${lang}`,
+    },
+  }
+}
 
 export default async function Home({
   params,
@@ -36,8 +80,18 @@ export default async function Home({
   const pains = [t("home.pains.0"), t("home.pains.1"), t("home.pains.2"), t("home.pains.3")]
   const outcomes = [t("home.outcomes.0"), t("home.outcomes.1"), t("home.outcomes.2"), t("home.outcomes.3")]
 
+  const steps = [
+    { n: "01", title: t("home.steps.0.title", "Club anlegen"), desc: t("home.steps.0.desc", "Verein einrichten, Plätze und Preise konfigurieren – in unter 48 Stunden betriebsbereit.") },
+    { n: "02", title: t("home.steps.1.title", "Mitglieder einladen"), desc: t("home.steps.1.desc", "CSV-Import oder direkte Einladung. Verträge werden digital unterzeichnet.") },
+    { n: "03", title: t("home.steps.2.title", "Alles läuft"), desc: t("home.steps.2.desc", "Buchungen, Zahlungen und Erinnerungen passieren automatisch.") },
+  ]
+
   return (
     <div className="min-h-screen bg-[#F9F8F4] text-[#0E1A14]">
+      <OrganizationSchema lang={lang} />
+      <SoftwareApplicationSchema lang={lang} />
+      <WebSiteSchema lang={lang} />
+      <FAQSchema lang={lang} />
       {/* Background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute -top-40 -right-32 h-[600px] w-[600px] rounded-full bg-[#CBBF9A]/12 blur-3xl" />
@@ -49,19 +103,19 @@ export default async function Home({
 
       <main className="relative z-10">
         {/* ── Hero ── */}
-        <section className="mx-auto max-w-6xl px-6 pt-16 pb-28">
-          <div className="grid gap-14 lg:grid-cols-2 items-center">
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 pt-12 sm:pt-16 pb-16 sm:pb-28">
+          <div className="grid gap-10 lg:grid-cols-2 lg:gap-14 items-center">
             {/* Left: copy */}
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#1F3D2B]/15 bg-white/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#1F3D2B]">
                 {t("home.hero.badge")}
               </div>
 
-              <h1 className="text-5xl md:text-[60px] leading-[1.05] font-semibold tracking-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-[60px] leading-[1.05] font-semibold tracking-tight">
                 {t("home.hero.title")}
               </h1>
 
-              <p className="text-lg text-[#0E1A14]/58 leading-relaxed max-w-md">
+              <p className="text-base sm:text-lg text-[#0E1A14]/58 leading-relaxed max-w-md">
                 {t("home.hero.subtitle")}
               </p>
 
@@ -94,7 +148,7 @@ export default async function Home({
             </div>
 
             {/* Right: product mockup */}
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <div className="absolute -inset-4 bg-gradient-to-br from-[#1F3D2B]/6 to-[#CBBF9A]/6 rounded-3xl blur-2xl" />
               <div className="relative rounded-2xl border border-slate-200/80 bg-white shadow-[0_32px_80px_-24px_rgba(0,0,0,0.15)] overflow-hidden">
                 {/* Browser chrome */}
@@ -209,9 +263,9 @@ export default async function Home({
         </section>
 
         {/* ── Stats bar ── */}
-        <section className="border-y border-[#1F3D2B]/10 bg-white/70 backdrop-blur-sm py-10">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="grid grid-cols-3 gap-6 text-center divide-x divide-[#1F3D2B]/10">
+        <section className="border-y border-[#1F3D2B]/10 bg-white/70 backdrop-blur-sm py-8 sm:py-10">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid grid-cols-3 gap-4 text-center divide-x divide-[#1F3D2B]/10">
               {(
                 [
                   ["30%", t("home.results.stats.0")],
@@ -219,9 +273,9 @@ export default async function Home({
                   ["5 Min", t("home.results.stats.2")],
                 ] as [string, string][]
               ).map(([value, label]) => (
-                <div key={label} className="px-6">
-                  <div className="text-3xl md:text-4xl font-semibold text-[#1F3D2B]">{value}</div>
-                  <div className="text-sm text-[#0E1A14]/50 mt-1.5">{label}</div>
+                <div key={label} className="px-2 sm:px-6">
+                  <div className="text-2xl sm:text-3xl md:text-4xl font-semibold text-[#1F3D2B]">{value}</div>
+                  <div className="text-xs sm:text-sm text-[#0E1A14]/50 mt-1 sm:mt-1.5 leading-tight">{label}</div>
                 </div>
               ))}
             </div>
@@ -229,42 +283,42 @@ export default async function Home({
         </section>
 
         {/* ── Pain → Solution ── */}
-        <section className="mx-auto max-w-6xl px-6 py-24">
-          <div className="text-center mb-14">
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+          <div className="text-center mb-10 sm:mb-14">
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1F3D2B]/60 mb-3">
               Problem → Lösung
             </div>
-            <h2 className="text-3xl md:text-4xl font-semibold">Was Avaimo löst</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold">Was Avaimo löst</h2>
           </div>
-          <div className="grid lg:grid-cols-2 gap-5">
+          <div className="grid lg:grid-cols-2 gap-4 sm:gap-5">
             {/* Before */}
-            <div className="rounded-3xl bg-[#0E1A14]/[0.04] border border-[#0E1A14]/[0.06] p-8 md:p-10">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0E1A14]/35 mb-7">
+            <div className="rounded-2xl sm:rounded-3xl bg-[#0E1A14]/[0.04] border border-[#0E1A14]/[0.06] p-6 sm:p-8 md:p-10">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0E1A14]/35 mb-5 sm:mb-7">
                 {t("home.pains.title")}
               </div>
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {pains.map((item) => (
-                  <div key={item} className="flex items-start gap-3.5">
+                  <div key={item} className="flex items-start gap-3 sm:gap-3.5">
                     <div className="mt-0.5 h-5 w-5 rounded-full border-2 border-[#0E1A14]/15 flex items-center justify-center flex-shrink-0">
                       <span className="text-[#0E1A14]/30 text-[11px] font-bold leading-none">✕</span>
                     </div>
-                    <span className="text-[#0E1A14]/65 leading-snug">{item}</span>
+                    <span className="text-sm sm:text-base text-[#0E1A14]/65 leading-snug">{item}</span>
                   </div>
                 ))}
               </div>
             </div>
             {/* After */}
-            <div className="rounded-3xl bg-[#1F3D2B] p-8 md:p-10">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#CBBF9A]/70 mb-7">
+            <div className="rounded-2xl sm:rounded-3xl bg-[#1F3D2B] p-6 sm:p-8 md:p-10">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#CBBF9A]/70 mb-5 sm:mb-7">
                 {t("home.outcomes.title")}
               </div>
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {outcomes.map((item) => (
-                  <div key={item} className="flex items-start gap-3.5">
+                  <div key={item} className="flex items-start gap-3 sm:gap-3.5">
                     <div className="mt-0.5 h-5 w-5 rounded-full bg-[#CBBF9A]/15 border border-[#CBBF9A]/25 flex items-center justify-center flex-shrink-0">
                       <Check className="h-3 w-3 text-[#CBBF9A]" />
                     </div>
-                    <span className="text-[#F9F8F4]/75 leading-snug">{item}</span>
+                    <span className="text-sm sm:text-base text-[#F9F8F4]/75 leading-snug">{item}</span>
                   </div>
                 ))}
               </div>
@@ -273,9 +327,9 @@ export default async function Home({
         </section>
 
         {/* ── Modules ── */}
-        <section className="mx-auto max-w-6xl px-6 pb-24">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-semibold">{t("home.modules.title")}</h2>
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-16 sm:pb-24">
+          <div className="text-center mb-10 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold">{t("home.modules.title")}</h2>
             <Link
               href={`/${lang}/features`}
               className="inline-flex items-center gap-1 mt-3 text-sm text-[#1F3D2B] hover:text-[#0E1A14] transition-colors"
@@ -283,18 +337,18 @@ export default async function Home({
               {t("home.modules.cta")} <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {modules.map((item, i) => (
               <div
                 key={item.title}
-                className={`rounded-3xl p-7 border transition-all ${
+                className={`rounded-2xl sm:rounded-3xl p-5 sm:p-7 border transition-all ${
                   i === 0
                     ? "bg-[#1F3D2B] border-[#1F3D2B]"
                     : "bg-white/90 border-[#1F3D2B]/10 hover:border-[#1F3D2B]/20 hover:shadow-sm"
                 }`}
               >
                 <div
-                  className={`inline-flex items-center justify-center h-10 w-10 rounded-2xl mb-5 ${
+                  className={`inline-flex items-center justify-center h-10 w-10 rounded-2xl mb-4 sm:mb-5 ${
                     i === 0 ? "bg-[#CBBF9A]/15" : "bg-[#1F3D2B]/8"
                   }`}
                 >
@@ -312,38 +366,26 @@ export default async function Home({
         </section>
 
         {/* ── How it works ── */}
-        <section className="bg-white/70 border-y border-[#1F3D2B]/8 py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <div className="text-center mb-14">
+        <section className="bg-white/70 border-y border-[#1F3D2B]/8 py-16 sm:py-24">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="text-center mb-10 sm:mb-14">
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1F3D2B]/60 mb-3">
-                So einfach
+                {t("home.steps.badge", "So einfach")}
               </div>
-              <h2 className="text-3xl md:text-4xl font-semibold">In 3 Schritten startklar</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold">
+                {t("home.steps.title", "In 3 Schritten startklar")}
+              </h2>
             </div>
-            <div className="grid md:grid-cols-3 gap-10 md:gap-8">
-              {[
-                {
-                  n: "01",
-                  title: "Club anlegen",
-                  desc: "Verein einrichten, Plätze und Preise konfigurieren – in unter 48 Stunden betriebsbereit.",
-                },
-                {
-                  n: "02",
-                  title: "Mitglieder einladen",
-                  desc: "CSV-Import oder direkte Einladung. Verträge werden digital unterzeichnet.",
-                },
-                {
-                  n: "03",
-                  title: "Alles läuft",
-                  desc: "Buchungen, Zahlungen und Erinnerungen passieren automatisch.",
-                },
-              ].map((item) => (
-                <div key={item.n} className="relative">
-                  <div className="text-7xl font-bold text-[#1F3D2B]/6 mb-3 leading-none select-none">
+            <div className="grid sm:grid-cols-3 gap-8 sm:gap-10 md:gap-8">
+              {steps.map((item) => (
+                <div key={item.n} className="relative flex sm:block gap-5 sm:gap-0">
+                  <div className="text-6xl sm:text-7xl font-bold text-[#1F3D2B]/6 leading-none select-none mb-0 sm:mb-3 flex-shrink-0">
                     {item.n}
                   </div>
-                  <div className="font-semibold text-lg mb-2 text-[#0E1A14]">{item.title}</div>
-                  <p className="text-sm text-[#0E1A14]/55 leading-relaxed">{item.desc}</p>
+                  <div className="pt-1 sm:pt-0">
+                    <div className="font-semibold text-lg mb-2 text-[#0E1A14]">{item.title}</div>
+                    <p className="text-sm text-[#0E1A14]/55 leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -351,12 +393,12 @@ export default async function Home({
         </section>
 
         {/* ── Final CTA ── */}
-        <section className="mx-auto max-w-6xl px-6 py-24">
-          <div className="rounded-3xl bg-[#1F3D2B] px-10 py-16 md:p-16 text-center">
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+          <div className="rounded-2xl sm:rounded-3xl bg-[#1F3D2B] px-6 py-12 sm:px-10 sm:py-16 md:p-16 text-center">
             <div className="text-xs uppercase tracking-[0.2em] text-[#CBBF9A] mb-4">
               {t("home.final.badge")}
             </div>
-            <h2 className="text-3xl md:text-5xl font-semibold text-[#F9F8F4] mb-8 max-w-xl mx-auto leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-semibold text-[#F9F8F4] mb-6 sm:mb-8 max-w-xl mx-auto leading-tight">
               {t("home.final.title")}
             </h2>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

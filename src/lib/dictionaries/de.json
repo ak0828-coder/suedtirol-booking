@@ -105,6 +105,22 @@
                                "badge":  "Bereit für Avaimo?",
                                "title":  "Sieh dein Vereins-Dashboard jetzt live.",
                                "cta":  "Demo starten"
+                           },
+                 "steps":  {
+                               "badge":  "So einfach",
+                               "title":  "In 3 Schritten startklar",
+                               "0":  {
+                                         "title":  "Club anlegen",
+                                         "desc":  "Verein einrichten, Plätze und Preise konfigurieren – in unter 48 Stunden betriebsbereit."
+                                     },
+                               "1":  {
+                                         "title":  "Mitglieder einladen",
+                                         "desc":  "CSV-Import oder direkte Einladung. Verträge werden digital unterzeichnet."
+                                     },
+                               "2":  {
+                                         "title":  "Alles läuft",
+                                         "desc":  "Buchungen, Zahlungen und Erinnerungen passieren automatisch."
+                                     }
                            }
              },
     "features":  {

@@ -21,8 +21,8 @@ export default async function AdminLayout({
 
   if (!hasAccess) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
-        <div className="text-center p-8 bg-white rounded-3xl shadow-lg border border-red-100 max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] p-4">
+        <div className="text-center p-6 sm:p-8 bg-white rounded-2xl sm:rounded-3xl shadow-lg border border-red-100 max-w-md w-full">
           <h1 className="text-2xl font-bold text-red-600 mb-2">Zugriff verweigert</h1>
           <Link href={`/${lang}/login`}>
             <Button variant="default">Zum Login</Button>
@@ -56,30 +56,34 @@ export default async function AdminLayout({
     }))
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div id="tour-admin-header" className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-[#f5f5f7] p-3 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div
+          id="tour-admin-header"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl sm:rounded-3xl border border-slate-200/60 bg-white/80 p-4 sm:p-6 shadow-sm"
+        >
+          <div className="flex items-center gap-3 sm:gap-4">
             <div
-              className="w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-slate-200"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-slate-200"
               style={{ backgroundColor: club.primary_color || "#0f172a" }}
             >
               {club.logo_url ? (
                 <img src={club.logo_url} alt={club.name} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xl">{club.name.substring(0, 2).toUpperCase()}</span>
+                <span className="text-base sm:text-xl">{club.name.substring(0, 2).toUpperCase()}</span>
               )}
             </div>
 
             <div>
-              <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-slate-900 tracking-tight">
                 Admin Dashboard
               </h1>
-              <p className="text-slate-500">Verwaltung für {club.name}</p>
+              <p className="text-sm text-slate-500">Verwaltung für {club.name}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <AdminMobileNav slug={slug} lang={lang} items={filtered} accentColor={club.primary_color} />
             <Suspense fallback={null}>
               <AdminTourButton />
@@ -98,8 +102,9 @@ export default async function AdminLayout({
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
-          <aside className="space-y-4">
+        {/* Sidebar + content grid */}
+        <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-4 sm:gap-6">
+          <aside className="hidden lg:block space-y-4">
             <div id="tour-admin-nav" className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
                 Navigation
@@ -108,7 +113,7 @@ export default async function AdminLayout({
             </div>
           </aside>
 
-          <main className="space-y-6">{children}</main>
+          <main className="space-y-4 sm:space-y-6 min-w-0">{children}</main>
         </div>
       </div>
     </div>

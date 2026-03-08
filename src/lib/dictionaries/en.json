@@ -105,6 +105,22 @@
                                "badge":  "Ready for Avaimo?",
                                "title":  "See your club dashboard live now.",
                                "cta":  "Start demo"
+                           },
+                 "steps":  {
+                               "badge":  "Simple as that",
+                               "title":  "Up and running in 3 steps",
+                               "0":  {
+                                         "title":  "Set up your club",
+                                         "desc":  "Configure your club, courts and pricing – ready to go in under 48 hours."
+                                     },
+                               "1":  {
+                                         "title":  "Invite members",
+                                         "desc":  "CSV import or direct invite. Contracts are signed digitally."
+                                     },
+                               "2":  {
+                                         "title":  "Everything runs itself",
+                                         "desc":  "Bookings, payments and reminders happen automatically."
+                                     }
                            }
              },
     "features":  {

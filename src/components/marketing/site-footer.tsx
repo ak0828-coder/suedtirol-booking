@@ -17,7 +17,7 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-[#0E1A14]/10 bg-[#1F3D2B]">
-      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 py-10 md:flex-row">
+      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 sm:px-6 py-8 sm:py-10 md:flex-row">
         <div className="space-y-2">
           <div className="text-sm font-semibold text-[#F9F8F4]">{t("app.name", "Avaimo")}</div>
           <div className="text-xs text-[#F9F8F4]/70">
