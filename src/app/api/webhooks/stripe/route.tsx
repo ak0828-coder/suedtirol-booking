@@ -216,22 +216,16 @@ export async function POST(req: Request) {
         const lang = normalizeLang(club?.default_language)
 
         try {
-          if (isNewUser) {
-            await resend.emails.send({
-              from: "Avaimo <info@avaimo.com>",
-              to: [customerEmail],
-              subject: `${clubName}`,
-              react: (
-                <WelcomeMemberEmailTemplate
-                  clubName={clubName}
-                  email={customerEmail}
-                  password={tempPassword}
-                  loginUrl={`${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login`}
-                  lang={lang}
-                />
-              ),
-            })
-          } else {
+          // New users: PostPaymentMagicLink on the success page sends the welcome email with
+          // a proper magic link + onboarding redirect. We only send a simple payment-confirmation
+          // here so the user knows their payment went through while they wait for the magic link.
+          const clubSlug = session.metadata?.clubSlug || ""
+          const memberLoginUrl = clubSlug
+            ? `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}/login`
+            : `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login`
+
+          if (!isNewUser) {
+            // Existing users: notify that membership was activated/renewed
             const dict = membershipCopy[lang]
             await resend.emails.send({
               from: "Avaimo <info@avaimo.com>",
@@ -240,10 +234,12 @@ export async function POST(req: Request) {
               html: `
                 <h1>${clubName}</h1>
                 <p>${dict.existingBody}</p>
-                <a href="${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/login">${dict.login}</a>
+                <a href="${memberLoginUrl}">${dict.login}</a>
               `,
             })
           }
+          // New users receive only the magic-link email from PostPaymentMagicLink.
+          // Sending a temp-password email here would point to the wrong login page and confuse members.
         } catch (emailError) {
           console.error("Member email error:", emailError)
         }

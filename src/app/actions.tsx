@@ -4838,12 +4838,13 @@ export async function inviteMember(formData: FormData) {
   // 4. Magic Link generieren und E-Mail senden
   try {
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
+    const onboardingUrl = `/${lang}/club/${clubSlug}/onboarding`
     const dashboardUrl = `/${lang}/club/${clubSlug}/dashboard`
 
-    // Neue Mitglieder: Magic Link → zuerst Passwort festlegen, dann Dashboard
-    // Bestehende Mitglieder: Magic Link → direkt zum Dashboard (haben bereits ein Passwort)
+    // Neue Mitglieder: Passwort festlegen → Onboarding (Vertrag unterschreiben) → Dashboard
+    // Bestehende Mitglieder: direkt zum Dashboard (haben bereits ein Passwort + Vertrag)
     const nextAfterLogin = isNewUser
-      ? `/${lang}/change-password?after=${encodeURIComponent(dashboardUrl)}`
+      ? `/${lang}/change-password?after=${encodeURIComponent(onboardingUrl)}`
       : dashboardUrl
 
     const redirectTo = `${base}/${lang}/auth/callback?next=${encodeURIComponent(nextAfterLogin)}`
