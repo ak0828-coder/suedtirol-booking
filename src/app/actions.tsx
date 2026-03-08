@@ -2838,7 +2838,7 @@ export async function createMembershipCheckout(
       line_items: [{ price: stripePriceId, quantity: 1 }],
       mode: 'subscription',
       subscription_data: subscriptionData,
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}/welcome?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}`,
       ...(customerId ? { customer: customerId } : { customer_email: email }),
       metadata: metadata
@@ -2909,6 +2909,27 @@ export async function ensureMembershipFromCheckoutSession(sessionId: string) {
   } catch (err) {
     console.error("ensureMembershipFromCheckoutSession error:", err)
     return { success: false, error: "session_fetch_failed" }
+  }
+}
+
+// Sets a password for the user associated with a Stripe checkout session.
+// Used by the /welcome page so new members can set their password without a magic link.
+export async function setMemberPassword(sessionId: string, password: string) {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    const email = getCheckoutEmail(session)
+    if (!email) return { success: false, error: "E-Mail nicht gefunden" }
+
+    const supabaseAdmin = getAdminClient()
+    const userId = await findUserIdByEmail(supabaseAdmin, email)
+    if (!userId) return { success: false, error: "Account nicht gefunden" }
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password })
+    if (error) return { success: false, error: error.message }
+
+    return { success: true, email }
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Fehler beim Passwort setzen" }
   }
 }
 
