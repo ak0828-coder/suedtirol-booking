@@ -23,6 +23,8 @@ import {
   Edit,
   Trash2,
   Download,
+  CreditCard,
+  Dumbbell,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -810,168 +812,269 @@ function ExportSection() {
 
 function MemberDashboardSection({ lang }: { lang: string }) {
   const nextDate = new Date(Date.now() + 3600000 * 28)
+  const nextDate2 = new Date(Date.now() + 3600000 * 52)
+  const nextDate3 = new Date(Date.now() + 3600000 * 76)
+  const pastDate1 = new Date(Date.now() - 3600000 * 25)
+  const pastDate2 = new Date(Date.now() - 3600000 * 49)
+
+  const upcomingBookings = [
+    { id: "u1", date: nextDate, court: "Platz 2" },
+    { id: "u2", date: nextDate2, court: "Platz 1" },
+    { id: "u3", date: nextDate3, court: "Platz 3" },
+  ]
+  const pastBookings = [
+    { id: "p1", date: pastDate1, court: "Platz 1" },
+    { id: "p2", date: pastDate2, court: "Platz 3" },
+  ]
+  const ranking = [
+    { userId: "1", rank: 1, name: "Erna M.", points: 240 },
+    { userId: "2", rank: 2, name: "Hans B.", points: 185 },
+    { userId: "3", rank: 3, name: "Claudia M.", points: 160 },
+    { userId: "4", rank: 4, name: "Peter G.", points: 142 },
+  ]
+  const badges = [
+    { id: "1", label: "🏆 Erster Sieg" },
+    { id: "2", label: "🔥 3er-Siegesserie" },
+    { id: "3", label: "⚡ Schnellster Aufsteiger" },
+  ]
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-8">
-      <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
-        <div
-          className="absolute -top-10 -right-10 h-40 w-40 rounded-full blur-2xl"
-          style={{ backgroundColor: demoClub.primary_color, opacity: 0.12 }}
-        />
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#1F3D2B]/20 bg-white/90 px-3 py-1 text-xs text-[#1F3D2B]">
-              <Sparkles className="w-3.5 h-3.5" /> Mitglied aktiv
+    <div
+      className="min-h-screen bg-[#f5f5f7] pb-24"
+      style={{ ["--club-primary" as any]: demoClub.primary_color, ["--club-primary-foreground" as any]: "#ffffff" }}
+    >
+      <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6 pt-4 sm:pt-6">
+
+        {/* Header */}
+        <header className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white/80 p-5 sm:p-6 shadow-sm">
+          <div
+            className="absolute -top-10 -right-10 h-40 w-40 rounded-full blur-2xl"
+            style={{ backgroundColor: demoClub.primary_color, opacity: 0.12 }}
+          />
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#1F3D2B]/20 bg-white/90 px-3 py-1 text-xs text-[#1F3D2B]">
+                <Sparkles className="w-3.5 h-3.5" /> Mitglied aktiv
+              </div>
+              <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight">Hallo Erna!</h1>
+              <p className="text-slate-500">Willkommen bei {demoClub.name}!</p>
             </div>
-            <h1 className="mt-3 text-2xl md:text-3xl font-semibold tracking-tight">Hallo Erna!</h1>
-            <p className="text-slate-500">Willkommen bei {demoClub.name}!</p>
+            <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/90 text-slate-900 px-4 py-2 text-sm font-semibold border border-slate-200/60">
+                Premium
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Button variant="outline" className="gap-2 rounded-full w-full sm:w-auto">
+                  Einstellungen
+                </Button>
+                <Button variant="outline" className="gap-2 rounded-full w-full sm:w-auto">
+                  Dokumente
+                </Button>
+                <Button variant="outline" className="gap-2 rounded-full w-full sm:w-auto">
+                  Platz buchen <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/90 text-slate-900 px-4 py-2 text-sm font-semibold border border-slate-200/60">
-              Premium Aktiv
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Button variant="outline" className="gap-2 rounded-full w-full sm:w-auto">
-                Einstellungen
+        </header>
+
+        {/* 3-col grid: Status | Nächster Termin | Mein Abo */}
+        <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Trophy className="text-[#1F3D2B]" /> Dein Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-semibold">Aktiv</div>
+              <p className="text-sm text-slate-500 mt-2">Gültig bis: 31.12.2026</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                {[["12", "Siege"], ["4", "Niederl."], ["3", "Streak"]].map(([val, label]) => (
+                  <div key={label} className="rounded-xl border border-slate-200/60 bg-white/90 px-2 py-2">
+                    <div className="text-lg font-semibold">{val}</div>
+                    <div className="text-xs text-slate-500">{label}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Calendar className="text-[#1F3D2B]" /> Nächster Termin
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="text-2xl font-semibold">{format(nextDate, "dd.MM.yyyy")}</div>
+                <div className="text-sm text-slate-500 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {format(nextDate, "HH:mm")} Uhr
+                </div>
+                <div className="text-sm text-slate-600">Platz 2</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <CreditCard className="text-[#1F3D2B]" /> Mein Abo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-xl font-semibold">Premium</div>
+              <div className="text-sm text-slate-500">Gültig bis: 31.12.2026</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700">
+                  Bezahlt
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <Button variant="outline" size="sm" className="rounded-full text-xs">
+                  Zahlungen verwalten
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Training */}
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Dumbbell className="text-[#1F3D2B]" /> Training & Kurse
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-slate-500 mb-4">
+                Trainerstunden buchen und Kurse entdecken.
+              </div>
+              <Button variant="outline" size="sm" className="rounded-full gap-2">
+                Training entdecken <ArrowRight className="w-3.5 h-3.5" />
               </Button>
-              <Button variant="outline" className="gap-2 rounded-full w-full sm:w-auto">
-                Dokumente
-              </Button>
-              <Button variant="outline" className="gap-2 rounded-full w-full sm:w-auto">
-                Zur Buchung <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Club Rangliste – col-span-2 */}
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Sparkles className="text-[#1F3D2B]" /> Club Rangliste
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {ranking.map((row) => (
+                  <div
+                    key={row.userId}
+                    className="flex items-center justify-between rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 text-center font-semibold text-slate-500">{row.rank}</span>
+                      <span className="font-medium text-slate-800">{row.name}</span>
+                    </div>
+                    <span className="rounded-full border border-[#1F3D2B]/20 px-3 py-1 text-xs font-semibold text-[#1F3D2B]">
+                      {row.points} Punkte
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4">
+                <Button variant="outline" className="rounded-full w-full sm:w-auto">
+                  Top 50 ansehen
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Badges – col-span-3 */}
+          <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm md:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex gap-2 items-center">
+                <Sparkles className="text-[#1F3D2B]" /> Badges & Erfolge
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {badges.map((b) => (
+                  <div
+                    key={b.id}
+                    className="rounded-full border border-slate-200/60 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700"
+                  >
+                    {b.label}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </header>
 
-      <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+        {/* Deine nächsten Spiele */}
         <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
           <CardHeader>
             <CardTitle className="flex gap-2 items-center">
-              <Trophy className="text-[#1F3D2B]" /> Dein Status
+              <Calendar className="text-[#1F3D2B]" /> Deine nächsten Spiele
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-semibold">Aktiv</div>
-            <p className="text-sm text-slate-500 mt-2">Gültig bis: 31.12.2026</p>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              {[
-                [12, "Siege"],
-                [4, "Niederl."],
-                [3, "Streak"],
-              ].map(([val, label]) => (
-                <div key={String(label)} className="rounded-xl border border-slate-200/60 bg-white/90 px-2 py-2">
-                  <div className="text-lg font-semibold">{val}</div>
-                  <div className="text-xs text-slate-500">{label}</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex gap-2 items-center">
-              <Calendar className="text-[#1F3D2B]" /> Nächster Termin
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-semibold">{format(nextDate, "dd.MM.yyyy")}</div>
-              <div className="text-sm text-slate-500 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> {format(nextDate, "HH:mm")} Uhr
-              </div>
-              <div className="text-sm text-slate-600">Platz 2</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex gap-2 items-center">
-              <Sparkles className="text-[#1F3D2B]" /> Club Rangliste
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {[
-                [1, "Erna M.", 240],
-                [2, "Hans B.", 185],
-                [3, "Claudia M.", 160],
-              ].map(([rank, name, pts]) => (
+            <div className="space-y-4">
+              {upcomingBookings.map((b) => (
                 <div
-                  key={String(name)}
-                  className="flex items-center justify-between rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm"
+                  key={b.id}
+                  className="flex items-center justify-between p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-sm transition-shadow"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-5 text-center font-semibold text-slate-500">{rank}</span>
-                    <span className={`font-medium ${rank === 1 ? "text-[#1F3D2B]" : "text-slate-800"}`}>{name}</span>
+                  <div>
+                    <div className="font-semibold text-base">{format(b.date, "dd.MM.yyyy")}</div>
+                    <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                      <Clock className="w-3 h-3" />
+                      {format(b.date, "HH:mm")} Uhr
+                      <span className="mx-1">·</span>
+                      {b.court}
+                    </div>
                   </div>
-                  <span className="rounded-full border border-[#1F3D2B]/20 px-2 py-0.5 text-xs font-semibold text-[#1F3D2B]">
-                    {pts} Pkt.
-                  </span>
+                  <button className="rounded-full border border-slate-200/60 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 transition-colors">
+                    Stornieren
+                  </button>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex gap-2 items-center">
-            <Calendar className="text-[#1F3D2B]" /> Deine nächsten Spiele
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[
-              { date: nextDate, court: "Platz 2" },
-              { date: new Date(Date.now() + 3600000 * 52), court: "Platz 1" },
-              { date: new Date(Date.now() + 3600000 * 76), court: "Platz 3" },
-            ].map((b, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-sm transition-shadow"
-              >
-                <div>
-                  <div className="font-semibold">{format(b.date, "dd.MM.yyyy")}</div>
-                  <div className="text-sm text-slate-500 flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3" /> {format(b.date, "HH:mm")} Uhr · {b.court}
+        {/* Letzte Spiele */}
+        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex gap-2 items-center">
+              <Calendar className="text-[#1F3D2B]" /> Letzte Spiele
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {pastBookings.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex items-center justify-between p-3 border border-slate-200/60 rounded-xl bg-white hover:shadow-sm transition-shadow"
+                >
+                  <div>
+                    <div className="font-semibold text-base">{format(b.date, "dd.MM.yyyy")}</div>
+                    <div className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                      <Clock className="w-3 h-3" />
+                      {format(b.date, "HH:mm")} Uhr
+                      <span className="mx-1">·</span>
+                      {b.court}
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    Ergebnis eintragen
+                  </Button>
                 </div>
-                <button className="rounded-full border border-slate-200/60 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50">
-                  Stornieren
-                </button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex gap-2 items-center">
-            <User className="text-slate-600" /> Meine Daten
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            {[
-              { label: "Vorname", value: "Erna" },
-              { label: "Nachname", value: "Müller" },
-              { label: "E-Mail", value: "erna@example.com" },
-              { label: "Telefon", value: "+39 340 123 456" },
-            ].map((row) => (
-              <div key={row.label} className="rounded-xl bg-slate-50 p-3">
-                <div className="text-xs text-slate-400">{row.label}</div>
-                <div className="font-medium text-slate-800 mt-0.5">{row.value}</div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }
