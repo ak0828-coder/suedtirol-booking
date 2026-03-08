@@ -82,9 +82,9 @@ export default async function MemberDashboard({
 
   if (!member) {
     const noMemberCopy = {
-      de: { title: "Kein Mitgliedskonto gefunden", desc: `Du bist als eingeloggt. Für diesen Account existiert keine Mitgliedschaft in diesem Verein.`, switch: "Account wechseln", back: "Zurück zum Club" },
-      en: { title: "No membership found", desc: `You are logged in as. No membership for this account exists in this club.`, switch: "Switch account", back: "Back to club" },
-      it: { title: "Nessun abbonamento trovato", desc: `Sei connesso come. Nessuna iscrizione per questo account esiste in questo club.`, switch: "Cambia account", back: "Torna al club" },
+      de: { title: "Kein Mitgliedskonto gefunden", hint: "Falls du gerade Mitglied geworden bist, schließe bitte das Onboarding ab.", onboarding: "Onboarding abschließen", switch: "Account wechseln", back: "Zurück zum Club" },
+      en: { title: "No membership found", hint: "If you just signed up, please complete the onboarding.", onboarding: "Complete onboarding", switch: "Switch account", back: "Back to club" },
+      it: { title: "Nessun abbonamento trovato", hint: "Se ti sei appena iscritto, completa l'onboarding.", onboarding: "Completa l'onboarding", switch: "Cambia account", back: "Torna al club" },
     }
     const nm = noMemberCopy[lang as "de" | "en" | "it"] || noMemberCopy.de
     return (
@@ -94,11 +94,15 @@ export default async function MemberDashboard({
           <p className="mt-2 text-sm text-slate-500">
             {lang === "de" ? <>Du bist als <strong>{user.email}</strong> eingeloggt. Für diesen Account existiert keine Mitgliedschaft in diesem Verein.</> : lang === "en" ? <>You are logged in as <strong>{user.email}</strong>. No membership for this account exists in this club.</> : <>Sei connesso come <strong>{user.email}</strong>. Nessuna iscrizione per questo account esiste in questo club.</>}
           </p>
+          <p className="mt-3 text-xs text-slate-400">{nm.hint}</p>
           <div className="mt-4 space-y-2">
             <Button asChild className="w-full">
-              <Link href={`/${lang}/login`}>{nm.switch}</Link>
+              <Link href={`/${lang}/club/${slug}/onboarding`}>{nm.onboarding}</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
+              <Link href={`/${lang}/login`}>{nm.switch}</Link>
+            </Button>
+            <Button asChild variant="ghost" className="w-full text-sm">
               <Link href={`/${lang}/club/${slug}`}>{nm.back}</Link>
             </Button>
           </div>

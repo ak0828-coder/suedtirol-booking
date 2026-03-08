@@ -5361,9 +5361,9 @@ export async function submitMembershipSignature(
   if (!payload.memberName || !payload.memberEmail) {
     return { success: false, error: "Bitte Name und E-Mail angeben." }
   }
-  if (!payload.memberAddress || !payload.signedCity) {
-    return { success: false, error: "Bitte Adresse und Ort ausfüllen." }
-  }
+  // Address and city are optional – fill with empty string when not provided
+  if (!payload.memberAddress) payload = { ...payload, memberAddress: "" }
+  if (!payload.signedCity) payload = { ...payload, signedCity: "" }
 
   const base64 = signatureDataUrl.split(",")[1]
   if (!base64) return { success: false, error: "Ungültige Signatur" }

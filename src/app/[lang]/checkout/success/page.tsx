@@ -8,6 +8,7 @@ import { createTranslator } from "@/lib/translator"
 import type { Locale } from "@/lib/i18n"
 import { ensureMembershipFromCheckoutSession } from "@/app/actions"
 import { createClient } from "@/lib/supabase/server"
+import { getAdminClient } from "@/lib/supabase/admin"
 import { redirect } from "next/navigation"
 import { PostPaymentMagicLink } from "@/components/checkout/post-payment-magic-link"
 
@@ -71,7 +72,8 @@ export default async function SuccessPage({
     }
 
     if (user && meta?.clubId && meta?.clubSlug) {
-      const { data: member } = await supabase
+      const supabaseAdmin = getAdminClient()
+      const { data: member } = await supabaseAdmin
         .from("club_members")
         .select("contract_signed_at")
         .eq("club_id", meta.clubId)

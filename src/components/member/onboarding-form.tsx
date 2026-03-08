@@ -286,7 +286,7 @@ export function MemberOnboardingForm({
     )
     if (!res?.success) {
       setSaving(false)
-      setError(t("member_onboarding.error_save", "Signatur konnte nicht gespeichert werden."))
+      setError(res?.error || t("member_onboarding.error_save", "Signatur konnte nicht gespeichert werden."))
       return
     }
 

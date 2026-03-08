@@ -26,6 +26,8 @@ export default async function MemberOnboardingPage({
   }
 
   let contract = user ? await getMembershipContractForMember(slug) : null
+  // If the logged-in user already has a club_members record, skip payment and show the contract form directly
+  const isAlreadyMember = user !== null && contract !== null
   if (!contract && !isPostPayment) {
     const { data: fallback } = await supabase
       .from("clubs")
@@ -164,11 +166,11 @@ export default async function MemberOnboardingPage({
           address: "",
           city: "",
         }}
-        guestMode={!isPostPayment}
-        prePayment={!isPostPayment}
+        guestMode={!isPostPayment && !isAlreadyMember}
+        prePayment={!isPostPayment && !isAlreadyMember}
       />
 
-      {user && isPostPayment && (
+      {user && (isPostPayment || isAlreadyMember) && (
         <div className="mx-auto max-w-4xl px-5 pb-16">
           <MemberDocumentsForm clubSlug={slug} documents={safeDocuments} />
         </div>
