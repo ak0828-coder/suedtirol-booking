@@ -1419,7 +1419,28 @@ export async function updateClubFeatureGate(formData: FormData): Promise<void> {
 
 export async function deleteMembershipPlan(id: string) {
   const supabase = await createClient()
-  await supabase.from('membership_plans').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Nicht eingeloggt" }
+
+  const supabaseAdmin = getAdminClient()
+  const { data: plan } = await supabaseAdmin
+    .from("membership_plans")
+    .select("club_id")
+    .eq("id", id)
+    .single()
+  if (!plan) return { success: false, error: "Plan nicht gefunden" }
+
+  const { data: club } = await supabaseAdmin
+    .from("clubs")
+    .select("owner_id")
+    .eq("id", plan.club_id)
+    .single()
+  const SUPER_ADMIN = process.env.SUPER_ADMIN_EMAIL?.toLowerCase()
+  if (!club || (club.owner_id !== user.id && user.email?.toLowerCase() !== SUPER_ADMIN)) {
+    return { success: false, error: "Keine Berechtigung" }
+  }
+
+  await supabaseAdmin.from("membership_plans").delete().eq("id", id)
   return { success: true }
 }
 
@@ -3187,9 +3208,10 @@ export async function createBooking(
     const { data: current } = await supabaseAdmin
         .from('credit_codes')
         .select('usage_count, usage_limit')
-        .eq('code', creditCode.toUpperCase()) // Uppercase
+        .eq('code', creditCode.toUpperCase())
+        .eq('club_id', club.id)
         .single()
-    
+
     if(current) {
         const newCount = (current.usage_count || 0) + 1
         const limit = current.usage_limit || 1
@@ -3198,11 +3220,12 @@ export async function createBooking(
 
         const { data: updatedRows } = await supabaseAdmin
           .from('credit_codes')
-          .update({ 
+          .update({
               usage_count: newCount,
               is_redeemed: isFullyRedeemed
           })
           .eq('code', creditCode.toUpperCase())
+          .eq('club_id', club.id)
           .eq('usage_count', current.usage_count || 0)
           .select('id')
 

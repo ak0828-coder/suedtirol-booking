@@ -407,14 +407,14 @@ export async function POST(req: Request) {
               .eq("id", bookingId)
               .single()
 
-            const lang = normalizeLang(bookingRow?.clubs?.[0]?.default_language)
+            const lang = normalizeLang((bookingRow?.clubs as any)?.default_language)
             const locale = localeMap[lang]
             const dict = trainerCopy[lang]
 
             const startText = bookingRow?.start_time
               ? new Date(bookingRow.start_time).toLocaleString(locale)
               : ""
-            const courtName = bookingRow?.courts?.[0]?.name || "Court"
+            const courtName = (bookingRow?.courts as any)?.name || "Court"
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
             const acceptUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=accept`
             const rejectUrl = `${baseUrl}/api/trainer/decision?token=${token}&action=reject`
@@ -573,7 +573,7 @@ export async function POST(req: Request) {
             .select("clubs(default_language)")
             .eq("id", courseId)
             .single()
-          const lang = normalizeLang(club?.clubs?.[0]?.default_language)
+          const lang = normalizeLang((club?.clubs as any)?.default_language)
           const locale = localeMap[lang]
           const dict = courseCopy[lang]
 
