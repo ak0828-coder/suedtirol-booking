@@ -75,7 +75,7 @@ export default async function MemberDashboard({
   const supabaseAdmin = getAdminClient()
   const { data: member } = await supabaseAdmin
     .from("club_members")
-    .select("*, membership_plans(name, billing_interval), contract_signed_at, medical_certificate_valid_until")
+    .select("*, membership_plans(name), contract_signed_at, medical_certificate_valid_until")
     .eq("user_id", user.id)
     .eq("club_id", club.id)
     .single()
