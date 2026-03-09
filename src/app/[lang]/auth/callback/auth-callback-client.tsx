@@ -20,9 +20,10 @@ export default function AuthCallbackClient() {
   const supabase = useMemo(() => createClient(), [])
 
   const lang = typeof params?.lang === "string" ? params.lang : "de"
-  const next = searchParams?.get("next") || `/${lang}`
+  const next = searchParams?.get("next") || ""
   const safeNext = next.startsWith("/") ? next : `/${lang}`
   const code = searchParams?.get("code")
+  const type = searchParams?.get("type")
 
   const [message, setMessage] = useState("Login wird abgeschlossen…")
 
@@ -34,7 +35,8 @@ export default function AuthCallbackClient() {
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (error) throw error
-          if (!cancelled) router.replace(safeNext)
+          const dest = safeNext || (type === "recovery" ? `/${lang}/change-password` : `/${lang}`)
+          if (!cancelled) router.replace(dest)
           return
         }
 
@@ -43,7 +45,9 @@ export default function AuthCallbackClient() {
         if (access_token && refresh_token) {
           const { error } = await supabase.auth.setSession({ access_token, refresh_token })
           if (error) throw error
-          if (!cancelled) router.replace(safeNext)
+          const hashType = new URLSearchParams((window.location.hash || "").replace(/^#/, "")).get("type")
+          const dest = safeNext || (hashType === "recovery" ? `/${lang}/change-password` : `/${lang}`)
+          if (!cancelled) router.replace(dest)
           return
         }
 

@@ -290,7 +290,7 @@ export function MemberOnboardingForm({
       return
     }
 
-    if (isPostPayment) {
+    if (!prePayment) {
       window.location.href = `/${lang}/club/${clubSlug}/dashboard`
       return
     }

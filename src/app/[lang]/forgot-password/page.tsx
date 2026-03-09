@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, Suspense, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { requestPasswordReset } from "@/app/actions"
 import { Loader2, ArrowLeft, Mail } from "lucide-react"
 import Link from "next/link"
 import { useParams, useSearchParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
+import { createClient } from "@/lib/supabase/client"
 
 export default function ForgotPasswordPage() {
   return (
@@ -24,6 +24,7 @@ function ForgotPasswordForm() {
   const afterRaw = searchParams?.get("after") || ""
   const afterUrl = afterRaw.startsWith("/") && !afterRaw.startsWith("//") ? afterRaw : null
   const { t } = useI18n()
+  const supabase = useMemo(() => createClient(), [])
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -34,12 +35,16 @@ function ForgotPasswordForm() {
     setIsLoading(true)
     setError("")
 
-    const res = await requestPasswordReset(email, lang, afterUrl || undefined)
+    const base = process.env.NEXT_PUBLIC_BASE_URL || "https://www.avaimo.com"
+    const changePasswordPath = `/${lang}/change-password${afterUrl ? `?after=${encodeURIComponent(afterUrl)}` : ""}`
+    const redirectTo = `${base}/${lang}/auth/callback?next=${encodeURIComponent(changePasswordPath)}`
 
-    if (res.success) {
-      setIsSuccess(true)
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+
+    if (resetError) {
+      setError(resetError.message || t("auth.forgot.error", "Ein Fehler ist aufgetreten."))
     } else {
-      setError(res.error || t("auth.forgot.error", "Ein Fehler ist aufgetreten."))
+      setIsSuccess(true)
     }
     setIsLoading(false)
   }
