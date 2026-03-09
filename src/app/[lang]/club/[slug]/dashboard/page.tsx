@@ -82,9 +82,9 @@ export default async function MemberDashboard({
 
   if (!member) {
     const noMemberCopy = {
-      de: { title: "Kein Mitgliedskonto gefunden", hint: "Falls du gerade Mitglied geworden bist, schließe bitte das Onboarding ab.", onboarding: "Onboarding abschließen", switch: "Account wechseln", back: "Zurück zum Club" },
-      en: { title: "No membership found", hint: "If you just signed up, please complete the onboarding.", onboarding: "Complete onboarding", switch: "Switch account", back: "Back to club" },
-      it: { title: "Nessun abbonamento trovato", hint: "Se ti sei appena iscritto, completa l'onboarding.", onboarding: "Completa l'onboarding", switch: "Cambia account", back: "Torna al club" },
+      de: { title: "Kein Mitgliedskonto gefunden", hint: "Falls du gerade eine Zahlung abgeschlossen hast, gehe zurück zum Club und starte den Prozess erneut. Sollte das Problem weiterhin bestehen, kontaktiere den Support.", switch: "Account wechseln", back: "Zurück zum Club" },
+      en: { title: "No membership found", hint: "If you just completed a payment, go back to the club page and try again. If the issue persists, contact support.", switch: "Switch account", back: "Back to club" },
+      it: { title: "Nessun abbonamento trovato", hint: "Se hai appena effettuato un pagamento, torna alla pagina del club e riprova. Se il problema persiste, contatta il supporto.", switch: "Cambia account", back: "Torna al club" },
     }
     const nm = noMemberCopy[lang as "de" | "en" | "it"] || noMemberCopy.de
     return (
@@ -97,13 +97,10 @@ export default async function MemberDashboard({
           <p className="mt-3 text-xs text-slate-400">{nm.hint}</p>
           <div className="mt-4 space-y-2">
             <Button asChild className="w-full">
-              <Link href={`/${lang}/club/${slug}/onboarding`}>{nm.onboarding}</Link>
+              <Link href={`/${lang}/club/${slug}`}>{nm.back}</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
               <Link href={`/${lang}/login`}>{nm.switch}</Link>
-            </Button>
-            <Button asChild variant="ghost" className="w-full text-sm">
-              <Link href={`/${lang}/club/${slug}`}>{nm.back}</Link>
             </Button>
           </div>
         </div>

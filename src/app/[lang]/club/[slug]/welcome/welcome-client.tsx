@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import SignatureCanvas from "react-signature-canvas"
 import { createClient } from "@/lib/supabase/client"
-import { setMemberPassword, submitMembershipSignature } from "@/app/actions"
+import { ensureMembershipFromCheckoutSession, setMemberPassword, submitMembershipSignature } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -145,7 +145,16 @@ export function WelcomeClient({
         }
       }
 
-      // Step 2: Sign contract
+      // Step 2: Ensure membership record exists (idempotent – guards against
+      // silent failure of the server-side call on page load)
+      const ensureRes = await ensureMembershipFromCheckoutSession(sessionId)
+      if (!ensureRes?.success) {
+        setError(`Mitgliedschaft konnte nicht erstellt werden (${ensureRes?.error || "unbekannt"}). Bitte wende dich an den Support.`)
+        setSaving(false)
+        return
+      }
+
+      // Step 3: Sign contract
       const res = await submitMembershipSignature(
         clubSlug,
         signature,
