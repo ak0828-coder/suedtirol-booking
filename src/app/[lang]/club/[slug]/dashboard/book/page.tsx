@@ -86,8 +86,23 @@ export default async function DashboardBookPage({
                       <p className="text-sm text-slate-400 mt-0.5 capitalize">{court.sport_type || "Tennis"}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-slate-900">{court.price_per_hour}€</p>
-                      <p className="text-xs text-slate-400">/ {duration} Min</p>
+                      {(() => {
+                        const mode = club.member_booking_pricing_mode
+                        const val = club.member_booking_pricing_value || 0
+                        const base = court.price_per_hour
+                        let memberPrice = base
+                        if (isMember && mode === "discount_percent") memberPrice = Math.max(0, base * (1 - val / 100))
+                        else if (isMember && mode === "member_price") memberPrice = Math.max(0, val)
+                        const hasDiscount = isMember && memberPrice < base
+                        return (
+                          <>
+                            {hasDiscount && <p className="text-xs text-slate-400 line-through text-right">{base}€</p>}
+                            <p className="text-2xl font-bold text-slate-900">{hasDiscount ? memberPrice : base}€</p>
+                            <p className="text-xs text-slate-400">/ {duration} Min</p>
+                            {hasDiscount && <p className="text-xs font-medium mt-0.5" style={{ color: primary }}>Mitgliederpreis</p>}
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
                   <BookingModal
