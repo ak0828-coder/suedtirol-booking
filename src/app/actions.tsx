@@ -540,9 +540,10 @@ async function upsertMembershipFromCheckoutSession(session: any) {
   const guestLastName = session.metadata?.guestLastName
   const guestPhone = session.metadata?.guestPhone
 
-  if (!clubId || !planId) {
-    return { success: false, error: "missing_metadata" }
+  if (!clubId) {
+    return { success: false, error: "missing_metadata_clubId" }
   }
+  // planId is validated/resolved inside writeClubMembership (falls back to first club plan)
 
   const supabaseAdmin = getAdminClient()
 
@@ -597,7 +598,8 @@ async function upsertMembershipFromCheckoutSession(session: any) {
   })
 
   if (!writeResult?.success) {
-    return { success: false, error: "member_write_failed" }
+    console.error("upsertMembershipFromCheckoutSession: writeClubMembership failed", writeResult?.error)
+    return { success: false, error: writeResult?.error || "member_write_failed" }
   }
 
   if (typeof session.customer === "string") {

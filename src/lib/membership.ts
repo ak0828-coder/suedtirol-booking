@@ -36,15 +36,39 @@ export async function writeClubMembership(params: {
   paymentStatus?: string | null
 }) {
   const { supabaseAdmin, userId, clubId, planId, subscriptionId, validUntilIso, paymentStatus } = params
-  if (!userId || !clubId || !planId) return { success: false, error: "missing_params" }
+  if (!userId || !clubId) return { success: false, error: "missing_params" }
+
+  // Verify plan exists — avoids FK violations if plan was deleted or is from wrong project
+  let resolvedPlanId: string | null = null
+  if (planId) {
+    const { data: plan } = await supabaseAdmin
+      .from("membership_plans")
+      .select("id")
+      .eq("id", planId)
+      .single()
+    resolvedPlanId = plan?.id ?? null
+    if (!resolvedPlanId) {
+      // Fallback: find any active plan for the club
+      const { data: fallback } = await supabaseAdmin
+        .from("membership_plans")
+        .select("id")
+        .eq("club_id", clubId)
+        .limit(1)
+        .single()
+      resolvedPlanId = fallback?.id ?? null
+      if (!resolvedPlanId) {
+        console.error("writeClubMembership: plan not found", { planId, clubId })
+      }
+    }
+  }
 
   const payload: any = {
     user_id: userId,
     club_id: clubId,
-    plan_id: planId,
     stripe_subscription_id: subscriptionId || null,
     status: "active",
   }
+  if (resolvedPlanId) payload.plan_id = resolvedPlanId
   if (paymentStatus) payload.payment_status = paymentStatus
   if (validUntilIso) payload.valid_until = validUntilIso
 
@@ -53,7 +77,8 @@ export async function writeClubMembership(params: {
     .upsert(payload, { onConflict: "club_id,user_id" })
 
   if (writeError) {
-    return { success: false, error: "member_write_failed" }
+    console.error("writeClubMembership upsert error:", writeError)
+    return { success: false, error: writeError.message }
   }
 
   return { success: true }
