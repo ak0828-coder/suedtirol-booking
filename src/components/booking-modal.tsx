@@ -207,7 +207,7 @@ export function BookingModal({
 
       <DialogContent
         showCloseButton={false}
-        className="p-0 gap-0 w-full max-w-md mx-auto sm:rounded-3xl rounded-t-3xl overflow-hidden border-0 shadow-2xl max-h-[92dvh] flex flex-col sm:top-[50%] sm:translate-y-[-50%] top-auto bottom-0 translate-y-0 left-0 right-0 translate-x-0 sm:left-[50%] sm:translate-x-[-50%] sm:bottom-auto"
+        className="p-0 gap-0 w-full max-w-[min(448px,calc(100vw-1rem))] rounded-2xl sm:rounded-3xl overflow-hidden border-0 shadow-2xl max-h-[88dvh] flex flex-col"
       >
         <DialogTitle className="sr-only">{courtName} buchen</DialogTitle>
 
