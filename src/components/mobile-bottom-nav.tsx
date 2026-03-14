@@ -24,26 +24,58 @@ export function MobileBottomNav({ slug, active }: MobileBottomNavProps) {
   ] as const
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-100 bg-white/95 backdrop-blur-md safe-bottom">
-      <nav className="grid grid-cols-5 px-2 py-1">
-        {items.map((item) => {
-          const Icon = item.icon
-          const isActive = active === item.id
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-medium transition-colors ${
-                isActive ? "club-primary-text" : "text-slate-400"
-              }`}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <Icon className={`h-5 w-5 ${isActive ? "club-primary-text" : "text-slate-400"}`} strokeWidth={isActive ? 2.2 : 1.8} />
-              <span>{item.label}</span>
-            </Link>
-          )
-        })}
-      </nav>
+    <div
+      className="sm:hidden fixed bottom-0 left-0 right-0 z-40"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div
+        className="mx-3 mb-3 glass-strong rounded-3xl overflow-hidden"
+        style={{
+          boxShadow: "0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)",
+        }}
+      >
+        <nav className="grid grid-cols-5 px-1 py-1.5">
+          {items.map((item) => {
+            const Icon = item.icon
+            const isActive = active === item.id
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[52px] rounded-2xl relative transition-all duration-200 active:scale-95"
+                style={
+                  isActive
+                    ? { background: "color-mix(in srgb, var(--club-primary) 16%, transparent)" }
+                    : {}
+                }
+                aria-current={isActive ? "page" : undefined}
+              >
+                {isActive && (
+                  <div
+                    className="absolute top-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+                    style={{ backgroundColor: "var(--club-primary)" }}
+                  />
+                )}
+                <Icon
+                  className="h-5 w-5 transition-colors"
+                  style={{
+                    color: isActive ? "var(--club-primary)" : "rgba(255,255,255,0.32)",
+                  }}
+                  strokeWidth={isActive ? 2.2 : 1.6}
+                />
+                <span
+                  className="text-[10px] font-medium tracking-wide transition-colors"
+                  style={{
+                    color: isActive ? "var(--club-primary)" : "rgba(255,255,255,0.28)",
+                  }}
+                >
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
+        </nav>
+      </div>
     </div>
   )
 }

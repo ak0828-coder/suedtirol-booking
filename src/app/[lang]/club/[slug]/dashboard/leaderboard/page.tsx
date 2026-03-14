@@ -3,14 +3,14 @@ import { getAdminClient } from "@/lib/supabase/admin"
 import { getClubRanking } from "@/app/actions"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trophy } from "lucide-react"
+import { ChevronLeft, Trophy } from "lucide-react"
 import { AnimatedNumber } from "@/components/animated-number"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { getReadableTextColor } from "@/lib/color"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
+
+const MEDALS = ["🥇", "🥈", "🥉"]
 
 export default async function ClubLeaderboardPage({
   params,
@@ -22,9 +22,7 @@ export default async function ClubLeaderboardPage({
   const t = createTranslator(dict)
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return notFound()
 
   const { data: club } = await supabase
@@ -47,65 +45,93 @@ export default async function ClubLeaderboardPage({
 
   const ranking = await getClubRanking(club.id, 50)
 
-  const primary = club.primary_color || "#0f172a"
+  const primary = club.primary_color || "#1F3D2B"
   const primaryFg = getReadableTextColor(primary)
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 pb-24 safe-bottom page-enter"
+      className="min-h-screen bg-[#f5f5f7] pb-24 safe-bottom page-enter"
       style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
     >
-      <div className="mx-auto max-w-4xl space-y-6 app-pad pt-4 sm:pt-6">
-        <header className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900">{t("leaderboard.title", "Top 50 Rangliste")}</h1>
-              <p className="text-sm text-slate-500">{t("leaderboard.club", "Club:")} {club.name}</p>
-            </div>
-            <Link href={`/${lang}/club/${slug}/dashboard`}>
-              <Button variant="outline" className="rounded-full">{t("leaderboard.back", "Zurück")}</Button>
-            </Link>
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-[#f5f5f7]/90 backdrop-blur-md border-b border-slate-200/60">
+        <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-3">
+          <Link
+            href={`/${lang}/club/${slug}/dashboard`}
+            className="w-9 h-9 rounded-xl bg-white border border-slate-200/60 flex items-center justify-center shadow-sm"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600" />
+          </Link>
+          <div>
+            <h1 className="text-lg font-semibold text-slate-900">{t("leaderboard.title", "Rangliste")}</h1>
+            <p className="text-xs text-slate-400">{club.name} · Top 50</p>
           </div>
-        </header>
+          <Trophy className="ml-auto w-5 h-5 text-slate-300" />
+        </div>
+      </div>
 
-        <Card className="rounded-2xl border border-slate-200/60 bg-white/80 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex gap-2 items-center">
-              <Trophy className="club-primary-text" /> {t("leaderboard.heading", "Rangliste")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {ranking.length === 0 ? (
-              <p className="text-sm text-slate-500">{t("leaderboard.empty", "Noch keine Ranglistenpunkte vorhanden.")}</p>
-            ) : (
-              <div className="space-y-2">
+      <div className="max-w-xl mx-auto px-4 pt-4 space-y-2">
+        {ranking.length === 0 ? (
+          <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm p-10 text-center">
+            <Trophy className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+            <p className="text-sm text-slate-400">{t("leaderboard.empty", "Noch keine Ranglistenpunkte vorhanden.")}</p>
+          </div>
+        ) : (
+          <>
+            {/* Top 3 podium */}
+            {ranking.length >= 3 && (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {[ranking[1], ranking[0], ranking[2]].map((row, i) => {
+                  if (!row) return <div key={i} />
+                  const positions = [1, 0, 2]
+                  const isCenter = i === 1
+                  return (
+                    <div
+                      key={row.userId}
+                      className={`rounded-2xl border bg-white shadow-sm p-3 text-center flex flex-col items-center gap-1 ${isCenter ? "ring-2 ring-offset-2" : ""}`}
+                      style={isCenter ? { ["--tw-ring-color" as any]: primary } : {}}
+                    >
+                      <span className="text-2xl">{MEDALS[positions[i]]}</span>
+                      <span className="text-xs font-semibold text-slate-700 leading-tight line-clamp-1">{row.name}</span>
+                      <span className="text-xs font-bold" style={{ color: primary }}>
+                        <AnimatedNumber value={row.points} /> P
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Full list */}
+            <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm overflow-hidden">
+              <div className="divide-y divide-slate-100">
                 {ranking.map((row) => (
                   <div
                     key={row.userId}
-                    className={`flex items-center justify-between rounded-xl border border-slate-200/60 bg-white/90 px-3 py-2 text-sm ${row.rank <= 3 ? "anim-pop" : ""}`}
+                    className="flex items-center gap-3 px-4 py-3"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="w-8 text-center flex-shrink-0">
                       {row.rank <= 3 ? (
-                        <span className="rounded-full border club-primary-border px-2 py-1 text-xs font-semibold club-primary-text">
-                          {row.rank}
-                        </span>
+                        <span className="text-lg">{MEDALS[row.rank - 1]}</span>
                       ) : (
-                        <span className="w-8 text-center font-semibold text-slate-500">
-                          {row.rank}
-                        </span>
+                        <span className="text-sm font-semibold text-slate-400">{row.rank}</span>
                       )}
-                      <span className="font-medium text-slate-800">{row.name}</span>
                     </div>
-                    <span className="rounded-full border club-primary-border px-3 py-1 text-xs font-semibold club-primary-text">
-                      <AnimatedNumber value={row.points} /> {t("leaderboard.points", "Punkte")}
+                    <span className="flex-1 text-sm font-medium text-slate-800 truncate">{row.name}</span>
+                    <span
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: primary + "18", color: primary }}
+                    >
+                      <AnimatedNumber value={row.points} /> {t("leaderboard.points", "Pkt")}
                     </span>
                   </div>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          </>
+        )}
       </div>
+
       <MobileBottomNav slug={slug} active="leaderboard" />
     </div>
   )

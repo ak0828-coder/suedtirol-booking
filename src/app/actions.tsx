@@ -2554,7 +2554,11 @@ export async function createCourseCheckoutSession(
           clubSlug,
           userId: user.id,
           pricingMode: "per_session",
-          sessionIds: selected.join(","),
+          // Stripe metadata values are limited to 500 chars; UUID list: ~37 chars/ID → cap at ~13
+          sessionIds: selected.reduce((acc: string, id: string) => {
+            const next = acc ? `${acc},${id}` : id
+            return next.length <= 490 ? next : acc
+          }, ""),
         },
         success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
@@ -3193,7 +3197,8 @@ export async function createBooking(
         }
       }
 
-      if (member.valid_until && new Date(member.valid_until) > new Date()) {
+      // null valid_until = unlimited membership
+      if (!member.valid_until || new Date(member.valid_until) > new Date()) {
         finalPrice = applyMemberPricing(
           price,
           club.member_booking_pricing_mode,
@@ -3505,7 +3510,7 @@ export async function createCheckoutSession(
 
   let finalPrice = price
   let metadata: any = {
-    courtId, clubSlug,
+    courtId, clubSlug, courtName,
     date: date.toISOString(),
     time,
     price: price.toString(),
@@ -3531,7 +3536,8 @@ export async function createCheckoutSession(
       .eq("status", "active")
       .single()
 
-    if (member && member.valid_until && new Date(member.valid_until) > new Date()) {
+    // Apply member pricing if active — null valid_until means unlimited membership
+    if (member && (!member.valid_until || new Date(member.valid_until) > new Date())) {
       finalPrice = applyMemberPricing(price, club.member_booking_pricing_mode, club.member_booking_pricing_value)
       memberAdjusted = true
     }
@@ -3656,7 +3662,9 @@ export async function createCheckoutSession(
           guestName,
           userId: user?.id || null
         },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: user
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}/dashboard?booking=success`
+        : `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/${lang}/club/${clubSlug}?canceled=true`,
       ...(customerId ? { customer: customerId } : { customer_email: user?.email || guestEmail }),
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60)

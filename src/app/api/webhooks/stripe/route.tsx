@@ -260,6 +260,22 @@ export async function POST(req: Request) {
       const lang = normalizeLang(club?.default_language)
       const locale = localeMap[lang]
 
+      // Resolve email: customer_details may be null for logged-in Stripe customers
+      let resolvedEmail = customerEmail || null
+      if (!resolvedEmail && userId) {
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("email")
+          .eq("id", userId)
+          .single()
+        if (!profile?.email) {
+          const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId)
+          resolvedEmail = authUser?.user?.email || null
+        } else {
+          resolvedEmail = profile.email
+        }
+      }
+
       if (club && bookingId) {
         // Idempotency: check if booking is already confirmed
         const { data: existingBooking } = await supabaseAdmin
@@ -318,7 +334,7 @@ export async function POST(req: Request) {
           })
           .eq("id", bookingId)
 
-        if (customerEmail) {
+        if (resolvedEmail) {
           try {
             const orderId = "ORD-" + Math.floor(Math.random() * 100000)
             const subject = lang === "en"
@@ -329,12 +345,12 @@ export async function POST(req: Request) {
 
             await resend.emails.send({
               from: "Avaimo <info@avaimo.com>",
-              to: [customerEmail],
+              to: [resolvedEmail],
               subject,
               react: (
                 <BookingEmailTemplate
-                  guestName={guestName || customerEmail || "Guest"}
-                  courtName="Tennis Court"
+                  guestName={guestName || resolvedEmail || "Guest"}
+                  courtName={session.metadata?.courtName || "Court"}
                   date={startTime.toLocaleDateString(locale)}
                   time={time}
                   price={amountTotal}
@@ -372,9 +388,30 @@ export async function POST(req: Request) {
       const bookingId = session.metadata?.bookingId
       const trainerId = session.metadata?.trainerId
       const clubSlug = session.metadata?.clubSlug
+      const trainerUserId = session.metadata?.userId
       const amountTotal = session.amount_total ? session.amount_total / 100 : 0
       const customerEmail = session.customer_details?.email
       const paymentIntentId = session.payment_intent
+
+      // Idempotency: skip if already processed
+      if (bookingId) {
+        const { data: existingBooking } = await supabaseAdmin
+          .from("bookings")
+          .select("status")
+          .eq("id", bookingId)
+          .single()
+        if (existingBooking?.status === "pending_trainer" || existingBooking?.status === "confirmed") {
+          console.log("trainer_session: already processed:", bookingId)
+          return new NextResponse(null, { status: 200 })
+        }
+      }
+
+      // Resolve customer email for logged-in users (customer_details may be null)
+      let resolvedTrainerEmail = customerEmail || null
+      if (!resolvedTrainerEmail && trainerUserId) {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(trainerUserId)
+        resolvedTrainerEmail = authUser?.user?.email || null
+      }
 
       if (bookingId) {
         const token = crypto.randomBytes(24).toString("hex")
@@ -386,7 +423,7 @@ export async function POST(req: Request) {
             status: "pending_trainer",
             payment_status: "authorized",
             price_paid: amountTotal,
-            guest_email: customerEmail || null,
+            guest_email: resolvedTrainerEmail || null,
             payment_intent_id: paymentIntentId || null,
             trainer_action_token: token,
             trainer_action_expires_at: expiresAt,
@@ -441,9 +478,36 @@ export async function POST(req: Request) {
             }
           }
         }
+
+        // Trainer payout — inside bookingId guard to avoid orphaned records
+        if (trainerId) {
+          const { data: trainerData } = await supabaseAdmin
+            .from("trainers")
+            .select("*")
+            .eq("id", trainerId)
+            .single()
+
+          if (trainerData) {
+            let trainerEarnings = 0
+            if (trainerData.salary_type === "commission") {
+              trainerEarnings = amountTotal * (Number(trainerData.default_rate || 0) / 100)
+            } else if (trainerData.salary_type === "hourly") {
+              trainerEarnings = Number(trainerData.default_rate || 0)
+            }
+
+            if (trainerEarnings > 0 && trainerData.payout_method !== "stripe_connect") {
+              await supabaseAdmin.from("trainer_payouts").insert({
+                trainer_id: trainerData.id,
+                booking_id: bookingId,
+                amount: trainerEarnings,
+                status: "pending",
+              })
+            }
+          }
+        }
       }
 
-      if (customerEmail) {
+      if (resolvedTrainerEmail) {
         try {
           const { data: club } = await supabaseAdmin
             .from("clubs")
@@ -455,7 +519,7 @@ export async function POST(req: Request) {
 
           await resend.emails.send({
             from: "Avaimo <info@avaimo.com>",
-            to: [customerEmail],
+            to: [resolvedTrainerEmail],
             subject: dict.pendingSubject,
             html: `
               <h2>${dict.pendingTitle}</h2>
@@ -468,36 +532,6 @@ export async function POST(req: Request) {
           console.error("Trainer Pending Mail Error:", emailError)
         }
       }
-
-      if (trainerId) {
-        const { data: trainer } = await supabaseAdmin
-          .from("trainers")
-          .select("*")
-          .eq("id", trainerId)
-          .single()
-
-        if (trainer) {
-          let trainerEarnings = 0
-          if (trainer.salary_type === "commission") {
-            trainerEarnings = amountTotal * (Number(trainer.default_rate || 0) / 100)
-          } else if (trainer.salary_type === "hourly") {
-            trainerEarnings = Number(trainer.default_rate || 0)
-          } else {
-            trainerEarnings = 0
-          }
-
-          if (trainerEarnings > 0) {
-            if (trainer.payout_method !== "stripe_connect") {
-              await supabaseAdmin.from("trainer_payouts").insert({
-                trainer_id: trainer.id,
-                booking_id: bookingId || null,
-                amount: trainerEarnings,
-                status: "pending",
-              })
-            }
-          }
-        }
-      }
     }
 
     if (session.metadata?.type === "course_enrollment") {
@@ -508,6 +542,37 @@ export async function POST(req: Request) {
       const sessionIdsRaw = session.metadata?.sessionIds || ""
       const amountTotal = session.amount_total ? session.amount_total / 100 : 0
       const customerEmail = session.customer_details?.email
+
+      // Idempotency: skip if already processed
+      if (pricingMode === "per_session" && userId && courseId) {
+        const { data: existingParticipant } = await supabaseAdmin
+          .from("course_participants")
+          .select("payment_status")
+          .eq("course_id", courseId)
+          .eq("user_id", userId)
+          .single()
+        if (existingParticipant?.payment_status === "paid_stripe") {
+          console.log("course_enrollment per_session: already processed, courseId:", courseId)
+          return new NextResponse(null, { status: 200 })
+        }
+      } else if (participantId) {
+        const { data: existingParticipant } = await supabaseAdmin
+          .from("course_participants")
+          .select("payment_status")
+          .eq("id", participantId)
+          .single()
+        if (existingParticipant?.payment_status === "paid_stripe") {
+          console.log("course_enrollment full_course: already processed, participantId:", participantId)
+          return new NextResponse(null, { status: 200 })
+        }
+      }
+
+      // Resolve email for logged-in users
+      let resolvedCourseEmail = customerEmail || null
+      if (!resolvedCourseEmail && userId) {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId)
+        resolvedCourseEmail = authUser?.user?.email || null
+      }
 
       if (pricingMode === "per_session") {
         const sessionIds = sessionIdsRaw.split(",").filter(Boolean)
@@ -567,7 +632,7 @@ export async function POST(req: Request) {
           }
         }
 
-        if (customerEmail) {
+        if (resolvedCourseEmail) {
           const { data: club } = await supabaseAdmin
             .from("courses")
             .select("clubs(default_language)")
@@ -594,7 +659,7 @@ export async function POST(req: Request) {
           try {
             await resend.emails.send({
               from: "Avaimo <info@avaimo.com>",
-              to: [customerEmail],
+              to: [resolvedCourseEmail],
               subject: `${dict.subject} - ${course?.title || "Course"}`,
               html: `
                 <h2>${dict.title}</h2>
