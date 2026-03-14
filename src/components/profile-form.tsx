@@ -48,7 +48,7 @@ export function ProfileForm({ profile }: { profile: any }) {
         {pending ? t("profile.saving", "Speichern...") : t("profile.save", "Speichern")}
       </Button>
 
-      {message && <div className="text-xs text-slate-500">{message}</div>}
+      {message && <div className="text-xs text-white/40">{message}</div>}
     </form>
   )
 }

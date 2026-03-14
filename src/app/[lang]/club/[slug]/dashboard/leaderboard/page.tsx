@@ -50,37 +50,80 @@ export default async function ClubLeaderboardPage({
 
   return (
     <div
-      className="min-h-screen bg-[#f5f5f7] pb-24 safe-bottom page-enter"
-      style={{ ["--club-primary" as any]: primary, ["--club-primary-foreground" as any]: primaryFg }}
+      className="min-h-screen pb-36"
+      style={{
+        background: "#09090b",
+        ["--club-primary" as any]: primary,
+        ["--club-primary-foreground" as any]: primaryFg,
+      }}
     >
+      {/* Ambient top glow */}
+      <div
+        className="fixed top-0 left-0 right-0 h-64 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 60% 100% at 50% 0%, color-mix(in srgb, ${primary} 12%, transparent) 0%, transparent 100%)`,
+          zIndex: 0,
+        }}
+      />
+
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-[#f5f5f7]/90 backdrop-blur-md border-b border-slate-200/60">
-        <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-3">
+      <div
+        className="sticky top-0 z-20 border-b"
+        style={{
+          background: "rgba(9,9,11,0.88)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderColor: "rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-3.5">
           <Link
             href={`/${lang}/club/${slug}/dashboard`}
-            className="w-9 h-9 rounded-xl bg-white border border-slate-200/60 flex items-center justify-center shadow-sm"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.09)",
+            }}
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+            <ChevronLeft className="w-5 h-5 text-white/70" />
           </Link>
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">{t("leaderboard.title", "Rangliste")}</h1>
-            <p className="text-xs text-slate-400">{club.name} · Top 50</p>
+            <h1 className="text-lg font-bold text-white tracking-tight">
+              {t("leaderboard.title", "Rangliste")}
+            </h1>
+            <p className="label-caps text-white/30 mt-0.5">{club.name} · Top 50</p>
           </div>
-          <Trophy className="ml-auto w-5 h-5 text-slate-300" />
+          <div
+            className="ml-auto w-9 h-9 rounded-2xl flex items-center justify-center"
+            style={{
+              background: `color-mix(in srgb, ${primary} 16%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${primary} 28%, transparent)`,
+            }}
+          >
+            <Trophy className="w-4 h-4" style={{ color: primary }} />
+          </div>
         </div>
       </div>
 
-      <div className="max-w-xl mx-auto px-4 pt-4 space-y-2">
+      <div className="relative z-10 max-w-xl mx-auto px-4 pt-5 space-y-3">
         {ranking.length === 0 ? (
-          <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm p-10 text-center">
-            <Trophy className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-sm text-slate-400">{t("leaderboard.empty", "Noch keine Ranglistenpunkte vorhanden.")}</p>
+          <div
+            className="rounded-3xl p-10 text-center anim-fade-up"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <Trophy className="w-10 h-10 mx-auto mb-3" style={{ color: "rgba(255,255,255,0.12)" }} />
+            <p className="text-white/30 text-sm">
+              {t("leaderboard.empty", "Noch keine Ranglistenpunkte vorhanden.")}
+            </p>
           </div>
         ) : (
           <>
             {/* Top 3 podium */}
             {ranking.length >= 3 && (
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-3 gap-2 mb-2 anim-fade-up">
                 {[ranking[1], ranking[0], ranking[2]].map((row, i) => {
                   if (!row) return <div key={i} />
                   const positions = [1, 0, 2]
@@ -88,12 +131,26 @@ export default async function ClubLeaderboardPage({
                   return (
                     <div
                       key={row.userId}
-                      className={`rounded-2xl border bg-white shadow-sm p-3 text-center flex flex-col items-center gap-1 ${isCenter ? "ring-2 ring-offset-2" : ""}`}
-                      style={isCenter ? { ["--tw-ring-color" as any]: primary } : {}}
+                      className="rounded-3xl p-3 text-center flex flex-col items-center gap-1.5"
+                      style={{
+                        background: isCenter
+                          ? `color-mix(in srgb, ${primary} 14%, rgba(255,255,255,0.04))`
+                          : "rgba(255,255,255,0.04)",
+                        border: isCenter
+                          ? `1px solid color-mix(in srgb, ${primary} 35%, transparent)`
+                          : "1px solid rgba(255,255,255,0.08)",
+                        paddingTop: isCenter ? "20px" : "12px",
+                        paddingBottom: isCenter ? "20px" : "12px",
+                      }}
                     >
                       <span className="text-2xl">{MEDALS[positions[i]]}</span>
-                      <span className="text-xs font-semibold text-slate-700 leading-tight line-clamp-1">{row.name}</span>
-                      <span className="text-xs font-bold" style={{ color: primary }}>
+                      <span className="text-xs font-semibold text-white/80 leading-tight line-clamp-1">
+                        {row.name}
+                      </span>
+                      <span
+                        className="font-mono text-xs font-bold"
+                        style={{ color: primary }}
+                      >
                         <AnimatedNumber value={row.points} /> P
                       </span>
                     </div>
@@ -103,24 +160,38 @@ export default async function ClubLeaderboardPage({
             )}
 
             {/* Full list */}
-            <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm overflow-hidden">
-              <div className="divide-y divide-slate-100">
+            <div
+              className="rounded-3xl overflow-hidden anim-fade-up anim-stagger-1"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              <div
+                className="h-[2px]"
+                style={{ background: `linear-gradient(90deg, ${primary}, transparent)` }}
+              />
+              <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
                 {ranking.map((row) => (
                   <div
                     key={row.userId}
-                    className="flex items-center gap-3 px-4 py-3"
+                    className="flex items-center gap-3 px-5 py-3.5"
                   >
-                    <div className="w-8 text-center flex-shrink-0">
+                    <div className="w-7 text-center flex-shrink-0">
                       {row.rank <= 3 ? (
-                        <span className="text-lg">{MEDALS[row.rank - 1]}</span>
+                        <span className="text-base">{MEDALS[row.rank - 1]}</span>
                       ) : (
-                        <span className="text-sm font-semibold text-slate-400">{row.rank}</span>
+                        <span className="font-mono text-sm font-medium text-white/25">{row.rank}</span>
                       )}
                     </div>
-                    <span className="flex-1 text-sm font-medium text-slate-800 truncate">{row.name}</span>
+                    <span className="flex-1 text-sm font-medium text-white/75 truncate">{row.name}</span>
                     <span
-                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                      style={{ backgroundColor: primary + "18", color: primary }}
+                      className="font-mono text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{
+                        background: `color-mix(in srgb, ${primary} 15%, transparent)`,
+                        color: primary,
+                        border: `1px solid color-mix(in srgb, ${primary} 28%, transparent)`,
+                      }}
                     >
                       <AnimatedNumber value={row.points} /> {t("leaderboard.points", "Pkt")}
                     </span>

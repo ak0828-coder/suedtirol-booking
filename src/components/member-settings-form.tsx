@@ -35,15 +35,21 @@ export function MemberSettingsForm({ clubSlug, initialOptOut }: MemberSettingsFo
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-white/40">
         {t("member_settings.leaderboard_desc", "Du kannst entscheiden, ob du in der Club-Rangliste sichtbar bist.")}
       </p>
-      <div className="flex items-center justify-between rounded-xl border border-slate-200/60 bg-slate-50/80 px-4 py-3">
+      <div
+        className="flex items-center justify-between rounded-2xl px-4 py-3"
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
         <div>
-          <div className="text-sm font-medium text-slate-800">
+          <div className="text-sm font-medium text-white/80">
             {t("member_settings.visibility", "Sichtbarkeit")}
           </div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-white/35">
             {optOut
               ? t("member_settings.hidden", "Ausgeblendet")
               : t("member_settings.visible", "Sichtbar")}
@@ -60,7 +66,7 @@ export function MemberSettingsForm({ clubSlug, initialOptOut }: MemberSettingsFo
             : t("member_settings.deactivate", "Deaktivieren")}
         </Button>
       </div>
-      {message && <div className="text-xs text-slate-500">{message}</div>}
+      {message && <div className="text-xs text-white/40">{message}</div>}
     </div>
   )
 }
