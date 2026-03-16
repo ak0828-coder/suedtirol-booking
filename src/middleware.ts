@@ -31,6 +31,13 @@ export function middleware(request: NextRequest) {
   const canonicalHost = process.env.NEXT_PUBLIC_CANONICAL_HOST || "www.avaimo.com";
   const currentHost = request.nextUrl.host;
 
+  // Bozen subdomain → serve /bozen landing page
+  if (currentHost === "bozen.avaimo.com" || currentHost.startsWith("bozen.")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/bozen";
+    return NextResponse.rewrite(url);
+  }
+
   if (
     currentHost &&
     canonicalHost &&
