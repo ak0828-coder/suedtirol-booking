@@ -145,9 +145,9 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
   ]
 
   const benefits = [
-    "20% Rabatt auf alle Gym- und Pilates-Abos im gesamten ersten Jahr",
-    "5% Extra-Rabatt auf jede Padel-Buchung — dauerhaft",
-    "Exklusiver Vorabzugang zur App & zur Anlage vor der offiziellen Eröffnung",
+    "20% Rabatt auf alle Gym und Pilates Abos im gesamten ersten Jahr",
+    "5% Extra Rabatt auf jede Padel Buchung im gesamten ersten Jahr",
+    "Exklusiver Vorabzugang zur App und zur Anlage vor der offiziellen Eröffnung",
     "Einladung zum Pre-Opening Event (nur für Founder)",
   ]
 
@@ -310,7 +310,7 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
               className="text-xs font-semibold uppercase tracking-[0.2em]"
               style={{ color: "rgba(255,255,255,0.25)" }}
             >
-              Bozner sind bereits auf der Warteliste
+              sind bereits auf der Warteliste
             </p>
           </div>
         </section>
@@ -399,7 +399,7 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
             </h2>
             <p className="text-base leading-relaxed mb-10" style={{ color: "rgba(255,255,255,0.45)" }}>
               Wir sind aktuell in der finalen Planungsphase für Bozen Süd. Trage dich jetzt ein
-              und sichere dir einen der limitierten Founder-Plätze — mit exklusiven Vorteilen,
+              und sichere dir einen der limitierten Founder-Plätze mit exklusiven Vorteilen,
               die danach nicht mehr verfügbar sind.
             </p>
 
@@ -446,7 +446,7 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
               <span className="font-mono font-semibold" style={{ color: "rgba(203,191,154,0.6)" }}>
                 <AnimatedCounter target={count} />
               </span>{" "}
-              Bozner auf der Warteliste · Founder-Plätze limitiert
+              sind bereits auf der Warteliste · Founder-Plätze limitiert
             </p>
           </div>
         </section>
