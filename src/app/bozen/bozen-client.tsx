@@ -31,7 +31,7 @@ function AnimatedCounter({ target }: { target: number }) {
   return <>{value}</>
 }
 
-function EmailForm({ onSuccess }: { onSuccess: () => void }) {
+function EmailForm({ onSuccess, buttonLabel = "Warteliste beitreten" }: { onSuccess: () => void; buttonLabel?: string }) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -73,16 +73,17 @@ function EmailForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <div className="flex gap-2 flex-col sm:flex-row">
+      <div className="flex flex-col gap-2.5">
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="deine@email.com"
-          className="flex-1 h-12 rounded-full px-5 text-sm text-white placeholder:text-white/25 outline-none transition-all"
+          className="w-full h-13 rounded-2xl px-5 text-base text-white placeholder:text-white/25 outline-none transition-all"
           style={{
-            background: "rgba(255,255,255,0.05)",
+            height: "52px",
+            background: "rgba(255,255,255,0.06)",
             border: "1px solid rgba(255,255,255,0.12)",
           }}
           onFocus={(e) => {
@@ -97,8 +98,10 @@ function EmailForm({ onSuccess }: { onSuccess: () => void }) {
         <button
           type="submit"
           disabled={loading}
-          className="h-12 px-6 rounded-full font-semibold text-sm flex items-center gap-2 justify-center shrink-0 transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="w-full font-semibold text-sm flex items-center gap-2 justify-center transition-opacity hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
           style={{
+            height: "52px",
+            borderRadius: "16px",
             background: "#CBBF9A",
             color: "#080808",
           }}
@@ -107,19 +110,19 @@ function EmailForm({ onSuccess }: { onSuccess: () => void }) {
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
-              Warteliste beitreten <ArrowRight className="w-4 h-4" />
+              {buttonLabel} <ArrowRight className="w-4 h-4" />
             </>
           )}
         </button>
       </div>
       {error && (
-        <p className="text-xs text-red-400 px-2">{error}</p>
+        <p className="text-xs text-red-400 px-1">{error}</p>
       )}
     </form>
   )
 }
 
-export default function BozemClient({ initialCount }: { initialCount: number }) {
+export default function BozenerClient({ initialCount }: { initialCount: number }) {
   const [count, setCount] = useState(initialCount)
 
   const handleSuccess = () => {
@@ -153,24 +156,24 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
 
   return (
     <div
-      className="min-h-screen text-white relative overflow-hidden"
+      className="min-h-screen text-white overflow-x-hidden"
       style={{ background: "#080808" }}
     >
-      {/* Animated mesh gradient */}
+      {/* Animated mesh gradient — fixed, clipped via overflow-x-hidden on parent */}
       <div
-        className="fixed inset-0 pointer-events-none"
+        className="fixed inset-0 pointer-events-none overflow-hidden"
         style={{ zIndex: 0 }}
         aria-hidden
       >
         <div
           style={{
             position: "absolute",
-            top: "-20%",
+            top: "-10%",
             left: "50%",
             transform: "translateX(-50%)",
-            width: "800px",
-            height: "600px",
-            background: "radial-gradient(ellipse, rgba(31,61,43,0.45) 0%, transparent 70%)",
+            width: "min(800px, 200vw)",
+            height: "min(600px, 160vw)",
+            background: "radial-gradient(ellipse, rgba(31,61,43,0.5) 0%, transparent 70%)",
             filter: "blur(60px)",
             animation: "meshDrift1 18s ease-in-out infinite",
           }}
@@ -178,11 +181,11 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
         <div
           style={{
             position: "absolute",
-            bottom: "10%",
-            right: "-10%",
-            width: "600px",
-            height: "500px",
-            background: "radial-gradient(ellipse, rgba(203,191,154,0.08) 0%, transparent 70%)",
+            bottom: "5%",
+            right: "-5%",
+            width: "min(600px, 150vw)",
+            height: "min(500px, 130vw)",
+            background: "radial-gradient(ellipse, rgba(203,191,154,0.07) 0%, transparent 70%)",
             filter: "blur(80px)",
             animation: "meshDrift2 22s ease-in-out infinite",
           }}
@@ -190,10 +193,10 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
         <div
           style={{
             position: "absolute",
-            top: "40%",
-            left: "-10%",
-            width: "500px",
-            height: "400px",
+            top: "45%",
+            left: "-5%",
+            width: "min(500px, 120vw)",
+            height: "min(400px, 100vw)",
             background: "radial-gradient(ellipse, rgba(31,61,43,0.2) 0%, transparent 70%)",
             filter: "blur(70px)",
             animation: "meshDrift3 26s ease-in-out infinite",
@@ -226,11 +229,6 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
           0%, 100% { transform: translateX(0%) translateY(0%); }
           50% { transform: translateX(4%) translateY(-6%); }
         }
-        @keyframes counterPop {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
         @keyframes pulse-dot {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.4; transform: scale(0.8); }
@@ -240,11 +238,17 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
       <div className="relative z-10">
 
         {/* ── HERO ── */}
-        <section className="min-h-screen flex flex-col items-center justify-center px-4 py-24 text-center">
-
+        <section
+          className="flex flex-col items-center justify-center px-5 text-center"
+          style={{
+            minHeight: "100svh",
+            paddingTop: "clamp(64px, 12vh, 120px)",
+            paddingBottom: "clamp(48px, 10vh, 96px)",
+          }}
+        >
           {/* Badge */}
           <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.2em] mb-10"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.2em] mb-6 sm:mb-10"
             style={{
               background: "rgba(31,61,43,0.3)",
               border: "1px solid rgba(31,61,43,0.55)",
@@ -260,55 +264,53 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
 
           {/* Main headline */}
           <h1
-            className="font-extrabold leading-none tracking-[-0.04em] mb-6"
+            className="font-extrabold leading-none mb-5 sm:mb-7 w-full"
             style={{
-              fontSize: "clamp(52px, 14vw, 160px)",
+              fontSize: "clamp(44px, 13vw, 160px)",
               letterSpacing: "-0.04em",
-              lineHeight: 0.92,
+              lineHeight: 0.9,
             }}
           >
             <span style={{ color: "#F9F8F4" }}>AVAÍMO.</span>
             <br />
             <span
               style={{
-                WebkitTextStroke: "1px rgba(249,248,244,0.25)",
+                WebkitTextStroke: "1.5px rgba(249,248,244,0.2)",
                 color: "transparent",
               }}
             >
               BOZEN SÜD.
             </span>
             <br />
-            <span style={{ color: "rgba(203,191,154,0.7)", fontSize: "0.6em" }}>2027.</span>
+            <span style={{ color: "rgba(203,191,154,0.65)", fontSize: "0.55em" }}>2027.</span>
           </h1>
 
           {/* Subheadline */}
           <p
-            className="text-base sm:text-lg md:text-xl leading-relaxed max-w-lg mb-10"
-            style={{ color: "rgba(249,248,244,0.45)" }}
+            className="text-sm sm:text-lg md:text-xl leading-relaxed max-w-sm sm:max-w-lg mb-7 sm:mb-10"
+            style={{ color: "rgba(249,248,244,0.42)" }}
           >
-            Der erste vollautomatische 24/7 Premium Sportclub Südtirols.
-            <br />
-            <span style={{ color: "rgba(203,191,154,0.6)" }}>Padel · Pilates · Gym.</span>
-            <br />
+            Der erste vollautomatische 24/7 Premium Sportclub Südtirols.{" "}
+            <span style={{ color: "rgba(203,191,154,0.6)" }}>Padel · Pilates · Gym.</span>{" "}
             Gesteuert über dein Smartphone.
           </p>
 
           {/* Email form */}
-          <div className="w-full max-w-md mb-8">
+          <div className="w-full max-w-sm sm:max-w-md mb-8 sm:mb-10">
             <EmailForm onSuccess={handleSuccess} />
           </div>
 
           {/* Live counter */}
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1.5">
             <div
-              className="font-mono text-5xl sm:text-6xl font-bold"
-              style={{ color: "#CBBF9A" }}
+              className="font-mono font-bold"
+              style={{ fontSize: "clamp(48px, 14vw, 80px)", color: "#CBBF9A", lineHeight: 1 }}
             >
               <AnimatedCounter target={count} />
             </div>
             <p
-              className="text-xs font-semibold uppercase tracking-[0.2em]"
-              style={{ color: "rgba(255,255,255,0.25)" }}
+              className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "rgba(255,255,255,0.22)" }}
             >
               sind bereits auf der Warteliste
             </p>
@@ -317,11 +319,11 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
 
         {/* ── FEATURES ── */}
         <section
-          className="py-20 sm:py-28"
+          className="py-14 sm:py-24"
           style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
         >
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="text-center mb-14">
+          <div className="max-w-4xl mx-auto px-5">
+            <div className="text-center mb-10 sm:mb-14">
               <p
                 className="text-[11px] font-semibold uppercase tracking-[0.22em] mb-3"
                 style={{ color: "rgba(203,191,154,0.5)" }}
@@ -329,36 +331,28 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
                 Das Konzept
               </p>
               <h2
-                className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em]"
+                className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em]"
                 style={{ color: "#F9F8F4" }}
               >
                 Ein Club. Kein Aufwand.
               </h2>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid sm:grid-cols-3 gap-3 sm:gap-6">
               {features.map((f, i) => (
                 <div
                   key={f.title}
-                  className="rounded-3xl p-7"
+                  className="rounded-2xl sm:rounded-3xl p-5 sm:p-7"
                   style={{
-                    background: i === 0
-                      ? "rgba(31,61,43,0.2)"
-                      : "rgba(255,255,255,0.03)",
-                    border: i === 0
-                      ? "1px solid rgba(31,61,43,0.45)"
-                      : "1px solid rgba(255,255,255,0.06)",
+                    background: i === 0 ? "rgba(31,61,43,0.2)" : "rgba(255,255,255,0.03)",
+                    border: i === 0 ? "1px solid rgba(31,61,43,0.45)" : "1px solid rgba(255,255,255,0.06)",
                   }}
                 >
                   <div
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-5"
                     style={{
-                      background: i === 0
-                        ? "rgba(203,191,154,0.1)"
-                        : "rgba(31,61,43,0.25)",
-                      border: i === 0
-                        ? "1px solid rgba(203,191,154,0.18)"
-                        : "1px solid rgba(31,61,43,0.4)",
+                      background: i === 0 ? "rgba(203,191,154,0.1)" : "rgba(31,61,43,0.25)",
+                      border: i === 0 ? "1px solid rgba(203,191,154,0.18)" : "1px solid rgba(31,61,43,0.4)",
                     }}
                   >
                     <f.icon
@@ -367,12 +361,12 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
                     />
                   </div>
                   <h3
-                    className="text-lg font-bold mb-2 tracking-tight"
+                    className="text-base sm:text-lg font-bold mb-1.5 sm:mb-2 tracking-tight"
                     style={{ color: "#F9F8F4" }}
                   >
                     {f.title}
                   </h3>
-                  <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.38)" }}>
                     {f.text}
                   </p>
                 </div>
@@ -382,44 +376,47 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
         </section>
 
         {/* ── FOUNDER STATUS ── */}
-        <section className="py-20 sm:py-28">
-          <div className="max-w-2xl mx-auto px-4 text-center">
+        <section className="py-14 sm:py-24">
+          <div className="max-w-xl mx-auto px-5 text-center">
 
             <p
-              className="text-[11px] font-semibold uppercase tracking-[0.22em] mb-4"
+              className="text-[11px] font-semibold uppercase tracking-[0.22em] mb-3 sm:mb-4"
               style={{ color: "rgba(203,191,154,0.5)" }}
             >
               Limitiert
             </p>
             <h2
-              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] mb-5"
+              className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.03em] mb-4 sm:mb-5"
               style={{ color: "#F9F8F4" }}
             >
               Werde AVAÍMO<br />Founder.
             </h2>
-            <p className="text-base leading-relaxed mb-10" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <p
+              className="text-sm sm:text-base leading-relaxed mb-8 sm:mb-10"
+              style={{ color: "rgba(255,255,255,0.42)" }}
+            >
               Wir sind aktuell in der finalen Planungsphase für Bozen Süd. Trage dich jetzt ein
               und sichere dir einen der limitierten Founder-Plätze mit exklusiven Vorteilen,
               die danach nicht mehr verfügbar sind.
             </p>
 
-            {/* Benefits */}
+            {/* Benefits card */}
             <div
-              className="rounded-3xl p-7 sm:p-9 text-left mb-10"
+              className="rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-left mb-8 sm:mb-10"
               style={{
                 background: "rgba(31,61,43,0.18)",
                 border: "1px solid rgba(31,61,43,0.4)",
               }}
             >
               <p
-                className="text-[11px] font-semibold uppercase tracking-[0.2em] mb-5"
+                className="text-[11px] font-semibold uppercase tracking-[0.2em] mb-4 sm:mb-5"
                 style={{ color: "rgba(203,191,154,0.55)" }}
               >
                 Deine Founder-Vorteile
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3.5 sm:space-y-4">
                 {benefits.map((b) => (
-                  <div key={b} className="flex items-start gap-3.5">
+                  <div key={b} className="flex items-start gap-3">
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
                       style={{
@@ -429,7 +426,7 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
                     >
                       <Check className="w-3 h-3" style={{ color: "#CBBF9A" }} />
                     </div>
-                    <span className="text-sm leading-snug" style={{ color: "rgba(249,248,244,0.7)" }}>
+                    <span className="text-sm leading-snug" style={{ color: "rgba(249,248,244,0.68)" }}>
                       {b}
                     </span>
                   </div>
@@ -438,32 +435,32 @@ export default function BozemClient({ initialCount }: { initialCount: number }) 
             </div>
 
             {/* Second email form */}
-            <EmailForm onSuccess={handleSuccess} />
+            <EmailForm onSuccess={handleSuccess} buttonLabel="Jetzt eintragen" />
 
-            {/* Counter (again) */}
-            <p className="text-xs mt-5" style={{ color: "rgba(255,255,255,0.2)" }}>
+            {/* Small counter */}
+            <p className="text-xs mt-4" style={{ color: "rgba(255,255,255,0.18)" }}>
               Bereits{" "}
-              <span className="font-mono font-semibold" style={{ color: "rgba(203,191,154,0.6)" }}>
+              <span className="font-mono font-semibold" style={{ color: "rgba(203,191,154,0.5)" }}>
                 <AnimatedCounter target={count} />
               </span>{" "}
-              sind bereits auf der Warteliste · Founder-Plätze limitiert
+              auf der Warteliste · Founder-Plätze limitiert
             </p>
           </div>
         </section>
 
         {/* ── FOOTER ── */}
         <footer
-          className="py-10 text-center"
+          className="py-8 text-center"
           style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
         >
           <Link
             href="https://avaimo.com"
             className="text-sm font-semibold tracking-[0.12em] uppercase transition-opacity hover:opacity-70"
-            style={{ color: "rgba(255,255,255,0.2)" }}
+            style={{ color: "rgba(255,255,255,0.18)" }}
           >
             avaimo.com
           </Link>
-          <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.1)" }}>
+          <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.08)" }}>
             © 2027 Avaimo. Alle Rechte vorbehalten.
           </p>
         </footer>
