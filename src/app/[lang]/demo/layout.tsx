@@ -76,7 +76,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
 
   if (isMemberView) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7]">
+      <div className="min-h-screen" style={{ background: "#09090b" }}>
         {demoBanner}
         {children}
       </div>

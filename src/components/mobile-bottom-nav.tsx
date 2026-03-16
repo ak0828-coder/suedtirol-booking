@@ -25,11 +25,11 @@ export function MobileBottomNav({ slug, active }: MobileBottomNavProps) {
 
   return (
     <div
-      className="sm:hidden fixed bottom-0 left-0 right-0 z-40"
+      className="fixed bottom-0 left-0 right-0 z-40"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div
-        className="mx-3 mb-3 glass-strong rounded-3xl overflow-hidden"
+        className="mx-3 mb-3 sm:mx-auto sm:max-w-lg glass-strong rounded-3xl overflow-hidden"
         style={{
           boxShadow: "0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)",
         }}
