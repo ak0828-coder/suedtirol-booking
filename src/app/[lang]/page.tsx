@@ -2,24 +2,29 @@
 
 import type { Metadata } from "next"
 import Link from "next/link"
-import { motion, useScroll, useTransform } from "motion/react"
+import { motion, useScroll, useTransform, AnimatePresence } from "motion/react"
 import {
   ArrowRight,
-  Check,
-  Calendar,
+  CheckCircle2,
+  CalendarDays,
   CreditCard,
   FileSignature,
   Users,
   Sparkles,
   BarChart3,
-  ShieldCheck,
+  Shield,
   Zap,
+  ChevronRight,
+  Trophy,
+  Activity,
+  Smartphone,
+  Globe2,
 } from "lucide-react"
 import { SiteHeader } from "@/components/marketing/site-header"
 import { SiteFooter } from "@/components/marketing/site-footer"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { useParams } from "next/navigation"
-import { useRef } from "react"
+import { useRef, useState, useEffect } from "react"
 import {
   OrganizationSchema,
   SoftwareApplicationSchema,
@@ -29,149 +34,112 @@ import {
 
 const BASE_URL = "https://avaimo.com"
 
+// --- Custom Components for Advanced UI ---
+
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
+  const [isFocused, setIsFocused] = useState(false)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [opacity, setOpacity] = useState(0)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current || isFocused) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+  }
+
+  const handleFocus = () => {
+    setIsFocused(true)
+    setOpacity(1)
+  }
+
+  const handleBlur = () => {
+    setIsFocused(false)
+    setOpacity(0)
+  }
+
+  const handleMouseEnter = () => {
+    setOpacity(1)
+  }
+
+  const handleMouseLeave = () => {
+    setOpacity(0)
+  }
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition duration-300"
+        style={{
+          opacity,
+          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(203,191,154,0.1), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
+}
+
+function FloatingElement({ children, delay = 0, yOffset = 20, duration = 4 }: { children: React.ReactNode, delay?: number, yOffset?: number, duration?: number }) {
+  return (
+    <motion.div
+      animate={{ y: [0, -yOffset, 0] }}
+      transition={{
+        duration: duration,
+        repeat: Infinity,
+        ease: "easeInOut",
+        delay: delay,
+      }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 export default function Home() {
   const params = useParams()
   const lang = (params?.lang as string) || "de"
   const { t } = useI18n()
   const targetRef = useRef<HTMLDivElement>(null)
+  
   const { scrollYProgress } = useScroll({
     target: targetRef,
     offset: ["start start", "end start"],
   })
 
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
-  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95])
-
-  const modules = [
-    {
-      title: t("home.modules.bookings.title"),
-      description: t("home.modules.bookings.desc"),
-      icon: Calendar,
-      color: "bg-emerald-500/10 text-emerald-500",
-      delay: 0.1,
-    },
-    {
-      title: t("home.modules.members.title"),
-      description: t("home.modules.members.desc"),
-      icon: Users,
-      color: "bg-blue-500/10 text-blue-500",
-      delay: 0.2,
-    },
-    {
-      title: t("home.modules.payments.title"),
-      description: t("home.modules.payments.desc"),
-      icon: CreditCard,
-      color: "bg-amber-500/10 text-amber-500",
-      delay: 0.3,
-    },
-    {
-      title: t("home.modules.contracts.title"),
-      description: t("home.modules.contracts.desc"),
-      icon: FileSignature,
-      color: "bg-purple-500/10 text-purple-500",
-      delay: 0.4,
-    },
-    {
-      title: t("home.modules.training.title"),
-      description: t("home.modules.training.desc"),
-      icon: Sparkles,
-      color: "bg-rose-500/10 text-rose-500",
-      delay: 0.5,
-    },
-    {
-      title: t("home.modules.reporting.title"),
-      description: t("home.modules.reporting.desc"),
-      icon: BarChart3,
-      color: "bg-indigo-500/10 text-indigo-500",
-      delay: 0.6,
-    },
-  ]
-
-  const steps = [
-    {
-      n: "01",
-      title: t("home.steps.0.title", "Club anlegen"),
-      desc: t("home.steps.0.desc", "Verein einrichten, Plätze und Preise konfigurieren – in unter 48 Stunden betriebsbereit."),
-    },
-    {
-      n: "02",
-      title: t("home.steps.1.title", "Mitglieder einladen"),
-      desc: t("home.steps.1.desc", "CSV-Import oder direkte Einladung. Verträge werden digital unterzeichnet."),
-    },
-    {
-      n: "03",
-      title: t("home.steps.2.title", "Alles läuft"),
-      desc: t("home.steps.2.desc", "Buchungen, Zahlungen und Erinnerungen passieren automatisch."),
-    },
-  ]
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        ease: "easeOut",
-      },
-    },
-  }
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8])
+  const y = useTransform(scrollYProgress, [0, 1], [0, 200])
 
   return (
-    <div className="min-h-screen bg-[#0C0F0E] text-[#F9F8F4] selection:bg-[#CBBF9A] selection:text-[#0C0F0E]">
+    <div className="min-h-screen bg-[#030504] text-[#F9F8F4] selection:bg-[#CBBF9A] selection:text-[#030504] font-sans">
       <OrganizationSchema lang={lang} />
       <SoftwareApplicationSchema lang={lang} />
       <WebSiteSchema lang={lang} />
       <FAQSchema lang={lang} />
 
-      {/* Grid background */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.15]"
+      {/* --- Global Background Elements --- */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden flex justify-center">
+        {/* Deep dark radial gradient */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#0A1410] via-[#030504] to-[#030504]" />
+        
+        {/* Subtle grid */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `radial-gradient(#F9F8F4 0.5px, transparent 0.5px)`,
-            backgroundSize: "24px 24px",
+            backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
+            backgroundSize: "4rem 4rem",
+            maskImage: "radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 80%)"
           }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0C0F0E]/50 to-[#0C0F0E]" />
-      </div>
-
-      {/* Dynamic Background Glows */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.15, 0.25, 0.15],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] rounded-full bg-[#1F3D2B] blur-[120px]"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.05, 0.1, 0.05],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-          className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-[#CBBF9A] blur-[120px]"
         />
       </div>
 
@@ -179,149 +147,318 @@ export default function Home() {
         <SiteHeader />
 
         <main className="flex-1">
-          {/* ── Hero ── */}
-          <section
-            ref={targetRef}
-            className="relative pt-20 pb-32 overflow-hidden px-4"
-          >
+          {/* ── HERO SECTION ── */}
+          <section ref={targetRef} className="relative pt-32 pb-40 overflow-hidden px-4 min-h-[90vh] flex items-center">
+            {/* Animated Glows behind Hero */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[500px] pointer-events-none">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 bg-gradient-to-r from-[#10B981]/20 to-[#CBBF9A]/20 blur-[120px] rounded-full mix-blend-screen"
+              />
+            </div>
+
             <motion.div
-              style={{ opacity, scale }}
-              className="max-w-7xl mx-auto flex flex-col items-center text-center"
+              style={{ opacity, scale, y }}
+              className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center"
             >
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#F9F8F4]/10 bg-white/5 backdrop-blur-md text-xs font-medium tracking-wide text-[#CBBF9A] mb-8"
-              >
-                <span className="flex h-2 w-2 rounded-full bg-[#CBBF9A] animate-pulse" />
-                {t("home.hero.badge")}
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 max-w-4xl"
-              >
-                {t("home.hero.title")}
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-lg md:text-xl text-[#F9F8F4]/60 max-w-2xl mb-12 leading-relaxed"
-              >
-                {t("home.hero.subtitle")}
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-20"
-              >
-                <Link
-                  href={`/${lang}/demo`}
-                  className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#1F3D2B] text-[#CBBF9A] rounded-full font-semibold transition-all hover:shadow-[0_0_30px_rgba(31,61,43,0.5)] overflow-hidden"
+              {/* Left: Text Content */}
+              <div className="flex flex-col items-start text-left z-10">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 backdrop-blur-md text-sm font-medium tracking-wide text-[#34D399] mb-8"
                 >
-                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  {t("home.hero.cta_demo")}
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <Link
-                  href={`/${lang}/contact`}
-                  className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-[#F9F8F4]/10 rounded-full font-semibold transition-all backdrop-blur-sm"
-                >
-                  {t("home.hero.cta_consulting")}
-                </Link>
-              </motion.div>
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34D399] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#10B981]"></span>
+                  </span>
+                  Avaimo 2.0 ist jetzt verfügbar
+                </motion.div>
 
-              {/* Hero Image / Video Mockup */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 40 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-                className="relative w-full max-w-5xl mx-auto"
-              >
-                <div className="absolute -inset-4 bg-gradient-to-r from-[#1F3D2B]/30 to-[#CBBF9A]/10 blur-[80px] opacity-50" />
-                <div className="relative aspect-[16/10] bg-[#0d1110] rounded-2xl border border-[#F9F8F4]/10 overflow-hidden shadow-2xl">
-                  {/* Browser Chrome Placeholder */}
-                  <div className="flex items-center gap-2 px-4 py-3 bg-[#0a0d0c] border-b border-white/5">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/20" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/20" />
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+                  className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter mb-8 leading-[1.05]"
+                >
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
+                    Der unfaire
+                  </span>
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#CBBF9A] via-[#E2D8B9] to-[#CBBF9A]">
+                    Vorteil
+                  </span>
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
+                    für deinen Verein.
+                  </span>
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+                  className="text-lg lg:text-xl text-[#F9F8F4]/60 max-w-xl mb-10 leading-relaxed font-light"
+                >
+                  Vergiss Excel-Chaos, WhatsApp-Gruppen und Papierkram. Avaimo ist das smarte Betriebssystem, das deinen Sportverein auf Autopilot stellt.
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
+                  className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto"
+                >
+                  <Link
+                    href={`/${lang}/demo`}
+                    className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-white text-[#030504] rounded-full font-bold text-lg transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)]"
+                  >
+                    Kostenlos starten
+                    <div className="w-8 h-8 rounded-full bg-[#030504]/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                      <ArrowRight className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 flex justify-center">
-                      <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/30 font-mono">
-                        avaimo.com/club/tc-bergblick/dashboard
+                  </Link>
+                  <Link
+                    href={`/${lang}/demo`}
+                    className="flex items-center justify-center gap-2 px-8 py-4 bg-white/5 border border-white/10 rounded-full font-semibold text-lg hover:bg-white/10 transition-colors backdrop-blur-md"
+                  >
+                    <Smartphone className="w-5 h-5 text-[#CBBF9A]" />
+                    Live Demo
+                  </Link>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1, delay: 0.8 }}
+                  className="mt-12 flex items-center gap-4 text-sm text-white/40"
+                >
+                  <div className="flex -space-x-2">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className={`w-8 h-8 rounded-full border-2 border-[#030504] bg-gradient-to-br from-[#1F3D2B] to-[#0A1410] flex items-center justify-center`}>
+                        <Users className="w-3 h-3 text-[#CBBF9A]" />
                       </div>
-                    </div>
+                    ))}
                   </div>
+                  <p>Bereits über <strong className="text-white">150+ Vereine</strong> an Bord</p>
+                </motion.div>
+              </div>
 
-                  {/* UI Preview */}
-                  <div className="p-8 flex h-full">
-                    {/* Sidebar */}
-                    <div className="w-48 hidden md:block space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-[#1F3D2B] flex items-center justify-center text-[10px] font-bold text-[#CBBF9A]">TC</div>
-                        <div className="h-2 w-20 bg-white/10 rounded" />
-                      </div>
-                      <div className="space-y-3">
-                        {[...Array(6)].map((_, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <div className="w-4 h-4 bg-white/5 rounded" />
-                            <div className={`h-1.5 rounded bg-white/5 ${i === 0 ? 'w-24 bg-[#1F3D2B]/40' : 'w-16'}`} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Content Area */}
-                    <div className="flex-1 space-y-8 pl-0 md:pl-8">
-                      <div className="grid grid-cols-3 gap-4">
-                        {[...Array(3)].map((_, i) => (
-                          <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-xl space-y-2">
-                            <div className="h-2 w-12 bg-white/10 rounded" />
-                            <div className="h-4 w-20 bg-white/20 rounded" />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex-1 bg-white/[0.03] border border-white/5 rounded-2xl p-6">
-                        <div className="flex justify-between items-center mb-8">
-                          <div className="h-3 w-32 bg-white/10 rounded" />
-                          <div className="h-8 w-24 bg-[#1F3D2B]/20 rounded-lg" />
+              {/* Right: Abstract UI Composition */}
+              <div className="relative h-[600px] hidden lg:block w-full perspective-1000">
+                <motion.div 
+                  initial={{ opacity: 0, rotateY: 10, rotateX: 10, x: 50 }}
+                  animate={{ opacity: 1, rotateY: -5, rotateX: 5, x: 0 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="absolute inset-0 preserve-3d"
+                >
+                  {/* Main Dashboard Card */}
+                  <FloatingElement yOffset={15} duration={6}>
+                    <div className="absolute top-10 right-0 w-[450px] bg-[#0A0D0C]/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-20">
+                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                          <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+                          <div className="w-3 h-3 rounded-full bg-green-500/50" />
                         </div>
-                        <div className="flex items-end gap-3 h-48">
-                          {[40, 70, 45, 90, 65, 80, 50, 95, 30, 85, 60, 75].map((h, i) => (
-                            <motion.div
+                        <div className="text-xs font-mono text-white/30">admin.avaimo.com</div>
+                      </div>
+                      <div className="p-6 space-y-6">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <div className="text-xs text-white/50 mb-1 uppercase tracking-wider">Umsatz diesen Monat</div>
+                            <div className="text-4xl font-bold text-white">€ 14.850</div>
+                          </div>
+                          <div className="px-3 py-1 bg-[#10B981]/20 text-[#34D399] rounded-full text-xs font-bold flex items-center gap-1">
+                            <Activity className="w-3 h-3" /> +24%
+                          </div>
+                        </div>
+                        {/* Chart Mock */}
+                        <div className="flex items-end gap-2 h-32 pt-4 border-b border-white/5">
+                          {[30, 45, 25, 60, 40, 75, 50, 90, 65, 100].map((h, i) => (
+                            <motion.div 
                               key={i}
                               initial={{ height: 0 }}
                               animate={{ height: `${h}%` }}
-                              transition={{ duration: 1, delay: 0.6 + i * 0.05 }}
-                              className="flex-1 bg-[#1F3D2B]/40 rounded-t-sm"
+                              transition={{ duration: 1, delay: 0.5 + (i * 0.05) }}
+                              className={`flex-1 rounded-t-sm ${i === 9 ? 'bg-[#CBBF9A]' : 'bg-white/10'}`} 
                             />
+                          ))}
+                        </div>
+                        <div className="space-y-3">
+                          <div className="text-xs font-medium text-white/40">Kürzliche Buchungen</div>
+                          {[
+                            { name: "Max Mustermann", time: "18:00 - Platz 1", type: "Padel" },
+                            { name: "Sarah Schmidt", time: "19:30 - Platz 3", type: "Tennis" }
+                          ].map((b, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1F3D2B] to-black flex items-center justify-center text-xs font-bold text-[#CBBF9A]">
+                                  {b.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-white">{b.name}</div>
+                                  <div className="text-xs text-white/50">{b.time}</div>
+                                </div>
+                              </div>
+                              <div className="text-xs px-2 py-1 rounded bg-white/10 text-white/70">{b.type}</div>
+                            </div>
                           ))}
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </motion.div>
+                  </FloatingElement>
+
+                  {/* Floating Notification */}
+                  <FloatingElement delay={1} yOffset={20} duration={5}>
+                    <div className="absolute top-1/4 -left-12 p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex items-center gap-4 z-30">
+                      <div className="w-12 h-12 rounded-full bg-[#10B981]/20 flex items-center justify-center">
+                        <CheckCircle2 className="w-6 h-6 text-[#34D399]" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-white">Zahlung erhalten</div>
+                        <div className="text-xs text-white/60">Mitgliedsbeitrag 2026 - €240</div>
+                      </div>
+                    </div>
+                  </FloatingElement>
+
+                  {/* Floating Court Status */}
+                  <FloatingElement delay={2} yOffset={10} duration={7}>
+                     <div className="absolute bottom-10 right-20 p-5 bg-[#1F3D2B]/80 backdrop-blur-xl border border-[#CBBF9A]/30 rounded-2xl shadow-2xl z-10">
+                        <div className="text-xs font-bold text-[#CBBF9A] uppercase tracking-wider mb-3">Live Auslastung</div>
+                        <div className="flex gap-2">
+                          {[1,2,3,4].map(court => (
+                            <div key={court} className="flex flex-col gap-1 items-center">
+                              <div className={`w-8 h-12 rounded-md ${court === 3 ? 'bg-white/10 border border-white/20' : 'bg-[#10B981] shadow-[0_0_15px_rgba(16,185,129,0.4)]'}`} />
+                              <span className="text-[10px] text-white/50">P{court}</span>
+                            </div>
+                          ))}
+                        </div>
+                     </div>
+                  </FloatingElement>
+                </motion.div>
+              </div>
             </motion.div>
           </section>
 
-          {/* ── Stats Bar ── */}
-          <section className="py-20 border-y border-[#F9F8F4]/5 bg-[#0a0d0c]/50 backdrop-blur-sm">
+          {/* ── BENTO GRID FEATURES ── */}
+          <section className="py-32 px-4 relative z-20 bg-[#030504]">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-20">
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
+                  Alles, was du brauchst.<br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#CBBF9A] to-[#F9F8F4]">In einem System vereint.</span>
+                </h2>
+                <p className="text-lg text-white/50 max-w-2xl">
+                  Keine Insellösungen mehr. Avaimo verbindet Platzbuchung, Mitgliederverwaltung und Finanzen nahtlos miteinander.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[280px]">
+                
+                {/* Feature 1: Large Booking */}
+                <SpotlightCard className="md:col-span-2 row-span-2 p-8 md:p-12 flex flex-col justify-between group">
+                  <div className="max-w-md relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-[#10B981]/10 flex items-center justify-center mb-6">
+                      <CalendarDays className="w-7 h-7 text-[#34D399]" />
+                    </div>
+                    <h3 className="text-3xl font-bold mb-4">Intelligentes Buchungssystem</h3>
+                    <p className="text-white/50 text-lg leading-relaxed">
+                      Egal ob Tennis, Padel oder Squash. Verwalte Plätze mit flexiblen Preisregeln, Gastbuchungen und automatischer Flutlicht-Ansteuerung.
+                    </p>
+                  </div>
+                  {/* Decorative element */}
+                  <div className="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4 w-96 h-96 bg-[#10B981]/10 rounded-full blur-[80px] group-hover:bg-[#10B981]/20 transition-colors duration-500" />
+                  <div className="absolute -right-10 bottom-10 rotate-[-10deg] opacity-50 group-hover:opacity-100 transition-all duration-500 group-hover:rotate-[-5deg]">
+                     <div className="bg-[#0A0D0C] border border-white/10 p-4 rounded-xl shadow-2xl w-64">
+                       <div className="flex gap-2 mb-3">
+                         <div className="w-10 h-10 rounded bg-white/5" />
+                         <div className="flex-1 space-y-2 py-1">
+                           <div className="h-3 bg-white/20 rounded w-full" />
+                           <div className="h-3 bg-white/10 rounded w-2/3" />
+                         </div>
+                       </div>
+                       <div className="h-8 bg-[#10B981] rounded w-full mt-4" />
+                     </div>
+                  </div>
+                </SpotlightCard>
+
+                {/* Feature 2: Members */}
+                <SpotlightCard className="p-8 flex flex-col justify-between group">
+                  <div className="relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
+                      <Users className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3">Mitgliederverwaltung</h3>
+                    <p className="text-white/50">
+                      Digitale Akten, Familienaccounts und automatischer Rechnungsversand. Immer aktuell.
+                    </p>
+                  </div>
+                  <div className="absolute right-0 bottom-0 w-48 h-48 bg-blue-500/10 rounded-full blur-[60px] group-hover:bg-blue-500/20 transition-colors" />
+                </SpotlightCard>
+
+                {/* Feature 3: Payments */}
+                <SpotlightCard className="p-8 flex flex-col justify-between group">
+                  <div className="relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-[#CBBF9A]/10 flex items-center justify-center mb-6">
+                      <CreditCard className="w-6 h-6 text-[#CBBF9A]" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3">Stripe Integration</h3>
+                    <p className="text-white/50">
+                      SEPA, Kreditkarte, Apple Pay. 100% automatisierter Geldeingang ohne Mahnwesen.
+                    </p>
+                  </div>
+                  <div className="absolute right-0 bottom-0 w-48 h-48 bg-[#CBBF9A]/10 rounded-full blur-[60px] group-hover:bg-[#CBBF9A]/20 transition-colors" />
+                </SpotlightCard>
+
+                {/* Feature 4: Training */}
+                <SpotlightCard className="p-8 flex flex-col justify-between group">
+                  <div className="relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center mb-6">
+                      <Trophy className="w-6 h-6 text-rose-400" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-3">Trainer & Kurse</h3>
+                    <p className="text-white/50">
+                      Camp-Anmeldungen, Trainerstunden und Abrechnung in einem flüssigen Workflow.
+                    </p>
+                  </div>
+                  <div className="absolute right-0 bottom-0 w-48 h-48 bg-rose-500/10 rounded-full blur-[60px] group-hover:bg-rose-500/20 transition-colors" />
+                </SpotlightCard>
+
+                {/* Feature 5: Wide stats */}
+                <SpotlightCard className="md:col-span-2 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 group">
+                  <div className="max-w-sm relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6">
+                      <BarChart3 className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-4">Echtzeit-Statistiken</h3>
+                    <p className="text-white/50 leading-relaxed">
+                      Behalte den Überblick über Finanzen, Auslastung und Mitgliederwachstum auf Knopfdruck. Perfekt für die nächste Vorstandssitzung.
+                    </p>
+                  </div>
+                  <div className="flex-1 w-full relative h-40">
+                     <div className="absolute inset-0 bg-gradient-to-t from-[#030504] to-transparent z-10" />
+                     <div className="flex items-end gap-2 h-full opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                       {[20, 35, 25, 45, 30, 60, 50, 75, 65, 85, 80, 100].map((h, i) => (
+                         <div key={i} className="flex-1 bg-gradient-to-t from-purple-500/20 to-purple-400 rounded-t-sm" style={{ height: `${h}%` }} />
+                       ))}
+                     </div>
+                  </div>
+                </SpotlightCard>
+
+              </div>
+            </div>
+          </section>
+
+          {/* ── METRICS & TRUST ── */}
+          <section className="py-24 border-y border-white/5 bg-white/[0.01]">
             <div className="max-w-7xl mx-auto px-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
                 {[
-                  { label: t("home.results.stats.0"), value: "30%", icon: Zap },
-                  { label: t("home.results.stats.1"), value: "+18%", icon: BarChart3 },
-                  { label: t("home.results.stats.2"), value: "5 Min", icon: ShieldCheck },
-                  { label: "Kundenzufriedenheit", value: "99%", icon: Sparkles },
+                  { label: "Zeitersparnis", value: "15h/Wo" },
+                  { label: "Mehr Umsatz", value: "+22%" },
+                  { label: "Zufriedenheit", value: "99%" },
+                  { label: "Setup-Zeit", value: "< 48h" },
                 ].map((stat, i) => (
                   <motion.div
                     key={i}
@@ -329,213 +466,131 @@ export default function Home() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="flex flex-col items-center text-center space-y-2"
+                    className="flex flex-col items-center justify-center text-center space-y-3 relative"
                   >
-                    <div className="p-2 bg-white/5 rounded-lg mb-2">
-                      <stat.icon className="w-5 h-5 text-[#CBBF9A]" />
+                    <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
+                      {stat.value}
                     </div>
-                    <div className="text-3xl md:text-4xl font-bold text-[#F9F8F4]">{stat.value}</div>
-                    <div className="text-sm text-[#F9F8F4]/40 font-medium uppercase tracking-wider">{stat.label}</div>
+                    <div className="text-sm md:text-base font-medium text-[#CBBF9A] uppercase tracking-widest">
+                      {stat.label}
+                    </div>
+                    {i !== 3 && <div className="hidden md:block absolute right-[-24px] md:right-[-32px] top-1/2 -translate-y-1/2 w-px h-12 bg-white/10" />}
                   </motion.div>
                 ))}
               </div>
             </div>
           </section>
 
-          {/* ── Features Bento ── */}
-          <section className="py-32 px-4 bg-gradient-to-b from-[#0C0F0E] to-[#0a0d0c]">
+          {/* ── HOW IT WORKS ── */}
+          <section className="py-32 px-4 relative">
             <div className="max-w-7xl mx-auto">
               <div className="text-center mb-24">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="text-[#CBBF9A] font-semibold text-sm tracking-widest uppercase mb-4"
-                >
-                  Features
-                </motion.div>
-                <motion.h2
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 }}
-                  className="text-4xl md:text-5xl font-bold tracking-tight"
-                >
-                  {t("home.modules.title")}
-                </motion.h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {modules.map((module, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: module.delay }}
-                    whileHover={{ y: -5 }}
-                    className="group relative p-8 bg-white/5 border border-white/5 rounded-[2rem] overflow-hidden transition-all hover:bg-white/[0.08] hover:border-white/10"
-                  >
-                    <div className={`w-12 h-12 rounded-2xl ${module.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                      <module.icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-3">{module.title}</h3>
-                    <p className="text-[#F9F8F4]/50 leading-relaxed">{module.description}</p>
-                    <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ArrowRight className="w-5 h-5 text-[#CBBF9A]" />
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── Problem/Solution ── */}
-          <section className="py-32 px-4 bg-[#0a0d0c]">
-            <div className="max-w-7xl mx-auto">
-              <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <motion.div
-                  initial={{ opacity: 0, x: -40 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8">
-                    Zeit für das Wesentliche,<br />
-                    <span className="text-[#CBBF9A]">nicht für Bürokratie.</span>
-                  </h2>
-                  <p className="text-lg text-[#F9F8F4]/50 mb-12 max-w-lg">
-                    Avaimo automatisiert die zeitfressenden Aufgaben Ihres Vereins, damit Sie sich wieder auf den Sport konzentrieren können.
-                  </p>
-                  <div className="space-y-6">
-                    {[
-                      t("home.outcomes.0"),
-                      t("home.outcomes.1"),
-                      t("home.outcomes.2"),
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                        </div>
-                        <span className="font-medium text-[#F9F8F4]/80">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  className="relative"
-                >
-                  <div className="absolute -inset-10 bg-[#1F3D2B]/20 blur-[100px] rounded-full" />
-                  <div className="relative p-8 bg-white/5 border border-white/5 rounded-[3rem] backdrop-blur-xl">
-                    <div className="space-y-8">
-                      <div className="p-6 bg-red-500/10 border border-red-500/10 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-red-500/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                        <div className="relative flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">✕</div>
-                          <div className="flex-1">
-                            <div className="h-2 w-24 bg-red-500/20 rounded mb-2" />
-                            <div className="text-sm text-red-500/60">{t("home.pains.0")}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-center">
-                        <ArrowRight className="w-8 h-8 text-[#CBBF9A] rotate-90" />
-                      </div>
-                      <div className="p-6 bg-emerald-500/10 border border-emerald-500/10 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-emerald-500/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                        <div className="relative flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">✓</div>
-                          <div className="flex-1">
-                            <div className="h-2 w-32 bg-emerald-500/20 rounded mb-2" />
-                            <div className="text-sm text-emerald-500/60">{t("home.outcomes.0")}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Steps ── */}
-          <section className="py-32 px-4 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-24">
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                  {t("home.steps.title", "In 3 Schritten startklar")}
+                <span className="text-[#10B981] font-bold text-sm tracking-widest uppercase mb-4 block">
+                  Simpel. Schnell. Sicher.
+                </span>
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                  Dein Verein. Digital in Rekordzeit.
                 </h2>
-                <p className="text-[#F9F8F4]/40">{t("home.steps.badge", "So einfach")}</p>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-12 relative">
-                {/* Connection Line */}
-                <div className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/5 to-transparent hidden md:block" />
+              <div className="grid lg:grid-cols-3 gap-8 relative">
+                {/* Connecting Line Desktop */}
+                <div className="absolute top-12 left-20 right-20 h-px bg-gradient-to-r from-transparent via-[#CBBF9A]/30 to-transparent hidden lg:block" />
 
-                {steps.map((step, i) => (
+                {[
+                  {
+                    step: "01",
+                    title: "Konto erstellen",
+                    desc: "Registriere deinen Verein und konfiguriere Plätze, Preise und Mitgliedschaften in unserer intuitiven Oberfläche.",
+                    icon: Globe2
+                  },
+                  {
+                    step: "02",
+                    title: "Mitglieder einladen",
+                    desc: "Importiere bestehende Listen per CSV oder lade Mitglieder per magischem Link ein. Ohne Passwort-Chaos.",
+                    icon: Users
+                  },
+                  {
+                    step: "03",
+                    title: "Zurücklehnen",
+                    desc: "Ab jetzt laufen Buchungen, Abrechnungen und Erinnerungen vollautomatisch im Hintergrund.",
+                    icon: Zap
+                  }
+                ].map((item, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.2 }}
-                    className="relative group"
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ delay: i * 0.2, duration: 0.6 }}
+                    className="relative p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors text-center flex flex-col items-center group"
                   >
-                    <div className="text-8xl font-black text-white/[0.03] absolute -top-12 -left-4 group-hover:text-[#1F3D2B]/20 transition-colors">
-                      {step.n}
+                    <div className="w-24 h-24 rounded-full bg-[#030504] border border-white/10 flex items-center justify-center mb-8 relative z-10 group-hover:scale-110 transition-transform duration-500">
+                      <div className="absolute inset-0 rounded-full bg-[#CBBF9A]/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <item.icon className="w-10 h-10 text-[#CBBF9A]" />
                     </div>
-                    <div className="relative pt-12">
-                      <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
-                      <p className="text-[#F9F8F4]/50 leading-relaxed">{step.desc}</p>
+                    <div className="text-6xl font-black text-white/[0.03] absolute top-4 right-8 select-none">
+                      {item.step}
                     </div>
+                    <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
+                    <p className="text-white/50 leading-relaxed">
+                      {item.desc}
+                    </p>
                   </motion.div>
                 ))}
               </div>
             </div>
           </section>
 
-          {/* ── CTA ── */}
+          {/* ── MASSIVE CTA ── */}
           <section className="py-32 px-4">
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-6xl mx-auto">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.95, y: 40 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="relative bg-[#1F3D2B] rounded-[4rem] p-12 md:p-24 overflow-hidden group text-center"
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="relative rounded-[3rem] p-12 md:p-24 overflow-hidden text-center isolate"
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#CBBF9A]/10 blur-[100px] rounded-full" />
-                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-black/20 blur-[100px] rounded-full" />
+                {/* Deep glowing background */}
+                <div className="absolute inset-0 bg-[#0A1410]" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#10B981]/20 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[#CBBF9A]/10 blur-[120px] rounded-full pointer-events-none" />
+                <div className="absolute inset-0 border border-white/10 rounded-[3rem] pointer-events-none" />
 
                 <div className="relative z-10 max-w-3xl mx-auto">
-                  <span className="text-[#CBBF9A] font-semibold text-sm tracking-widest uppercase mb-6 block">
-                    {t("home.final.badge")}
-                  </span>
-                  <h2 className="text-4xl md:text-6xl font-bold text-white mb-10 leading-tight">
-                    {t("home.final.title")}
+                  <Shield className="w-16 h-16 text-[#CBBF9A] mx-auto mb-8" />
+                  <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tight">
+                    Bereit für den nächsten Schritt?
                   </h2>
-                  <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                  <p className="text-xl text-white/60 mb-12 font-light">
+                    Schließe dich hunderten innovativen Vereinen an. Teste Avaimo unverbindlich oder lass dich von unseren Experten beraten.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                     <Link
                       href={`/${lang}/demo`}
-                      className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-[#CBBF9A] text-[#0C0F0E] rounded-full font-bold text-lg transition-transform hover:scale-105"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5 bg-[#CBBF9A] text-[#030504] rounded-full font-bold text-lg transition-transform hover:scale-105 hover:shadow-[0_0_40px_rgba(203,191,154,0.4)]"
                     >
-                      {t("home.final.cta")}
+                      Kostenlos Demo anfordern
                       <ArrowRight className="w-5 h-5" />
                     </Link>
                     <Link
                       href={`/${lang}/contact`}
-                      className="inline-flex items-center justify-center px-10 py-5 bg-black/20 text-white border border-white/10 rounded-full font-bold text-lg backdrop-blur-sm hover:bg-black/30 transition-colors"
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-5 bg-white/5 text-white border border-white/10 rounded-full font-bold text-lg backdrop-blur-sm hover:bg-white/10 transition-colors"
                     >
-                      {t("home.hero.cta_consulting")}
+                      Zum Beratungsgespräch
                     </Link>
                   </div>
+                  <p className="mt-8 text-sm text-white/40 flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
+                    Keine Kreditkarte erforderlich. 100% DSGVO-konform.
+                  </p>
                 </div>
               </motion.div>
             </div>
           </section>
+
         </main>
 
         <SiteFooter />
