@@ -3,39 +3,109 @@
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
+import { Globe } from "lucide-react"
 
 export function SiteFooter() {
   const params = useParams()
   const lang = typeof params?.lang === "string" ? params.lang : "de"
   const { t } = useI18n()
-  const footerLinks = [
-    { href: `/${lang}/features`, label: t("nav.features") },
-    { href: `/${lang}/pricing`, label: t("nav.pricing") },
-    { href: `/${lang}/security`, label: t("nav.security", "Sicherheit") },
-    { href: `/${lang}/contact`, label: t("nav.contact") },
+  
+  const sections = [
+    {
+      title: "Produkt",
+      links: [
+        { href: `/${lang}/features`, label: t("nav.features") },
+        { href: `/${lang}/pricing`, label: t("nav.pricing") },
+        { href: `/${lang}/demo`, label: t("nav.demo") },
+        { href: `/${lang}/security`, label: t("nav.security", "Sicherheit") },
+      ]
+    },
+    {
+      title: "Rechtliches",
+      links: [
+        { href: `/${lang}/impressum`, label: t("footer.impressum", "Impressum") },
+        { href: `/${lang}/datenschutz`, label: t("footer.privacy", "Datenschutz") },
+      ]
+    }
+  ]
+
+  const locales = [
+    { code: "de", label: "Deutsch" },
+    { code: "it", label: "Italiano" },
+    { code: "en", label: "English" },
   ]
 
   return (
-    <footer className="border-t border-[#0E1A14]/10 bg-[#1F3D2B]">
-      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 sm:px-6 py-8 sm:py-10 md:flex-row">
-        <div className="space-y-2">
-          <div className="text-sm font-semibold text-[#F9F8F4]">{t("app.name", "Avaimo")}</div>
-          <div className="text-xs text-[#F9F8F4]/70">
-            {t("footer.tagline_short", "Vereinsplattform für Buchung, Mitglieder und Finanzen.")}
+    <footer className="bg-[#0C0F0E] border-t border-white/5 pt-24 pb-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 mb-24">
+          <div className="col-span-2 lg:col-span-2 space-y-6">
+            <Link href={`/${lang}`} className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#1F3D2B] flex items-center justify-center text-[#CBBF9A] font-bold text-sm">
+                A
+              </div>
+              <span className="text-xl font-bold tracking-tight text-[#F9F8F4]">
+                {t("app.name", "Avaimo")}
+              </span>
+            </Link>
+            <p className="text-[#F9F8F4]/50 max-w-xs leading-relaxed">
+              Die All-in-One-Plattform für moderne Sportvereine. Buchung, Mitglieder und Finanzen in einem System.
+            </p>
+          </div>
+
+          {sections.map((section) => (
+            <div key={section.title} className="space-y-6">
+              <h4 className="text-sm font-bold uppercase tracking-widest text-[#CBBF9A]">
+                {section.title}
+              </h4>
+              <ul className="space-y-4">
+                {section.links.map((link) => (
+                  <li key={link.href}>
+                    <Link 
+                      href={link.href} 
+                      className="text-[#F9F8F4]/50 hover:text-[#CBBF9A] transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          <div className="space-y-6">
+            <h4 className="text-sm font-bold uppercase tracking-widest text-[#CBBF9A]">
+              Sprache
+            </h4>
+            <div className="flex flex-col gap-3">
+              {locales.map((l) => (
+                <Link
+                  key={l.code}
+                  href={`/${l.code}`}
+                  className={`text-sm flex items-center gap-2 ${
+                    lang === l.code ? "text-[#CBBF9A] font-medium" : "text-[#F9F8F4]/40 hover:text-[#F9F8F4]/60"
+                  } transition-colors`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  {l.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4 text-xs text-[#F9F8F4]/70">
-          {footerLinks.map((item) => (
-            <Link key={item.href} href={item.href} className="hover:text-[#F9F8F4]">
-              {item.label}
-            </Link>
-          ))}
-          <Link href={`/${lang}/impressum`} className="hover:text-[#F9F8F4]">
-            {t("footer.impressum", "Impressum")}
-          </Link>
-          <Link href={`/${lang}/datenschutz`} className="hover:text-[#F9F8F4]">
-            {t("footer.privacy", "Datenschutz")}
-          </Link>
+
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-sm text-[#F9F8F4]/30">
+            © {new Date().getFullYear()} Avaimo. Alle Rechte vorbehalten.
+          </p>
+          <div className="flex items-center gap-6">
+             <Link href={`/${lang}/contact`} className="text-sm text-[#F9F8F4]/30 hover:text-[#CBBF9A] transition-colors">
+               Kontakt
+             </Link>
+             <Link href="https://avaimo.com" className="text-sm text-[#F9F8F4]/30 hover:text-[#CBBF9A] transition-colors">
+               avaimo.com
+             </Link>
+          </div>
         </div>
       </div>
     </footer>
