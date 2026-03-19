@@ -350,8 +350,8 @@ export default function MemberDashboard() {
 
         </main>
       </div>
-
-      <MobileBottomNav slug={slug} active="dashboard" />
     </div>
+  )
+}
   )
 }

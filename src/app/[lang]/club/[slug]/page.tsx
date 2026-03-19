@@ -306,8 +306,6 @@ export default function ClubPage() {
           </div>
         </footer>
       </div>
-
-      {user && <MobileBottomNav slug={club.slug} active="home" />}
     </div>
   )
 }

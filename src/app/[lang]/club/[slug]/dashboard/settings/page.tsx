@@ -195,8 +195,8 @@ export default function MemberSettingsPage() {
           </div>
         </div>
       </main>
-
-      <MobileBottomNav slug={slug} active="settings" />
     </div>
+  )
+}
   )
 }

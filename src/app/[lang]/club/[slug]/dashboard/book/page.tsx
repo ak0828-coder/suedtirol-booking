@@ -191,8 +191,8 @@ export default function DashboardBookPage() {
           </div>
         )}
       </main>
-
-      <MobileBottomNav slug={slug} active="book" />
     </div>
+  )
+}
   )
 }

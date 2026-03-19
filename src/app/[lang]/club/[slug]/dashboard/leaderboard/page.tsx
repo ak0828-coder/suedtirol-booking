@@ -213,8 +213,8 @@ export default function ClubLeaderboardPage() {
           </div>
         )}
       </main>
-
-      <MobileBottomNav slug={slug} active="leaderboard" />
     </div>
+  )
+}
   )
 }

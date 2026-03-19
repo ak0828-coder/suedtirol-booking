@@ -207,8 +207,8 @@ export default function DashboardTrainingPage() {
         </section>
 
       </main>
-
-      <MobileBottomNav slug={slug} active="training" />
     </div>
+  )
+}
   )
 }
