@@ -167,7 +167,7 @@ export default function MemberDashboard() {
 
       <div className="relative z-10">
         {/* ── TOP NAV / HEADER ── */}
-        <header className="px-6 pt-12 pb-8 max-w-xl mx-auto flex justify-between items-center">
+        <header className="px-6 pt-12 pb-8 max-w-5xl mx-auto flex justify-between items-center">
            <div>
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-[#CBBF9A] mb-3">
                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" /> {member.membership_plans?.name || "Member"}
@@ -182,7 +182,7 @@ export default function MemberDashboard() {
            </Link>
         </header>
 
-        <main className="px-4 max-w-xl mx-auto space-y-6">
+        <main className="px-4 max-w-5xl mx-auto space-y-6">
           
           {/* Alerts Area */}
           <AnimatePresence>
@@ -216,130 +216,136 @@ export default function MemberDashboard() {
           </AnimatePresence>
 
           {/* ── MAIN ACTION ── */}
-          <Link href={`/${lang}/club/${slug}/dashboard/book`} className="block group">
-            <SpotlightCard className="p-8 flex items-center justify-between bg-gradient-to-br from-[#CBBF9A] to-[#8A7B4D] border-none shadow-2xl shadow-[#CBBF9A]/10 group-hover:scale-[1.02] transition-transform">
-              <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#030504]/40 mb-2">Ready to Play?</p>
-                <h2 className="text-3xl font-black text-[#030504] tracking-tight">Platz buchen</h2>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-[#030504]/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                <ArrowRight className="w-7 h-7 text-[#030504]" />
-              </div>
-            </SpotlightCard>
-          </Link>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link href={`/${lang}/club/${slug}/dashboard/book`} className="block group">
+              <SpotlightCard className="p-8 h-full flex items-center justify-between bg-gradient-to-br from-[#CBBF9A] to-[#8A7B4D] border-none shadow-2xl shadow-[#CBBF9A]/10 group-hover:scale-[1.02] transition-transform">
+                <div className="relative z-10">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#030504]/40 mb-2">Ready to Play?</p>
+                  <h2 className="text-3xl font-black text-[#030504] tracking-tight">Platz buchen</h2>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-[#030504]/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                  <ArrowRight className="w-7 h-7 text-[#030504]" />
+                </div>
+              </SpotlightCard>
+            </Link>
 
-          {/* ── NEXT BOOKING ── */}
-          {nextBooking ? (
-            <SpotlightCard className="p-6 relative group">
-              <div className="absolute top-0 right-0 p-6 opacity-5">
-                 <CalendarDays className="w-24 h-24 text-white" />
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4">Nächster Termin</p>
-              <div className="flex items-end justify-between relative z-10">
-                <div>
-                  <p className="text-4xl font-black text-white mb-2">{format(new Date(nextBooking.start_time), "dd. MMMM")}</p>
-                  <div className="flex items-center gap-3 text-sm font-medium text-white/50">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span className="font-mono">{format(new Date(nextBooking.start_time), "HH:mm")}</span>
+            {/* ── NEXT BOOKING ── */}
+            {nextBooking ? (
+              <SpotlightCard className="p-6 relative group h-full">
+                <div className="absolute top-0 right-0 p-6 opacity-5">
+                   <CalendarDays className="w-24 h-24 text-white" />
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4">Nächster Termin</p>
+                <div className="flex items-end justify-between relative z-10">
+                  <div>
+                    <p className="text-4xl font-black text-white mb-2">{format(new Date(nextBooking.start_time), "dd. MMMM")}</p>
+                    <div className="flex items-center gap-3 text-sm font-medium text-white/50">
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span className="font-mono">{format(new Date(nextBooking.start_time), "HH:mm")}</span>
+                      </div>
+                      <span className="text-white/20">·</span>
+                      <span className="text-[#CBBF9A]">{nextBooking.courts?.name}</span>
                     </div>
-                    <span className="text-white/20">·</span>
-                    <span className="text-[#CBBF9A]">{nextBooking.courts?.name}</span>
                   </div>
+                  <CancelBookingButton bookingId={nextBooking.id} />
                 </div>
-                <CancelBookingButton bookingId={nextBooking.id} />
+              </SpotlightCard>
+            ) : (
+              <SpotlightCard className="p-8 text-center border-dashed border-white/5 flex items-center justify-center">
+                 <p className="text-sm font-medium text-white/20">Keine anstehenden Buchungen</p>
+              </SpotlightCard>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* STATS */}
+            <div className="grid grid-cols-3 gap-4 md:col-span-1">
+              {[
+                { label: "Wins", value: stats.wins, icon: Trophy, color: "text-[#CBBF9A]" },
+                { label: "Losses", value: stats.losses, icon: CalendarX, color: "text-white/20" },
+                { label: "Streak", value: stats.win_streak, icon: Zap, color: "text-amber-400" },
+              ].map((s, i) => (
+                <SpotlightCard key={i} className="p-5 text-center flex flex-col items-center justify-center gap-2">
+                  <s.icon className={`w-4 h-4 ${s.color}`} />
+                  <p className="text-2xl font-black text-white leading-none">{s.value}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">{s.label}</p>
+                </SpotlightCard>
+              ))}
+            </div>
+
+            {/* QUICK TOOLS */}
+            <div className="grid grid-cols-2 gap-4 md:col-span-2">
+              <Link href={`/${lang}/club/${slug}/dashboard/training`}>
+                <SpotlightCard className="p-5 h-full flex items-center gap-4 hover:bg-white/5 transition-colors group">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Dumbbell className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white leading-tight">Training</p>
+                    <p className="text-[10px] text-white/30 font-medium">Kurse & Camps</p>
+                  </div>
+                </SpotlightCard>
+              </Link>
+              <Link href={`/${lang}/club/${slug}/dashboard/leaderboard`}>
+                <SpotlightCard className="p-5 h-full flex items-center gap-4 hover:bg-white/5 transition-colors group">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Star className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white leading-tight">Leaderboard</p>
+                    <p className="text-[10px] text-white/30 font-medium">Top Spieler</p>
+                  </div>
+                </SpotlightCard>
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* MEMBERSHIP DETAIL */}
+            <SpotlightCard className="p-6 relative">
+              <div className="flex items-center justify-between mb-6">
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Mitgliedschaft</p>
+                 <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${paymentPaid ? 'bg-[#10B981]/10 text-[#34D399] border border-[#10B981]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                    {paymentPaid ? "Aktiv & Bezahlt" : "Zahlung offen"}
+                 </div>
+              </div>
+              <div className="flex items-center gap-4 mb-6">
+                 <div className="w-12 h-12 rounded-2xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-[#CBBF9A]" />
+                 </div>
+                 <div>
+                    <p className="text-lg font-bold text-white">{member.membership_plans?.name}</p>
+                    {member.valid_until && <p className="text-xs text-white/40">Gültig bis {format(new Date(member.valid_until), "dd.MM.yyyy")}</p>}
+                 </div>
+              </div>
+              <div className="flex gap-3">
+                 <BillingPortalButton clubSlug={slug} returnPath={`/${lang}/club/${slug}/dashboard`} hasStripeCustomer={!!profile?.stripe_customer_id} />
+                 {member.stripe_subscription_id && member.payment_status !== "cancelled" && (
+                   <CancelMembershipButton clubSlug={slug} />
+                 )}
               </div>
             </SpotlightCard>
-          ) : (
-            <SpotlightCard className="p-8 text-center border-dashed border-white/5">
-               <p className="text-sm font-medium text-white/20">Keine anstehenden Buchungen</p>
-            </SpotlightCard>
-          )}
 
-          {/* ── STATS GRID ── */}
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { label: "Wins", value: stats.wins, icon: Trophy, color: "text-[#CBBF9A]" },
-              { label: "Losses", value: stats.losses, icon: CalendarX, color: "text-white/20" },
-              { label: "Streak", value: stats.win_streak, icon: Zap, color: "text-amber-400" },
-            ].map((s, i) => (
-              <SpotlightCard key={i} className="p-5 text-center flex flex-col items-center justify-center gap-2">
-                <s.icon className={`w-4 h-4 ${s.color}`} />
-                <p className="text-2xl font-black text-white leading-none">{s.value}</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">{s.label}</p>
-              </SpotlightCard>
-            ))}
-          </div>
-
-          {/* ── QUICK TOOLS ── */}
-          <div className="grid grid-cols-2 gap-4">
-            <Link href={`/${lang}/club/${slug}/dashboard/training`}>
-              <SpotlightCard className="p-5 flex items-center gap-4 hover:bg-white/5 transition-colors group">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Dumbbell className="w-5 h-5 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white leading-tight">Training</p>
-                  <p className="text-[10px] text-white/30 font-medium">Kurse & Camps</p>
-                </div>
-              </SpotlightCard>
-            </Link>
-            <Link href={`/${lang}/club/${slug}/dashboard/leaderboard`}>
-              <SpotlightCard className="p-5 flex items-center gap-4 hover:bg-white/5 transition-colors group">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Star className="w-5 h-5 text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white leading-tight">Leaderboard</p>
-                  <p className="text-[10px] text-white/30 font-medium">Top Spieler</p>
-                </div>
-              </SpotlightCard>
-            </Link>
-          </div>
-
-          {/* ── MEMBERSHIP DETAIL ── */}
-          <SpotlightCard className="p-6 relative">
-            <div className="flex items-center justify-between mb-6">
-               <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Mitgliedschaft</p>
-               <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${paymentPaid ? 'bg-[#10B981]/10 text-[#34D399] border border-[#10B981]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                  {paymentPaid ? "Aktiv & Bezahlt" : "Zahlung offen"}
-               </div>
+            {/* DOCUMENTS & HISTORY */}
+            <div className="grid grid-cols-2 gap-4">
+               <Link href={`/${lang}/club/${slug}/dashboard/documents`} className="block">
+                  <SpotlightCard className="p-5 h-full flex flex-col gap-4 text-center items-center justify-center group">
+                     <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#CBBF9A]/10 group-hover:border-[#CBBF9A]/20 transition-all">
+                        <FileText className="w-5 h-5 text-white/40 group-hover:text-[#CBBF9A]" />
+                     </div>
+                     <p className="text-xs font-bold text-white/60">Dokumente</p>
+                  </SpotlightCard>
+               </Link>
+               <Link href={`/${lang}/club/${slug}/dashboard/history`} className="block">
+                  <SpotlightCard className="p-5 h-full flex flex-col gap-4 text-center items-center justify-center group">
+                     <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#CBBF9A]/10 group-hover:border-[#CBBF9A]/20 transition-all">
+                        <Activity className="w-5 h-5 text-white/40 group-hover:text-[#CBBF9A]" />
+                     </div>
+                     <p className="text-xs font-bold text-white/60">Aktivität</p>
+                  </SpotlightCard>
+               </Link>
             </div>
-            <div className="flex items-center gap-4 mb-6">
-               <div className="w-12 h-12 rounded-2xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-[#CBBF9A]" />
-               </div>
-               <div>
-                  <p className="text-lg font-bold text-white">{member.membership_plans?.name}</p>
-                  {member.valid_until && <p className="text-xs text-white/40">Gültig bis {format(new Date(member.valid_until), "dd.MM.yyyy")}</p>}
-               </div>
-            </div>
-            <div className="flex gap-3">
-               <BillingPortalButton clubSlug={slug} returnPath={`/${lang}/club/${slug}/dashboard`} hasStripeCustomer={!!profile?.stripe_customer_id} />
-               {member.stripe_subscription_id && member.payment_status !== "cancelled" && (
-                 <CancelMembershipButton clubSlug={slug} />
-               )}
-            </div>
-          </SpotlightCard>
-
-          {/* ── DOCUMENTS & HISTORY ── */}
-          <div className="grid grid-cols-2 gap-4">
-             <Link href={`/${lang}/club/${slug}/dashboard/documents`} className="block">
-                <SpotlightCard className="p-5 flex flex-col gap-4 text-center items-center group">
-                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#CBBF9A]/10 group-hover:border-[#CBBF9A]/20 transition-all">
-                      <FileText className="w-5 h-5 text-white/40 group-hover:text-[#CBBF9A]" />
-                   </div>
-                   <p className="text-xs font-bold text-white/60">Dokumente</p>
-                </SpotlightCard>
-             </Link>
-             <Link href={`/${lang}/club/${slug}/dashboard/history`} className="block">
-                <SpotlightCard className="p-5 flex flex-col gap-4 text-center items-center group">
-                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#CBBF9A]/10 group-hover:border-[#CBBF9A]/20 transition-all">
-                      <Activity className="w-5 h-5 text-white/40 group-hover:text-[#CBBF9A]" />
-                   </div>
-                   <p className="text-xs font-bold text-white/60">Aktivität</p>
-                </SpotlightCard>
-             </Link>
           </div>
 
         </main>

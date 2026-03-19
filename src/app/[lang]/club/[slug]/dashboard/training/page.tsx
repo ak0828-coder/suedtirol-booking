@@ -131,7 +131,7 @@ export default function DashboardTrainingPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 py-4 bg-[#030504]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-xl mx-auto px-6 flex items-center gap-4">
+        <div className="max-w-5xl mx-auto px-6 flex items-center gap-4">
           <Link href={`/${lang}/club/${slug}/dashboard`} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors group">
             <ChevronLeft className="w-5 h-5 text-white/40 group-hover:text-white" />
           </Link>
@@ -142,7 +142,7 @@ export default function DashboardTrainingPage() {
         </div>
       </header>
 
-      <main className="px-4 max-w-xl mx-auto pt-8 space-y-12">
+      <main className="px-4 max-w-5xl mx-auto pt-8 space-y-12">
         
         {/* Intro */}
         <section>
@@ -155,7 +155,7 @@ export default function DashboardTrainingPage() {
                     <Sparkles className="w-6 h-6 text-[#CBBF9A]" />
                  </div>
                  <h2 className="text-3xl font-black text-white mb-2">{t("training.hero.title")}</h2>
-                 <p className="text-white/40 font-light leading-relaxed">{t("training.hero.subtitle")}</p>
+                 <p className="text-white/40 font-light leading-relaxed max-w-2xl">{t("training.hero.subtitle")}</p>
               </div>
            </SpotlightCard>
         </section>
@@ -172,7 +172,7 @@ export default function DashboardTrainingPage() {
               <p className="text-white/20 text-sm">{t("training.trainers.empty")}</p>
             </SpotlightCard>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid md:grid-cols-2 gap-6">
               {(trainers || []).map((trainer: any, idx: number) => (
                 <motion.div key={trainer.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}>
                    <TrainerBookingCard clubSlug={slug} trainer={trainer} />

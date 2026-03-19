@@ -110,7 +110,7 @@ export default function MemberSettingsPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 py-4 bg-[#030504]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-xl mx-auto px-6 flex items-center gap-4">
+        <div className="max-w-5xl mx-auto px-6 flex items-center gap-4">
           <Link href={`/${lang}/club/${slug}/dashboard`} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors group">
             <ChevronLeft className="w-5 h-5 text-white/40 group-hover:text-white" />
           </Link>
@@ -121,73 +121,79 @@ export default function MemberSettingsPage() {
         </div>
       </header>
 
-      <main className="px-4 max-w-xl mx-auto pt-8 space-y-6">
-        {/* Profile */}
-        <SpotlightCard className="p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
-              <User className="w-5 h-5 text-[#CBBF9A]" />
-            </div>
-            <h2 className="text-lg font-bold text-white">{t("member_settings.profile_title")}</h2>
-          </div>
-          <ProfileForm profile={profile} />
-        </SpotlightCard>
-
-        {/* Leaderboard */}
-        <SpotlightCard className="p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-blue-400" />
-            </div>
-            <h2 className="text-lg font-bold text-white">{t("member_settings.leaderboard_title")}</h2>
-          </div>
-          <MemberSettingsForm clubSlug={slug} initialOptOut={!!member.leaderboard_opt_out} />
-        </SpotlightCard>
-
-        {/* Account & Security */}
-        <SpotlightCard className="p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-purple-400" />
-            </div>
-            <h2 className="text-lg font-bold text-white">{t("member_settings.account_title")}</h2>
-          </div>
-          
+      <main className="px-4 max-w-5xl mx-auto pt-8 space-y-6">
+        <div className="grid md:grid-cols-2 gap-6 items-start">
           <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-white/20" />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{t("member_settings.email_label")}</p>
-                    <p className="text-sm font-medium text-white/80">{user.email}</p>
-                  </div>
-               </div>
-            </div>
+            {/* Profile */}
+            <SpotlightCard className="p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
+                  <User className="w-5 h-5 text-[#CBBF9A]" />
+                </div>
+                <h2 className="text-lg font-bold text-white">{t("member_settings.profile_title")}</h2>
+              </div>
+              <ProfileForm profile={profile} />
+            </SpotlightCard>
 
-            <Link href={`/${lang}/change-password`} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group">
-               <div className="flex items-center gap-3">
-                  <Lock className="w-4 h-4 text-white/20" />
-                  <span className="text-sm font-bold text-white">{t("member_settings.change_password")}</span>
-               </div>
-               <ChevronRight className="w-4 h-4 text-white/20 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            {/* Leaderboard */}
+            <SpotlightCard className="p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-blue-400" />
+                </div>
+                <h2 className="text-lg font-bold text-white">{t("member_settings.leaderboard_title")}</h2>
+              </div>
+              <MemberSettingsForm clubSlug={slug} initialOptOut={!!member.leaderboard_opt_out} />
+            </SpotlightCard>
           </div>
-        </SpotlightCard>
 
-        {/* Danger Zone */}
-        <SpotlightCard className="p-8 border-red-500/20 bg-red-500/5">
-           <div className="flex items-center gap-3 mb-6">
-             <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-               <AlertTriangle className="w-5 h-5 text-red-500" />
-             </div>
-             <h2 className="text-lg font-bold text-red-500">Datenschutz & Account</h2>
-           </div>
-           <p className="text-sm text-red-500/60 mb-8 leading-relaxed">
-              Du hast das Recht, die Löschung aller deiner personenbezogenen Daten zu beantragen. 
-              Dieser Vorgang kann nicht rückgängig gemacht werden.
-           </p>
-           <DeleteAccountButton lang={lang} />
-        </SpotlightCard>
+          <div className="space-y-6">
+            {/* Account & Security */}
+            <SpotlightCard className="p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5 text-purple-400" />
+                </div>
+                <h2 className="text-lg font-bold text-white">{t("member_settings.account_title")}</h2>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-white/20" />
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{t("member_settings.email_label")}</p>
+                        <p className="text-sm font-medium text-white/80">{user.email}</p>
+                      </div>
+                   </div>
+                </div>
+
+                <Link href={`/${lang}/change-password`} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group">
+                   <div className="flex items-center gap-3">
+                      <Lock className="w-4 h-4 text-white/20" />
+                      <span className="text-sm font-bold text-white">{t("member_settings.change_password")}</span>
+                   </div>
+                   <ChevronRight className="w-4 h-4 text-white/20 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </SpotlightCard>
+
+            {/* Danger Zone */}
+            <SpotlightCard className="p-8 border-red-500/20 bg-red-500/5">
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                   <AlertTriangle className="w-5 h-5 text-red-500" />
+                 </div>
+                 <h2 className="text-lg font-bold text-red-500">Datenschutz & Account</h2>
+               </div>
+               <p className="text-sm text-red-500/60 mb-8 leading-relaxed">
+                  Du hast das Recht, die Löschung aller deiner personenbezogenen Daten zu beantragen. 
+                  Dieser Vorgang kann nicht rückgängig gemacht werden.
+               </p>
+               <DeleteAccountButton lang={lang} />
+            </SpotlightCard>
+          </div>
+        </div>
       </main>
 
       <MobileBottomNav slug={slug} active="settings" />

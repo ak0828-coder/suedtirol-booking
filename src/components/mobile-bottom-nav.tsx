@@ -25,7 +25,7 @@ export function MobileBottomNav({ slug, active }: MobileBottomNavProps) {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-40"
+      className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div
