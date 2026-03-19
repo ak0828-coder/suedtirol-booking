@@ -5,7 +5,7 @@ import { createCourseCheckoutSession, joinCourseWaitlist } from "@/app/actions"
 import { useParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { motion, AnimatePresence } from "motion/react"
-import { CalendarDays, Clock, Users, ArrowRight, X, Check, Loader2, Info, ChevronRight } from "lucide-react"
+import { CalendarDays, Clock, Users, ArrowRight, X, Check, Loader2, Info, ChevronRight, ShieldCheck } from "lucide-react"
 
 function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const divRef = useRef<HTMLDivElement>(null)
