@@ -31,30 +31,30 @@ export function NewClubForm() {
     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Vereinsname</Label>
-          <Input id="name" name="name" placeholder="TC Meran" required />
+          <Label htmlFor="name" className="text-white">Vereinsname</Label>
+          <Input id="name" name="name" placeholder="TC Meran" required className="bg-white/5 border-white/10 text-white placeholder:text-white/20" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="slug">Slug (URL)</Label>
-          <Input id="slug" name="slug" placeholder="tc-meran" required pattern="[a-z0-9-]+" />
+          <Label htmlFor="slug" className="text-white">Slug (URL)</Label>
+          <Input id="slug" name="slug" placeholder="tc-meran" required pattern="[a-z0-9-]+" className="bg-white/5 border-white/10 text-white placeholder:text-white/20" />
         </div>
       </div>
       
-      <div className="space-y-2 pt-2 border-t border-slate-200/60">
-        <Label className="text-slate-500">Admin Zugang erstellen</Label>
+      <div className="space-y-2 pt-2 border-t border-white/10">
+        <Label className="text-white/50">Admin Zugang erstellen</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="email">E-Mail</Label>
-            <Input id="email" name="email" type="email" placeholder="admin@tc-meran.it" required />
+            <Label htmlFor="email" className="text-white">E-Mail</Label>
+            <Input id="email" name="email" type="email" placeholder="admin@tc-meran.it" required className="bg-white/5 border-white/10 text-white placeholder:text-white/20" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
-            <Input id="password" name="password" type="text" placeholder="Geheim123" required minLength={6} />
+            <Label htmlFor="password" className="text-white">Passwort</Label>
+            <Input id="password" name="password" type="text" placeholder="Geheim123" required minLength={6} className="bg-white/5 border-white/10 text-white placeholder:text-white/20" />
           </div>
         </div>
       </div>
 
-      <Button type="submit" className="w-full bg-slate-900 text-white rounded-full" disabled={isLoading}>
+      <Button type="submit" className="w-full bg-[#CBBF9A] text-[#030504] hover:bg-[#CBBF9A]/90 rounded-full font-bold" disabled={isLoading}>
         {isLoading ? <Loader2 className="animate-spin mr-2" /> : "Verein & User erstellen"}
       </Button>
     </form>

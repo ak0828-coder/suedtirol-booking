@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/client"
 import { notFound, useParams } from "next/navigation"
 import { TrainerBookingCard } from "@/components/training/trainer-booking-card"
 import { CourseGrid } from "@/components/training/course-grid"
-import { TourLauncher } from "@/components/tours/tour-launcher"
 import { Suspense, useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { useI18n } from "@/components/i18n/locale-provider"
@@ -153,9 +152,6 @@ export default function PublicTrainingPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-             <Suspense fallback={null}>
-                <TourLauncher tour="training" storageKey="tour_training_seen" label={t("training.hero.guide")} autoStart />
-             </Suspense>
              <div className="w-10 h-10 rounded-xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-[#CBBF9A]" />
              </div>

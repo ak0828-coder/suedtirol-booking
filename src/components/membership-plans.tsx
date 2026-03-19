@@ -57,16 +57,16 @@ export function MembershipPlans({
           return (
             <Card
               key={plan.id}
-              className="border-2 transition-colors relative flex flex-col hover:shadow-md"
+              className="border-2 transition-colors relative flex flex-col hover:shadow-md bg-white dark:bg-slate-900/50"
               style={{ borderColor: "color-mix(in srgb, var(--club-primary, #0f172a) 20%, transparent)" }}
             >
               <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description || t("membership.plan_fallback", "Jahresbeitrag")}</CardDescription>
+                <CardTitle className="text-slate-900 dark:text-white">{plan.name}</CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400">{plan.description || t("membership.plan_fallback", "Jahresbeitrag")}</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
-                <div className="text-3xl font-bold mb-4">
-                  {plan.price}€ <span className="text-sm font-normal text-slate-500">/ {t("membership.year", "Jahr")}</span>
+                <div className="text-3xl font-bold mb-4 text-slate-900 dark:text-white">
+                  {plan.price}€ <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/ {t("membership.year", "Jahr")}</span>
                 </div>
 
                 {features.length > 0 && (

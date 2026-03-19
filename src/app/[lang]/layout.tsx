@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
-import { TourShell } from "@/components/tours/tour-shell"
 import { defaultLocale, isLocale, locales } from "@/lib/i18n"
 import { getDictionary } from "@/lib/dictionaries"
 import { LocaleProvider } from "@/components/i18n/locale-provider"
@@ -65,7 +64,7 @@ export default async function RootLayout({
       disableTransitionOnChange
     >
       <LocaleProvider dictionary={dictionary}>
-        <TourShell>{children}</TourShell>
+        {children}
       </LocaleProvider>
       <Toaster richColors position="top-right" />
       <CookieBanner />

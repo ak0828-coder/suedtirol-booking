@@ -25,7 +25,7 @@ export function ProfileForm({ profile }: { profile: any }) {
     })
   }
 
-  const inputClasses = "w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/40 focus:ring-4 focus:ring-[#CBBF9A]/5 transition-all text-sm"
+  const inputClasses = "w-full h-12 bg-white/[0.07] border border-white/20 rounded-xl px-4 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/60 focus:ring-4 focus:ring-[#CBBF9A]/10 transition-all text-sm"
   const labelClasses = "text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2 block px-1"
 
   return (

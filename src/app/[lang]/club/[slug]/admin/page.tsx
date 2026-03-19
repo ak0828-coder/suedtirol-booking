@@ -121,7 +121,7 @@ export default async function AdminPage({
 
       <div className="grid xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-6">
-          <Card id="tour-admin-activity" className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{apc.activity_title}</CardTitle>
               <span className="text-xs text-slate-500">{bookings?.length || 0} {apc.entries}</span>
@@ -176,7 +176,7 @@ export default async function AdminPage({
         </div>
 
         <div className="space-y-6 xl:sticky xl:top-6 h-fit">
-          <Card id="tour-admin-quick" className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
+          <Card className="rounded-3xl border border-slate-200/60 bg-white/80 shadow-sm">
             <CardHeader>
               <CardTitle>{apc.quick_title}</CardTitle>
             </CardHeader>

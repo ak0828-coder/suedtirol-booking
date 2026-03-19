@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { SidebarNav } from "@/components/admin/sidebar-nav"
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav"
 import { getAdminContext } from "./_lib/get-admin-context"
-import { AdminTourButton } from "@/components/tours/admin-tour-button"
 import { Suspense } from "react"
 
 export const dynamic = "force-dynamic"
@@ -60,7 +59,6 @@ export default async function AdminLayout({
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <div
-          id="tour-admin-header"
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl sm:rounded-3xl border border-slate-200/60 bg-white/80 p-4 sm:p-6 shadow-sm"
         >
           <div className="flex items-center gap-3 sm:gap-4">
@@ -85,9 +83,6 @@ export default async function AdminLayout({
 
           <div className="flex items-center gap-2">
             <AdminMobileNav slug={slug} lang={lang} items={filtered} accentColor={club.primary_color} />
-            <Suspense fallback={null}>
-              <AdminTourButton />
-            </Suspense>
             <Link href={`/${lang}/club/${slug}`} target="_blank">
               <Button variant="outline" className="gap-2 rounded-full hidden sm:flex">
                 <ExternalLink className="w-4 h-4" /> Vorschau
@@ -105,7 +100,7 @@ export default async function AdminLayout({
         {/* Sidebar + content grid */}
         <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-4 sm:gap-6">
           <aside className="hidden lg:block space-y-4">
-            <div id="tour-admin-nav" className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
+            <div className="rounded-3xl border border-slate-200/60 bg-white/80 p-4 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
                 Navigation
               </div>

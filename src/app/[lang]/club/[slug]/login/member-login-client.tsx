@@ -148,7 +148,7 @@ export default function MemberLoginClient({ clubName, clubLogoUrl, primaryColor 
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="name@beispiel.de"
-                      className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/40 focus:ring-4 focus:ring-[#CBBF9A]/5 transition-all"
+                      className="w-full h-14 bg-white/[0.07] border border-white/20 rounded-2xl pl-12 pr-4 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/60 focus:ring-4 focus:ring-[#CBBF9A]/10 transition-all"
                     />
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export default function MemberLoginClient({ clubName, clubLogoUrl, primaryColor 
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       placeholder="••••••••"
-                      className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-12 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/40 focus:ring-4 focus:ring-[#CBBF9A]/5 transition-all"
+                      className="w-full h-14 bg-white/[0.07] border border-white/20 rounded-2xl pl-12 pr-12 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/60 focus:ring-4 focus:ring-[#CBBF9A]/10 transition-all"
                     />
                     <button
                       type="button"

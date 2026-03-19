@@ -375,7 +375,6 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
     <div className="space-y-6">
       {/* Upload form */}
       <form
-        id="tour-documents-upload"
         onSubmit={handleSubmit}
         className="rounded-2xl border border-slate-200/60 bg-white/90 p-5 sm:p-6 shadow-sm space-y-5"
       >
@@ -495,7 +494,7 @@ export function MemberDocumentsForm({ clubSlug, documents }: MemberDocumentsForm
       </form>
 
       {/* Document list */}
-      <div id="tour-documents-list" className="space-y-4">
+      <div className="space-y-4">
         <h3 className="text-sm font-semibold text-slate-700 px-1">{c.docs_title}</h3>
 
         {documents.length === 0 ? (

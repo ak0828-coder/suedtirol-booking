@@ -229,8 +229,8 @@ export default function SuperAdminPage() {
                 </div>
                 <SpotlightCard className="p-8 bg-[#CBBF9A] border-none text-[#030504]">
                    <h4 className="text-2xl font-black tracking-tight mb-2">Neuer Verein</h4>
-                   <p className="text-sm font-bold opacity-40 mb-8 leading-relaxed">Erstelle eine neue Club-Instanz und konfiguriere die Basis-Einstellungen.</p>
-                   <div className="bg-white/90 backdrop-blur-xl p-6 rounded-[1.5rem] shadow-2xl">
+                   <p className="text-sm font-bold text-[#030504]/60 mb-8 leading-relaxed">Erstelle eine neue Club-Instanz und konfiguriere die Basis-Einstellungen.</p>
+                   <div className="bg-[#030504] p-6 rounded-[1.5rem] shadow-2xl border border-black/10">
                       <NewClubForm />
                    </div>
                 </SpotlightCard>

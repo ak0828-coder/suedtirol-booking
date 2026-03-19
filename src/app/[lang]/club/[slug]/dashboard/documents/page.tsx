@@ -6,7 +6,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { getReadableTextColor } from "@/lib/color"
-import { TourLauncher } from "@/components/tours/tour-launcher"
 import { Suspense } from "react"
 import { getDictionary } from "@/lib/dictionaries"
 import { createTranslator } from "@/lib/translator"
@@ -57,7 +56,6 @@ export default async function MemberDocumentsPage({
     >
       <div className="mx-auto max-w-3xl space-y-6 app-pad pt-4 sm:pt-6">
         <header
-          id="tour-documents-header"
           className="rounded-2xl border border-slate-200/60 bg-white/90 p-6 shadow-sm flex flex-wrap items-center justify-between gap-3"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -69,9 +67,6 @@ export default async function MemberDocumentsPage({
               <Button variant="outline" className="rounded-full">{t("documents.back", "Zurück")}</Button>
             </Link>
           </div>
-          <Suspense fallback={null}>
-            <TourLauncher tour="member-documents" storageKey="tour_member_documents_seen" label={t("documents.guide", "Guide")} autoStart />
-          </Suspense>
         </header>
 
         <MemberDocumentsForm clubSlug={slug} documents={documents} />

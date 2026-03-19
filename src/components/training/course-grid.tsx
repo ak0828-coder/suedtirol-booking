@@ -57,7 +57,6 @@ export function CourseGrid({
             key={course.id}
             clubSlug={clubSlug}
             course={course}
-            cardId={idx === 0 ? "tour-training-course-card" : undefined}
           />
         ))}
         {filtered.length === 0 && (
