@@ -68,9 +68,11 @@ export default function ClubLeaderboardPage() {
       if (!club) return
 
       // Use client-side fetching for ranking to match current structure
-      // In a real app, this might be a server action or a direct API call
-      // For now we'll simulate the ranking data fetching
-      const { data: ranking } = await supabase.rpc('get_club_ranking', { p_club_id: club.id, p_limit: 50 })
+      const { data: ranking, error: rankingError } = await supabase.rpc('get_club_ranking', { p_club_id: club.id, p_limit: 50 })
+
+      if (rankingError) {
+        console.error("Ranking error:", rankingError)
+      }
 
       setData({ club, ranking: ranking || [] })
       setLoading(false)
@@ -84,7 +86,9 @@ export default function ClubLeaderboardPage() {
     </div>
   )
 
-  const { club, ranking } = data
+  if (!data?.club) return notFound()
+
+  const { club, ranking = [] } = data
   const primary = club.primary_color || "#1F3D2B"
   const primaryRGB = hexToRgb(primary)
 

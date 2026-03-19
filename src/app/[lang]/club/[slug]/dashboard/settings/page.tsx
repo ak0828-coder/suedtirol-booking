@@ -85,6 +85,23 @@ export default function MemberSettingsPage() {
     </div>
   )
 
+  if (!data?.member) {
+    return (
+      <div className="min-h-screen bg-[#030504] flex items-center justify-center p-6 text-center">
+        <SpotlightCard className="max-w-sm p-10 space-y-6">
+          <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
+            <ShieldCheck className="w-10 h-10 text-white/20" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-2">Zugriff eingeschränkt</h1>
+            <p className="text-white/40">Deine Mitgliedsdaten konnten nicht geladen werden. Bitte melde dich erneut an.</p>
+          </div>
+          <Link href={`/${lang}/club/${slug}/login`} className="block w-full py-4 bg-white text-[#030504] rounded-2xl font-bold hover:scale-105 transition-transform">Zum Login</Link>
+        </SpotlightCard>
+      </div>
+    )
+  }
+
   const { club, member, profile, user } = data
   const primary = club.primary_color || "#1F3D2B"
   const primaryRGB = hexToRgb(primary)
