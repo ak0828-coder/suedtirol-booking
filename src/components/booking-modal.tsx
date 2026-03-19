@@ -10,7 +10,21 @@ import {
 import { de, it, enUS } from "date-fns/locale"
 import { createBooking, getBookedSlots, createCheckoutSession, getBlockedDates, validateCreditCode } from "@/app/actions"
 import { generateTimeSlots, isDateBlocked } from "@/lib/utils"
-import { Loader2, ChevronLeft, ChevronRight, Clock, AlertTriangle, CheckCircle2, Ticket, CalendarDays, X, Zap, ShieldCheck, User, ArrowRight } from "lucide-react"
+import { 
+  Loader2, 
+  ChevronLeft, 
+  ChevronRight, 
+  Clock, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Ticket, 
+  CalendarDays, 
+  X, 
+  Zap, 
+  ShieldCheck, 
+  User, 
+  ArrowRight 
+} from "lucide-react"
 import { useParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { format } from "date-fns"
