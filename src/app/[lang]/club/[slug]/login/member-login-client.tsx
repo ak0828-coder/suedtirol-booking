@@ -1,16 +1,52 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Loader2, Eye, EyeOff } from "lucide-react"
+import { Loader2, Eye, EyeOff, Lock, Mail, ChevronLeft, ShieldCheck, AlertCircle } from "lucide-react"
 import { getMemberAccessForClub } from "@/app/actions"
 import Link from "next/link"
+import { motion, AnimatePresence } from "motion/react"
 
 type Props = {
   clubName: string
   clubLogoUrl: string | null
   primaryColor: string
+}
+
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
+  }
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
+        style={{
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(var(--primary-rgb), 0.1), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
+}
+
+function hexToRgb(hex: string) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : "31, 61, 43"
 }
 
 export default function MemberLoginClient({ clubName, clubLogoUrl, primaryColor }: Props) {
@@ -45,7 +81,7 @@ export default function MemberLoginClient({ clubName, clubLogoUrl, primaryColor 
     const access = await getMemberAccessForClub(slug)
     if (!access?.ok) {
       await supabase.auth.signOut()
-      setErrorMessage("Dieses Konto ist kein aktives Mitglied in diesem Verein.")
+      setErrorMessage("Zugriff verweigert: Dieses Konto ist kein aktives Mitglied in diesem Verein.")
       setIsLoading(false)
       return
     }
@@ -54,159 +90,130 @@ export default function MemberLoginClient({ clubName, clubLogoUrl, primaryColor 
     router.push(safeNext || `/${lang}/club/${slug}/dashboard`)
   }
 
-  const initials = clubName.substring(0, 2).toUpperCase()
+  const primaryRGB = hexToRgb(primaryColor)
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden flex items-center justify-center p-6"
+      className="relative min-h-screen bg-[#030504] text-[#F9F8F4] flex items-center justify-center p-6 overflow-hidden"
       style={{
-        background: "#09090b",
         ["--club-primary" as any]: primaryColor,
+        ["--primary-rgb" as any]: primaryRGB,
       }}
     >
-      {/* Ambient radial glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 80% 55% at 50% 110%, color-mix(in srgb, ${primaryColor} 22%, transparent) 0%, transparent 70%)`,
-        }}
-      />
+      {/* Background Decor */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#0A1410] via-[#030504] to-[#030504]" />
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 15, repeat: Infinity }}
+          className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-full max-w-5xl h-[600px] rounded-full blur-[140px]"
+          style={{ background: `rgba(${primaryRGB}, 0.3)` }}
+        />
+      </div>
 
-      {/* Grain texture */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          opacity: 0.028,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: "160px",
-        }}
-      />
-
-      <div className="relative w-full max-w-[360px] anim-scale-in">
-        {/* Club branding */}
-        <div className="flex flex-col items-center mb-8 anim-fade-up">
-          <div className="relative mb-5">
-            {/* Glow behind logo */}
-            <div
-              className="absolute inset-0 rounded-3xl blur-2xl opacity-60 scale-110"
-              style={{ backgroundColor: primaryColor }}
-            />
-            <div
-              className="relative w-20 h-20 rounded-3xl flex items-center justify-center text-white text-2xl font-bold overflow-hidden ring-1 ring-white/10"
-              style={{ backgroundColor: primaryColor }}
-            >
-              {clubLogoUrl ? (
-                <img src={clubLogoUrl} alt={clubName} className="w-full h-full object-cover" />
-              ) : (
-                <span className="font-extrabold">{initials}</span>
-              )}
+      <div className="relative z-10 w-full max-w-md">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Header Branding */}
+          <div className="flex flex-col items-center mb-10 text-center">
+            <Link href={`/${lang}/club/${slug}`} className="group relative mb-6">
+              <div className="absolute inset-0 rounded-[2rem] blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" style={{ backgroundColor: primaryColor }} />
+              <div className="relative w-24 h-24 rounded-[2rem] bg-[#030504] border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl">
+                {clubLogoUrl ? (
+                  <img src={clubLogoUrl} alt={clubName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-black text-white">{clubName.substring(0, 2).toUpperCase()}</span>
+                )}
+              </div>
+            </Link>
+            <h1 className="text-3xl font-black tracking-tight mb-2">{clubName}</h1>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-white/40">
+               <ShieldCheck className="w-3 h-3 text-[#CBBF9A]" /> Mitglieder-Bereich
             </div>
           </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">{clubName}</h1>
-          <p className="label-caps text-white/35 mt-1.5">Mitglieder-Login</p>
-        </div>
 
-        {/* Glass card */}
-        <div
-          className="rounded-3xl p-7 space-y-5 anim-fade-up anim-stagger-1"
-          style={{
-            background: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(24px) saturate(160%)",
-            WebkitBackdropFilter: "blur(24px) saturate(160%)",
-            border: "1px solid rgba(255,255,255,0.09)",
-          }}
-        >
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-2">
-              <label htmlFor="email" className="label-caps text-white/40 block">
-                E-Mail
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="deine@email.com"
-                className="input-dark w-full h-12 rounded-2xl px-4 text-sm"
-              />
-            </div>
+          <SpotlightCard className="p-8 md:p-10 shadow-2xl shadow-black/50">
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-1">E-Mail Adresse</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="name@beispiel.de"
+                      className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/40 focus:ring-4 focus:ring-[#CBBF9A]/5 transition-all"
+                    />
+                  </div>
+                </div>
 
-            {/* Password */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="label-caps text-white/40">
-                  Passwort
-                </label>
-                <Link
-                  href={`/${lang}/forgot-password?after=/${lang}/club/${slug}/dashboard`}
-                  className="text-[11px] font-light text-white/30 hover:text-white/60 transition-colors"
-                >
-                  Vergessen?
-                </Link>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/30">Passwort</label>
+                    <Link href={`/${lang}/forgot-password?after=/${lang}/club/${slug}/dashboard`} className="text-[10px] font-bold text-[#CBBF9A] hover:underline">Vergessen?</Link>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                    <input
+                      type={showPw ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="••••••••"
+                      className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-12 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/40 focus:ring-4 focus:ring-[#CBBF9A]/5 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                    >
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  className="input-dark w-full h-12 rounded-2xl px-4 pr-11 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                >
-                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
 
-            {/* Error */}
-            {errorMessage && (
-              <div className="p-3.5 rounded-2xl text-sm text-red-300 anim-slide-up"
+              <AnimatePresence>
+                {errorMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold flex items-start gap-3"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    {errorMessage}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-16 rounded-2xl font-black text-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl"
                 style={{
-                  background: "rgba(239,68,68,0.10)",
-                  border: "1px solid rgba(239,68,68,0.20)",
+                  backgroundColor: primaryColor,
+                  color: "#030504",
+                  boxShadow: `0 10px 30px rgba(${primaryRGB}, 0.2)`
                 }}
               >
-                {errorMessage}
-              </div>
-            )}
+                {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Anmelden"}
+              </button>
+            </form>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 rounded-full font-semibold text-sm text-white btn-press transition-opacity disabled:opacity-60 mt-1"
-              style={{
-                backgroundColor: primaryColor,
-                boxShadow: `0 0 24px color-mix(in srgb, ${primaryColor} 35%, transparent)`,
-              }}
-            >
-              {isLoading ? (
-                <Loader2 className="animate-spin h-4 w-4 mx-auto" />
-              ) : (
-                "Anmelden"
-              )}
-            </button>
-          </form>
-
-          <div className="text-center pt-1">
-            <Link
-              href={`/${lang}/club/${slug}`}
-              className="text-[11px] font-light text-white/25 hover:text-white/55 transition-colors"
-            >
-              ← Zurück zur Clubseite
-            </Link>
-          </div>
-        </div>
+            <div className="mt-8 pt-8 border-t border-white/5 text-center">
+               <Link href={`/${lang}/club/${slug}`} className="inline-flex items-center gap-2 text-xs font-bold text-white/30 hover:text-white transition-colors">
+                  <ChevronLeft className="w-4 h-4" /> Zurück zum Club
+               </Link>
+            </div>
+          </SpotlightCard>
+        </motion.div>
       </div>
     </div>
   )
