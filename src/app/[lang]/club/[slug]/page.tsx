@@ -1,6 +1,8 @@
-import { createClient } from "@/lib/supabase/server"
-import { notFound, redirect } from "next/navigation"
-import { MapPin, Check, LogIn, User, Sparkles, ChevronRight, CalendarDays } from "lucide-react"
+"use client"
+
+import { createClient } from "@/lib/supabase/client"
+import { notFound, redirect, useParams } from "next/navigation"
+import { MapPin, Check, LogIn, User, Sparkles, ChevronRight, CalendarDays, ArrowRight, ShieldCheck, Zap } from "lucide-react"
 import { BookingModal } from "@/components/booking-modal"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
@@ -10,447 +12,308 @@ import { applyClubDefaults, mergeClubContent } from "@/lib/club-content"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { getReadableTextColor } from "@/lib/color"
 import { TourLauncher } from "@/components/tours/tour-launcher"
-import { Suspense } from "react"
-import { getDictionary } from "@/lib/dictionaries"
-import { createTranslator } from "@/lib/translator"
+import { Suspense, useEffect, useState, useRef } from "react"
+import { useI18n } from "@/components/i18n/locale-provider"
+import { motion, AnimatePresence } from "motion/react"
 
-async function getClubData(slug: string) {
-  const supabase = await createClient()
+// --- Reusable Premium Components ---
 
-  const { data: club } = await supabase
-    .from("clubs")
-    .select("*")
-    .eq("slug", slug)
-    .single()
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
 
-  if (!club) return null
-
-  const { data: courts } = await supabase
-    .from("courts")
-    .select("*")
-    .eq("club_id", club.id)
-    .order("name")
-
-  const { data: plans } = await supabase
-    .from("membership_plans")
-    .select("*")
-    .eq("club_id", club.id)
-    .order("price", { ascending: true })
-
-  return { club, courts, plans }
-}
-
-export default async function ClubPage({
-  params,
-}: {
-  params: Promise<{ lang: string; slug: string }>
-}) {
-  const { slug, lang } = await params
-  const dict = await getDictionary(lang as any)
-  const t = createTranslator(dict)
-  const supabase = await createClient()
-  const data = await getClubData(slug)
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!data) return notFound()
-
-  const { club, courts, plans } = data
-  const primary = club.primary_color || "#0f172a"
-  const primaryFg = getReadableTextColor(primary)
-  const courtCount = courts?.length || 0
-  const minPrice =
-    courts && courts.length > 0
-      ? Math.min(...courts.map((court: any) => court.price_per_hour || 0))
-      : null
-
-  const { data: contentRows } = await supabase
-    .from("club_content")
-    .select("content")
-    .eq("club_id", club.id)
-    .limit(1)
-
-  const storedContent = contentRows?.[0]?.content ?? null
-  const content = applyClubDefaults(mergeClubContent(storedContent), club.name)
-
-  let isMember = false
-  if (user) {
-    const { data: member } = await supabase
-      .from("club_members")
-      .select("id, status, valid_until")
-      .eq("club_id", club.id)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .single()
-
-    if (member && (!member.valid_until || new Date(member.valid_until) > new Date())) {
-      isMember = true
-    }
-  }
-
-  if (isMember) {
-    redirect(`/${lang}/club/${slug}/dashboard`)
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
   }
 
   return (
     <div
-      className="min-h-screen pb-24 page-enter"
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
+        style={{
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(var(--primary-rgb), 0.15), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
+}
+
+function hexToRgb(hex: string) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : "31, 61, 43"
+}
+
+export default function ClubPage() {
+  const params = useParams()
+  const slug = params?.slug as string
+  const lang = params?.lang as string
+  const { t } = useI18n()
+  const [data, setData] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [isMember, setIsMember] = useState(false)
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      setUser(u)
+
+      const { data: club } = await supabase
+        .from("clubs")
+        .select("*")
+        .eq("slug", slug)
+        .single()
+
+      if (!club) {
+        setLoading(false)
+        return
+      }
+
+      const [{ data: courts }, { data: plans }, { data: contentRows }] = await Promise.all([
+        supabase.from("courts").select("*").eq("club_id", club.id).order("name"),
+        supabase.from("membership_plans").select("*").eq("club_id", club.id).order("price", { ascending: true }),
+        supabase.from("club_content").select("content").eq("club_id", club.id).limit(1)
+      ])
+
+      const storedContent = contentRows?.[0]?.content ?? null
+      const content = applyClubDefaults(mergeClubContent(storedContent), club.name)
+
+      if (u) {
+        const { data: member } = await supabase
+          .from("club_members")
+          .select("id, status, valid_until")
+          .eq("club_id", club.id)
+          .eq("user_id", u.id)
+          .eq("status", "active")
+          .single()
+
+        if (member && (!member.valid_until || new Date(member.valid_until) > new Date())) {
+          setIsMember(true)
+          // redirect happens in a separate effect or just render different UI
+        }
+      }
+
+      setData({ club, courts, plans, content })
+      setLoading(false)
+    }
+    load()
+  }, [slug])
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#030504] flex items-center justify-center">
+      <Loader2 className="w-8 h-8 text-white/20 animate-spin" />
+    </div>
+  )
+  if (!data) return notFound()
+  if (isMember) redirect(`/${lang}/club/${slug}/dashboard`)
+
+  const { club, courts, plans, content } = data
+  const primary = club.primary_color || "#1F3D2B"
+  const primaryRGB = hexToRgb(primary)
+  const primaryFg = getReadableTextColor(primary)
+  const courtCount = courts?.length || 0
+  const minPrice = courts && courts.length > 0 ? Math.min(...courts.map((c: any) => c.price_per_hour || 0)) : null
+
+  return (
+    <div
+      className="min-h-screen bg-[#030504] text-[#F9F8F4] selection:bg-[#CBBF9A] selection:text-[#030504] overflow-x-hidden"
       style={{
-        background: "#09090b",
         ["--club-primary" as any]: primary,
+        ["--primary-rgb" as any]: primaryRGB,
         ["--club-primary-foreground" as any]: primaryFg,
       }}
     >
-      {/* Grain texture */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          opacity: 0.028,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: "160px",
-          zIndex: 9998,
-        }}
-      />
+      {/* Background Decor */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#0A1410] via-[#030504] to-[#030504]" />
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute -top-[10%] left-1/2 -translate-x-1/2 w-full max-w-5xl h-[600px] rounded-full blur-[120px]"
+          style={{ background: `rgba(${primaryRGB}, 0.3)` }}
+        />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)`, backgroundSize: "4rem 4rem" }} />
+      </div>
 
-      {/* Top ambient glow */}
-      <div
-        className="fixed top-0 left-0 right-0 h-[50vh] pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse 80% 60% at 50% -10%, color-mix(in srgb, ${primary} 20%, transparent) 0%, transparent 70%)`,
-          zIndex: 0,
-        }}
-      />
-
-      {/* ── HEADER ── */}
-      <header
-        id="tour-booking-header"
-        className="relative z-10 sticky top-0"
-        style={{
-          background: "rgba(9,9,11,0.80)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="mx-auto max-w-5xl app-pad py-4 flex items-center justify-between gap-3">
-          {/* Logo + name */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold overflow-hidden ring-1 ring-white/10 shrink-0"
-              style={{ backgroundColor: primary }}
-            >
-              {club.logo_url ? (
-                <img src={club.logo_url} alt={club.name} className="w-full h-full object-cover" />
-              ) : (
-                <span>{club.name.substring(0, 2).toUpperCase()}</span>
-              )}
-            </div>
-            <span className="text-sm font-semibold text-white truncate hidden sm:block">{club.name}</span>
-          </div>
-
-          {/* Nav actions */}
-          <div className="flex items-center gap-2">
-            <ModeToggle />
-            <Suspense fallback={null}>
-              <TourLauncher tour="member-booking" storageKey="tour_member_booking_seen" label="Guide" autoStart />
-            </Suspense>
-            <Link href={`/${lang}/club/${slug}/training`}>
-              <button
-                id="tour-booking-training"
-                className="hidden sm:flex items-center gap-1.5 h-9 px-4 rounded-full text-sm font-medium text-white/70 hover:text-white transition-colors btn-press"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.09)",
-                }}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                {t("club.nav.training", "Training")}
-              </button>
+      <div className="relative z-10">
+        {/* ── HEADER ── */}
+        <header className="sticky top-0 z-50 py-4 bg-[#030504]/80 backdrop-blur-xl border-b border-white/5">
+          <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <Link href={`/${lang}/club/${slug}`} className="flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-xl overflow-hidden ring-1 ring-white/10 group-hover:scale-110 transition-transform shadow-2xl" style={{ backgroundColor: primary }}>
+                {club.logo_url ? <img src={club.logo_url} alt={club.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white font-bold">{club.name.substring(0, 2).toUpperCase()}</div>}
+              </div>
+              <span className="text-xl font-bold tracking-tighter group-hover:text-[#CBBF9A] transition-colors">{club.name}</span>
             </Link>
 
-            {user ? (
-              <Link href={`/${lang}/club/${slug}/dashboard`}>
-                <button
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-full text-sm font-medium text-white/80 hover:text-white transition-colors btn-press"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.09)",
-                  }}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  {t("club.nav.my_area", "Mein Bereich")}
-                </button>
+            <div className="flex items-center gap-4">
+              <Link href={`/${lang}/club/${slug}/training`} className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium hover:bg-white/10 transition-colors">
+                <Sparkles className="w-4 h-4 text-[#CBBF9A]" /> {t("club.nav.training")}
               </Link>
-            ) : (
-              <Link href={`/${lang}/club/${slug}/login?next=/${lang}/club/${slug}/dashboard`}>
-                <button
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-full text-sm font-semibold text-white btn-press"
-                  style={{
-                    backgroundColor: primary,
-                    boxShadow: `0 0 20px color-mix(in srgb, ${primary} 30%, transparent)`,
-                  }}
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  {t("club.nav.login", "Login")}
-                </button>
+              <Link href={`/${lang}/club/${slug}/login`} className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#030504] text-sm font-bold hover:scale-105 transition-all shadow-lg shadow-white/5">
+                <LogIn className="w-4 h-4" /> {t("club.nav.login")}
               </Link>
-            )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* ── HERO ── */}
-      <section className="relative z-10 mx-auto max-w-5xl app-pad pt-14 pb-16 sm:pt-20 sm:pb-24">
-        <div className="grid items-center gap-10 md:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
-          {/* Left: branding + CTA */}
-          <div className="flex flex-col items-center text-center md:items-start md:text-left">
-            {/* Logo */}
-            <div className="relative mb-7 anim-scale-in">
-              <div
-                className="absolute inset-0 rounded-3xl blur-2xl opacity-50 scale-125"
-                style={{ backgroundColor: primary }}
-              />
-              <div
-                className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center text-white text-4xl font-extrabold overflow-hidden ring-1 ring-white/10"
-                style={{ backgroundColor: primary }}
-              >
-                {club.logo_url ? (
-                  <img src={club.logo_url} alt={club.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span>{club.name.substring(0, 2).toUpperCase()}</span>
+        <main>
+          {/* ── HERO ── */}
+          <section className="pt-24 pb-32 px-6 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBBF9A] mb-8">
+                <MapPin className="w-3 h-3" /> {content.badges.locationText}
+              </div>
+              <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-8">
+                <span className="block text-white">{content.hero.title.split(' ')[0]}</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#CBBF9A] via-[#E2D8B9] to-[#CBBF9A]">{content.hero.title.split(' ').slice(1).join(' ')}</span>
+              </h1>
+              <p className="text-xl text-white/50 max-w-lg mb-12 font-light leading-relaxed">
+                {content.hero.subtitle}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="#courts" className="px-8 py-4 bg-[#CBBF9A] text-[#030504] rounded-full font-bold text-lg hover:scale-105 transition-transform text-center flex items-center justify-center gap-2">
+                  {content.hero.primaryCtaText} <ArrowRight className="w-5 h-5" />
+                </Link>
+                {plans?.length > 0 && (
+                  <Link href="#membership" className="px-8 py-4 bg-white/5 border border-white/10 rounded-full font-bold text-lg hover:bg-white/10 transition-colors text-center">
+                    {content.hero.secondaryCtaText}
+                  </Link>
                 )}
               </div>
-            </div>
+            </motion.div>
 
-            <p className="label-caps text-white/35 mb-3 anim-fade-up">{content.badges.locationText}</p>
-
-            <h1 className="text-5xl sm:text-6xl font-extrabold text-white tracking-[-0.04em] leading-none anim-fade-up anim-stagger-1">
-              {content.hero.title}
-            </h1>
-            <p className="mt-4 text-base text-white/50 font-light max-w-sm anim-fade-up anim-stagger-2">
-              {content.hero.subtitle}
-            </p>
-
-            {/* Status badge */}
-            <div
-              className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs text-white/60 anim-fade-up anim-stagger-3"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.09)",
-              }}
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{content.badges.locationText}</span>
-              <span className="mx-1 h-3 w-px bg-white/20" />
-              <span className="inline-flex items-center gap-1" style={{ color: primary }}>
-                <Check className="w-3 h-3" /> {content.badges.statusText}
-              </span>
-            </div>
-
-            {/* CTA buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto anim-fade-up anim-stagger-4">
-              <Link href="#courts">
-                <button
-                  className="flex items-center justify-center gap-2 h-12 px-7 rounded-full text-sm font-semibold text-white btn-press w-full sm:w-auto touch-44"
-                  style={{
-                    backgroundColor: primary,
-                    boxShadow: `0 0 28px color-mix(in srgb, ${primary} 32%, transparent)`,
-                  }}
-                >
-                  {content.hero.primaryCtaText} <ChevronRight className="w-4 h-4" />
-                </button>
-              </Link>
-              {plans && plans.length > 0 && !isMember && (
-                <Link href="#membership">
-                  <button
-                    className="flex items-center justify-center gap-2 h-12 px-7 rounded-full text-sm font-medium text-white/75 hover:text-white transition-colors btn-press w-full sm:w-auto touch-44"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                    }}
-                  >
-                    {content.hero.secondaryCtaText}
-                  </button>
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {/* Right: stats panel */}
-          <div
-            className="rounded-3xl p-6 anim-scale-in anim-stagger-2"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            <p className="label-caps text-white/30 mb-5">{content.overview.title}</p>
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white/50">{content.overview.labelCourts}</span>
-                <span className="font-mono text-2xl font-bold text-white">{courtCount}</span>
-              </div>
-              <div className="h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white/50">{content.overview.labelFromPrice}</span>
-                <span className="font-mono text-2xl font-bold text-white">
-                  {minPrice !== null ? `${minPrice}€` : "—"}
-                </span>
-              </div>
-              <div className="h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white/50">{content.overview.labelStatus}</span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: primary }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primary }} />
-                  {content.badges.statusText}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── COURTS ── */}
-      <section className="relative z-10 mx-auto max-w-5xl app-pad">
-        <div id="courts" className="flex items-end justify-between mb-8 scroll-mt-24">
-          <div>
-            <p className="label-caps text-white/30 mb-2">{content.sections.courts.subtitle}</p>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
-              {content.sections.courts.title}
-            </h2>
-          </div>
-        </div>
-
-        <div id="tour-booking-courts" className="grid md:grid-cols-2 gap-5">
-          {courts?.map((court: any, idx: number) => {
-            const duration = court.duration_minutes || 60
-            return (
-              <div
-                key={court.id}
-                id={idx === 0 ? "tour-booking-first" : undefined}
-                className={`rounded-3xl overflow-hidden tilt-card anim-slide-up anim-stagger-${Math.min(idx + 1, 6) as 1|2|3|4|5|6}`}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                {/* Club color accent stripe */}
-                <div
-                  className="h-[2px]"
-                  style={{ background: `linear-gradient(90deg, ${primary}, transparent)` }}
-                />
-                <div className="p-6">
-                  <div className="flex items-start justify-between gap-4 mb-5">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.2 }}>
+              <SpotlightCard className="p-10 relative group">
+                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                   <Zap className="w-32 h-32 text-[#CBBF9A]" />
+                </div>
+                <div className="relative z-10 space-y-8">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#CBBF9A] mb-2">{content.overview.title}</p>
+                    <div className="h-1 w-12 bg-[#CBBF9A] rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-8">
                     <div>
-                      <div
-                        className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
-                        style={{
-                          background: `color-mix(in srgb, ${primary} 16%, transparent)`,
-                          border: `1px solid color-mix(in srgb, ${primary} 25%, transparent)`,
-                        }}
-                      >
-                        <CalendarDays className="w-5 h-5" style={{ color: primary }} />
-                      </div>
-                      <h3 className="text-xl font-bold text-white tracking-tight">{court.name}</h3>
-                      <p className="label-caps text-white/35 mt-1.5 capitalize">
-                        {court.sport_type || t("club.courts.sport_default", "Tennis")}
-                      </p>
+                      <p className="text-sm text-white/40 mb-1">{content.overview.labelCourts}</p>
+                      <p className="text-4xl font-black text-white">{courtCount}</p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-mono text-3xl font-bold text-white leading-none">
-                        {court.price_per_hour}€
-                      </p>
-                      <p className="label-caps-sm text-white/30 mt-1">
-                        / {duration} {t("club.courts.minutes", "Min")}
-                      </p>
+                    <div>
+                      <p className="text-sm text-white/40 mb-1">{content.overview.labelFromPrice}</p>
+                      <p className="text-4xl font-black text-white">{minPrice ? `${minPrice}€` : '—'}</p>
                     </div>
                   </div>
-                  <BookingModal
-                    courtId={court.id}
-                    courtName={court.name}
-                    price={court.price_per_hour}
-                    clubSlug={club.slug}
-                    durationMinutes={duration}
-                    startHour={court.start_hour}
-                    endHour={court.end_hour}
-                    isMember={isMember}
-                    memberPricingMode={club.member_booking_pricing_mode || "full_price"}
-                    memberPricingValue={club.member_booking_pricing_value || 0}
-                  />
+                  <div className="pt-6 border-t border-white/5 flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                    <span className="text-sm font-medium text-white/60">{content.badges.statusText}</span>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              </SpotlightCard>
+            </motion.div>
+          </section>
 
-        {courtCount === 0 && (
-          <div
-            className="rounded-3xl p-10 text-center anim-fade-up"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px dashed rgba(255,255,255,0.08)",
-            }}
-          >
-            <p className="text-white/30 text-sm">{t("club.courts.empty", "Noch keine Plätze verfügbar.")}</p>
-          </div>
-        )}
-
-        {/* ── MEMBERSHIP ── */}
-        {plans && plans.length > 0 && !isMember && (
-          <div id="membership" className="mt-20 mb-12 scroll-mt-24">
-            <div className="mb-8">
-              <p className="label-caps text-white/30 mb-2">{content.sections.membership.subtitle}</p>
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                {content.sections.membership.title}
-              </h2>
+          {/* ── COURTS ── */}
+          <section id="courts" className="py-32 px-6 max-w-7xl mx-auto scroll-mt-24">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-6">{content.sections.courts.title}</h2>
+              <p className="text-white/40 text-lg">{content.sections.courts.subtitle}</p>
             </div>
-            <MembershipPlans
-              plans={plans}
-              clubSlug={slug}
-              title={content.sections.membership.title}
-              subtitle={content.sections.membership.subtitle}
-              ctaLabel={content.sections.membership.ctaLabel}
-            />
-          </div>
-        )}
 
-        {/* ── FOOTER ── */}
-        <footer
-          className="mt-16 pt-6 pb-4 text-xs text-white/25"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <span>{content.footer.smallText}</span>
-            <Link
-              href={`/${lang}/club/${slug}/impressum`}
-              className="text-white/30 hover:text-white/60 transition-colors"
-            >
-              {content.footer.impressumLinkText}
-            </Link>
+            <div className="grid md:grid-cols-2 gap-8">
+              {courts?.map((court: any, idx: number) => (
+                <motion.div
+                  key={court.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  <SpotlightCard className="p-8 h-full flex flex-col justify-between group">
+                    <div className="flex justify-between items-start mb-12">
+                      <div>
+                        <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                          <CalendarDays className="w-7 h-7 text-[#CBBF9A]" />
+                        </div>
+                        <h3 className="text-3xl font-bold mb-2 group-hover:text-[#CBBF9A] transition-colors">{court.name}</h3>
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/30">{court.sport_type || 'Tennis'}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-4xl font-black text-white">{court.price_per_hour}€</div>
+                        <p className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">Pro {court.duration_minutes || 60} Min</p>
+                      </div>
+                    </div>
+                    
+                    <BookingModal
+                      courtId={court.id}
+                      courtName={court.name}
+                      price={court.price_per_hour}
+                      clubSlug={club.slug}
+                      durationMinutes={court.duration_minutes || 60}
+                      startHour={court.start_hour}
+                      endHour={court.end_hour}
+                      isMember={isMember}
+                      memberPricingMode={club.member_booking_pricing_mode || "full_price"}
+                      memberPricingValue={club.member_booking_pricing_value || 0}
+                    />
+                  </SpotlightCard>
+                </motion.div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── MEMBERSHIP ── */}
+          {plans?.length > 0 && (
+            <section id="membership" className="py-32 px-6 bg-white/[0.01] border-y border-white/5 scroll-mt-24">
+              <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-20">
+                  <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-6">{content.sections.membership.title}</h2>
+                  <p className="text-white/40 text-lg">{content.sections.membership.subtitle}</p>
+                </div>
+                <MembershipPlans
+                  plans={plans}
+                  clubSlug={slug}
+                  title={content.sections.membership.title}
+                  subtitle={content.sections.membership.subtitle}
+                  ctaLabel={content.sections.membership.ctaLabel}
+                />
+              </div>
+            </section>
+          )}
+        </main>
+
+        <footer className="py-20 px-6 border-t border-white/5">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
+            <div className="space-y-4 text-center md:text-left">
+              <p className="text-sm text-white/20">{content.footer.smallText}</p>
+              <p className="text-xs text-white/10">© {new Date().getFullYear()} {club.name}. Powered by Avaimo.</p>
+            </div>
+            <div className="flex gap-8">
+              <Link href={`/${lang}/club/${slug}/impressum`} className="text-sm text-white/30 hover:text-[#CBBF9A] transition-colors">{content.footer.impressumLinkText}</Link>
+              <Link href="https://avaimo.com" className="text-sm text-white/30 hover:text-[#CBBF9A] transition-colors">avaimo.com</Link>
+            </div>
           </div>
         </footer>
-      </section>
-
-      {/* Mobile floating CTA */}
-      <div className="sm:hidden fixed left-4 right-4 bottom-6 z-30">
-        <Link href="#courts">
-          <button
-            className="w-full h-14 rounded-full text-sm font-semibold text-white btn-press touch-44"
-            style={{
-              backgroundColor: primary,
-              boxShadow: `0 8px 32px color-mix(in srgb, ${primary} 40%, transparent)`,
-            }}
-          >
-            {t("club.cta.book_now", "Jetzt buchen")}
-          </button>
-        </Link>
       </div>
 
       {user && <MobileBottomNav slug={club.slug} active="home" />}
     </div>
+  )
+}
+
+function Loader2({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
   )
 }

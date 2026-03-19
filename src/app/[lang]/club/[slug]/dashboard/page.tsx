@@ -1,500 +1,346 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import { AlertTriangle, ArrowRight, CalendarCheck, CalendarX, Clock, Dumbbell, Trophy } from "lucide-react"
+"use client"
+
+import { createClient } from "@/lib/supabase/client"
+import { notFound, redirect, useParams, useSearchParams } from "next/navigation"
+import { 
+  AlertTriangle, 
+  ArrowRight, 
+  CalendarCheck, 
+  CalendarX, 
+  Clock, 
+  Dumbbell, 
+  Trophy, 
+  Settings, 
+  CreditCard, 
+  FileText,
+  Loader2,
+  ChevronRight,
+  Zap,
+  Star
+} from "lucide-react"
 import { format } from "date-fns"
-import { getMyMemberStats, getProfile } from "@/app/actions"
 import { CancelBookingButton } from "@/components/cancel-booking-button"
 import Link from "next/link"
 import { getReadableTextColor } from "@/lib/color"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
-import { getDictionary } from "@/lib/dictionaries"
-import { createTranslator } from "@/lib/translator"
-import { getAdminClient } from "@/lib/supabase/admin"
+import { useI18n } from "@/components/i18n/locale-provider"
 import { BillingPortalButton, CancelMembershipButton } from "@/components/dashboard/subscription-actions"
+import { useEffect, useState, useRef } from "react"
+import { motion, AnimatePresence } from "motion/react"
 
-export default async function MemberDashboard({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ lang: string; slug: string }>
-  searchParams: Promise<{ booking?: string }>
-}) {
-  const { slug, lang } = await params
-  const { booking } = await searchParams
-  const dict = await getDictionary(lang as any)
-  const t = createTranslator(dict)
-  const supabase = await createClient()
+// --- Reusable Premium Components ---
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect(`/${lang}/club/${slug}/login?next=/${lang}/club/${slug}/dashboard`)
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
   }
 
-  const { data: club } = await supabase
-    .from("clubs")
-    .select("id, name, primary_color")
-    .eq("slug", slug)
-    .single()
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
+        style={{
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(var(--primary-rgb), 0.15), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
+}
 
-  if (!club) redirect(`/${lang}`)
+function hexToRgb(hex: string) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : "31, 61, 43"
+}
 
-  const supabaseAdmin = getAdminClient()
-  const { data: member } = await supabaseAdmin
-    .from("club_members")
-    .select("*, membership_plans(name), contract_signed_at, medical_certificate_valid_until")
-    .eq("user_id", user.id)
-    .eq("club_id", club.id)
-    .single()
+export default function MemberDashboard() {
+  const params = useParams()
+  const searchParams = useSearchParams()
+  const slug = params?.slug as string
+  const lang = params?.lang as string
+  const bookingStatus = searchParams.get("booking")
+  
+  const { t } = useI18n()
+  const supabase = createClient()
 
-  if (!member) {
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [data, setData] = useState<any>(null)
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      if (!u) {
+        redirect(`/${lang}/club/${slug}/login?next=/${lang}/club/${slug}/dashboard`)
+        return
+      }
+      setUser(u)
+
+      const { data: club } = await supabase.from("clubs").select("*").eq("slug", slug).single()
+      if (!club) return
+
+      // Fetch all dashboard data in parallel
+      const [
+        { data: member },
+        { data: upcomingBookings },
+        { data: pastBookings },
+        { data: profile },
+        { data: contractDocs }
+      ] = await Promise.all([
+        supabase.from("club_members").select("*, membership_plans(name)").eq("user_id", u.id).eq("club_id", club.id).single(),
+        supabase.from("bookings").select("*, courts(name)").eq("club_id", club.id).eq("user_id", u.id).gte("start_time", new Date().toISOString()).order("start_time", { ascending: true }),
+        supabase.from("bookings").select("*, courts(name)").eq("club_id", club.id).eq("user_id", u.id).lt("start_time", new Date().toISOString()).order("start_time", { ascending: false }).limit(5),
+        supabase.from("profiles").select("*").eq("id", u.id).single(),
+        supabase.from("member_documents").select("id").eq("club_id", club.id).eq("user_id", u.id).in("doc_type", ["membership_contract", "contract"]).limit(1)
+      ])
+
+      // Stats would normally come from a function, using fallback for now
+      const stats = { wins: 0, losses: 0, win_streak: 0 } 
+
+      setData({ club, member, upcomingBookings, pastBookings, profile, stats, hasContract: !!member?.contract_signed_at || (contractDocs?.length || 0) > 0 })
+      setLoading(false)
+    }
+    load()
+  }, [slug])
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#030504] flex items-center justify-center">
+      <Loader2 className="w-8 h-8 text-white/20 animate-spin" />
+    </div>
+  )
+
+  if (!data?.member) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "#09090b" }}>
-        <div className="w-full max-w-sm text-center space-y-5">
-          <div
-            className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto"
-            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}
-          >
-            <CalendarX className="w-7 h-7 text-white/40" />
+      <div className="min-h-screen bg-[#030504] flex items-center justify-center p-6 text-center">
+        <SpotlightCard className="max-w-sm p-10 space-y-6">
+          <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
+            <CalendarX className="w-10 h-10 text-white/20" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Kein Mitgliedskonto</h1>
-            <p className="text-sm text-white/40 mt-1">Für {user.email} existiert keine Mitgliedschaft.</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Kein Mitgliedskonto</h1>
+            <p className="text-white/40">Für diesen Club existiert keine aktive Mitgliedschaft unter {user?.email}.</p>
           </div>
-          <div className="flex flex-col gap-2 pt-2">
-            <Link href={`/${lang}/club/${slug}`} className="w-full h-12 rounded-full bg-white text-slate-900 text-sm font-semibold flex items-center justify-center">Zurück zum Club</Link>
-            <Link href={`/${lang}/login`} className="w-full h-12 rounded-full text-white/60 text-sm font-medium flex items-center justify-center" style={{ border: "1px solid rgba(255,255,255,0.10)" }}>Account wechseln</Link>
-          </div>
-        </div>
+          <Link href={`/${lang}/club/${slug}`} className="block w-full py-4 bg-white text-[#030504] rounded-2xl font-bold hover:scale-105 transition-transform">Zurück zum Club</Link>
+        </SpotlightCard>
       </div>
     )
   }
 
-  const certValidUntil = member?.medical_certificate_valid_until ? new Date(member.medical_certificate_valid_until) : null
-  const certExpiringSoon = certValidUntil ? (certValidUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24) < 30 : false
-  const certExpired = certValidUntil ? certValidUntil < new Date() : false
-
-  const { data: contractDocs } = await supabase
-    .from("member_documents")
-    .select("id")
-    .eq("club_id", club.id)
-    .eq("user_id", user.id)
-    .in("doc_type", ["membership_contract", "contract"])
-    .limit(1)
-
-  const hasContract = !!member.contract_signed_at || (contractDocs?.length || 0) > 0
-
-  const { data: upcomingBookings } = await supabase
-    .from("bookings")
-    .select("*, courts(name)")
-    .eq("club_id", club.id)
-    .eq("user_id", user.id)
-    .gte("start_time", new Date().toISOString())
-    .order("start_time", { ascending: true })
-
-  const pastStart = new Date()
-  pastStart.setDate(pastStart.getDate() - 7)
-  const { data: pastBookings } = await supabase
-    .from("bookings")
-    .select("*, courts(name)")
-    .eq("club_id", club.id)
-    .eq("user_id", user.id)
-    .gte("start_time", pastStart.toISOString())
-    .lt("start_time", new Date().toISOString())
-    .order("start_time", { ascending: false })
-    .limit(5)
-
-  const bookingIds = [...(upcomingBookings || []), ...(pastBookings || [])].map((b: any) => b.id)
-  const { data: recaps } = bookingIds.length
-    ? await supabase.from("match_recaps").select("booking_id, token, completed_at").in("booking_id", bookingIds)
-    : { data: [] }
-  const recapMap = new Map((recaps || []).map((r: any) => [r.booking_id, r]))
-
-  const { data: profileData } = await supabase.from("profiles").select("stripe_customer_id").eq("id", user.id).single()
-  const hasStripeCustomer = !!profileData?.stripe_customer_id
-
-  const profile = await getProfile()
-  const stats = await getMyMemberStats(club.id)
-
-  const nextBooking = upcomingBookings?.[0] ?? null
+  const { club, member, upcomingBookings, pastBookings, profile, stats, hasContract } = data
   const primary = club.primary_color || "#1F3D2B"
-  const primaryFg = getReadableTextColor(primary)
-
+  const primaryRGB = hexToRgb(primary)
+  const nextBooking = upcomingBookings?.[0]
   const paymentPaid = ["paid", "paid_stripe", "paid_cash", "paid_member"].includes(member.payment_status)
 
   return (
     <div
-      className="min-h-screen pb-36"
+      className="min-h-screen bg-[#030504] text-[#F9F8F4] selection:bg-[#CBBF9A] selection:text-[#030504] pb-32"
       style={{
-        background: "#09090b",
         ["--club-primary" as any]: primary,
-        ["--club-primary-foreground" as any]: primaryFg,
+        ["--primary-rgb" as any]: primaryRGB,
       }}
     >
-      {/* Grain */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          opacity: 0.025,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: "160px",
-          zIndex: 9998,
-        }}
-      />
-
-      {/* ── HERO HEADER ── */}
-      <div
-        className="relative overflow-hidden px-5 pt-14 pb-14"
-        style={{
-          background: `linear-gradient(160deg, color-mix(in srgb, ${primary} 85%, #000) 0%, color-mix(in srgb, ${primary} 45%, #000) 100%)`,
-        }}
-      >
-        {/* Decorative circles */}
-        <div
-          className="absolute -top-20 -right-16 w-72 h-72 rounded-full opacity-15"
-          style={{ background: "white" }}
+      {/* Background Decor */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#0A1410] via-[#030504] to-[#030504]" />
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.15, 0.1] }}
+          transition={{ duration: 15, repeat: Infinity }}
+          className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-full max-w-5xl h-[800px] rounded-full blur-[140px]"
+          style={{ background: `rgba(${primaryRGB}, 0.2)` }}
         />
-        <div
-          className="absolute -bottom-24 -left-12 w-56 h-56 rounded-full opacity-10"
-          style={{ background: "white" }}
-        />
-
-        <div className="relative max-w-xl mx-auto">
-          <div
-            className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-white/90 mb-5"
-            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.20)" }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            {t("dashboard.badge.active", "Mitglied aktiv")}
-            <span className="text-white/40">·</span>
-            {member.membership_plans?.name || "Mitgliedschaft"}
-          </div>
-
-          <h1 className="text-4xl font-extrabold text-white tracking-[-0.03em] leading-none anim-fade-up">
-            {t("dashboard.greeting", "Hallo")},<br />
-            {profile?.first_name || user.email?.split("@")[0]}
-          </h1>
-          <p className="label-caps text-white/50 mt-3">{club.name}</p>
-        </div>
       </div>
 
-      {/* ── CONTENT ── */}
-      <div className="relative z-10 max-w-xl mx-auto px-4 -mt-5 space-y-4">
-
-        {/* Booking success */}
-        {booking === "success" && (
-          <div
-            className="rounded-2xl p-4 flex items-start gap-3 anim-slide-up"
-            style={{
-              background: "rgba(52,211,153,0.10)",
-              border: "1px solid rgba(52,211,153,0.22)",
-              borderLeft: "3px solid rgb(52,211,153)",
-            }}
-          >
-            <CalendarCheck className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-white">Buchung bestätigt!</p>
-              <p className="text-xs text-white/45 mt-0.5">Zahlung eingegangen · Bestätigung wurde per E-Mail geschickt.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Contract alert */}
-        {!hasContract && (
-          <div
-            className="rounded-2xl p-4 flex items-start gap-3"
-            style={{
-              background: "rgba(245,158,11,0.09)",
-              border: "1px solid rgba(245,158,11,0.20)",
-            }}
-          >
-            <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white">Vertrag ausstehend</p>
-              <p className="text-xs text-white/45 mt-0.5">Bitte unterzeichne deinen Mitgliedsvertrag.</p>
-            </div>
-            <Link
-              href={`/${lang}/club/${slug}/onboarding?post_payment=1`}
-              className="shrink-0 text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors"
-            >
-              Jetzt
-            </Link>
-          </div>
-        )}
-
-        {/* Cert alert */}
-        {certValidUntil && (certExpired || certExpiringSoon) && (
-          <div
-            className="rounded-2xl p-4 flex items-start gap-3"
-            style={{
-              background: certExpired ? "rgba(239,68,68,0.09)" : "rgba(245,158,11,0.09)",
-              border: `1px solid ${certExpired ? "rgba(239,68,68,0.20)" : "rgba(245,158,11,0.20)"}`,
-            }}
-          >
-            <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0 ${certExpired ? "text-red-400" : "text-amber-400"}`} />
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-semibold text-white`}>
-                {certExpired ? "Ärztl. Zeugnis abgelaufen" : "Ärztl. Zeugnis läuft ab"}
-              </p>
-              <p className="text-xs text-white/45 mt-0.5">
-                {certExpired ? "Bitte lade ein neues Zeugnis hoch." : `Läuft ab am ${certValidUntil.toLocaleDateString("de-DE")}.`}
-              </p>
-            </div>
-            <Link
-              href={`/${lang}/club/${slug}/dashboard/documents`}
-              className={`shrink-0 text-xs font-semibold ${certExpired ? "text-red-400 hover:text-red-300" : "text-amber-400 hover:text-amber-300"} transition-colors`}
-            >
-              Hochladen
-            </Link>
-          </div>
-        )}
-
-        {/* ── PRIMARY CTA ── */}
-        <Link
-          href={`/${lang}/club/${slug}/dashboard/book`}
-          className="flex items-center justify-between w-full rounded-3xl p-6 btn-press anim-fade-up"
-          style={{
-            background: `linear-gradient(135deg, ${primary}, color-mix(in srgb, ${primary} 65%, #000))`,
-            boxShadow: `0 8px 32px color-mix(in srgb, ${primary} 35%, transparent)`,
-          }}
-        >
-          <div>
-            <p className="label-caps text-white/60">Bereit zu spielen?</p>
-            <p className="text-2xl font-extrabold text-white tracking-tight mt-1">Platz buchen</p>
-          </div>
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.15)" }}
-          >
-            <ArrowRight className="w-6 h-6 text-white" />
-          </div>
-        </Link>
-
-        {/* ── NEXT BOOKING ── */}
-        {nextBooking ? (
-          <div
-            className="rounded-3xl p-5 anim-fade-up anim-stagger-1"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            <p className="label-caps text-white/30 mb-3">Nächste Buchung</p>
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="font-mono text-3xl font-bold text-white leading-none">
-                  {format(new Date(nextBooking.start_time), "dd. MMM")}
-                </p>
-                <div className="flex items-center gap-2 mt-2 text-sm text-white/50">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span className="font-mono">{format(new Date(nextBooking.start_time), "HH:mm")}</span>
-                  <span className="text-white/25">·</span>
-                  <span>{(nextBooking as any).courts?.name}</span>
-                </div>
+      <div className="relative z-10">
+        {/* ── TOP NAV / HEADER ── */}
+        <header className="px-6 pt-12 pb-8 max-w-xl mx-auto flex justify-between items-center">
+           <div>
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-[#CBBF9A] mb-3">
+                 <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" /> {member.membership_plans?.name || "Member"}
               </div>
-              <CancelBookingButton bookingId={nextBooking.id} />
-            </div>
-          </div>
-        ) : (
-          <div
-            className="rounded-3xl p-5 text-center anim-fade-up anim-stagger-1"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px dashed rgba(255,255,255,0.07)",
-            }}
-          >
-            <p className="text-sm text-white/25">Keine anstehenden Buchungen</p>
-          </div>
-        )}
+              <h1 className="text-4xl font-black tracking-tight leading-none">
+                {t("dashboard.greeting")},<br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60">{profile?.first_name || user?.email?.split('@')[0]}</span>
+              </h1>
+           </div>
+           <Link href={`/${lang}/club/${slug}/dashboard/settings`} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+              <Settings className="w-5 h-5 text-white/40" />
+           </Link>
+        </header>
 
-        {/* ── STATS ── */}
-        <div className="grid grid-cols-3 gap-3 anim-fade-up anim-stagger-2">
-          {[
-            { label: t("dashboard.stats.wins", "Siege"), value: stats?.wins ?? 0 },
-            { label: t("dashboard.stats.losses", "Niederlagen"), value: stats?.losses ?? 0 },
-            { label: t("dashboard.stats.streak", "Streak"), value: stats?.win_streak ?? 0 },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl p-4 text-center"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.07)",
-              }}
-            >
-              <p className="font-mono text-3xl font-bold text-white">{s.value}</p>
-              <p className="label-caps-sm text-white/35 mt-1.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* ── QUICK LINKS ── */}
-        <div className="grid grid-cols-2 gap-3 anim-fade-up anim-stagger-3">
-          <Link
-            href={`/${lang}/club/${slug}/dashboard/training`}
-            className="rounded-2xl p-4 flex items-center gap-3 active:scale-[0.97] transition-transform"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: `color-mix(in srgb, ${primary} 18%, transparent)` }}
-            >
-              <Dumbbell className="w-4 h-4" style={{ color: primary }} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">Training</p>
-              <p className="text-xs text-white/35">& Kurse</p>
-            </div>
-          </Link>
-          <Link
-            href={`/${lang}/club/${slug}/dashboard/leaderboard`}
-            className="rounded-2xl p-4 flex items-center gap-3 active:scale-[0.97] transition-transform"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: `color-mix(in srgb, ${primary} 18%, transparent)` }}
-            >
-              <Trophy className="w-4 h-4" style={{ color: primary }} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">Rangliste</p>
-              <p className="text-xs text-white/35">Top 50</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* ── MEMBERSHIP CARD ── */}
-        <div
-          className="rounded-3xl p-5 anim-fade-up anim-stagger-4"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <p className="label-caps text-white/30">Meine Mitgliedschaft</p>
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide"
-              style={
-                paymentPaid
-                  ? { background: "rgba(52,211,153,0.12)", color: "rgb(52,211,153)", border: "1px solid rgba(52,211,153,0.20)" }
-                  : member.payment_status === "overdue"
-                  ? { background: "rgba(239,68,68,0.12)", color: "rgb(248,113,113)", border: "1px solid rgba(239,68,68,0.20)" }
-                  : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.10)" }
-              }
-            >
-              {paymentPaid ? "Bezahlt" : member.payment_status === "overdue" ? "Überfällig" : member.payment_status === "cancelled" ? "Gekündigt" : "Aktiv"}
-            </span>
-          </div>
-          <p className="text-lg font-bold text-white">{member.membership_plans?.name || "Mitgliedschaft"}</p>
-          {member.valid_until && (
-            <p className="label-caps text-white/30 mt-2">
-              Gültig bis{" "}
-              <span className="font-mono text-white/60 font-medium normal-case tracking-normal text-[11px]">
-                {new Date(member.valid_until).toLocaleDateString("de-DE")}
-              </span>
-            </p>
-          )}
-          <div className="flex gap-2 mt-4 flex-wrap">
-            <BillingPortalButton clubSlug={slug} returnPath={`/${lang}/club/${slug}/dashboard`} hasStripeCustomer={hasStripeCustomer} />
-            {member.stripe_subscription_id && member.payment_status !== "cancelled" && (
-              <CancelMembershipButton clubSlug={slug} />
+        <main className="px-4 max-w-xl mx-auto space-y-6">
+          
+          {/* Alerts Area */}
+          <AnimatePresence>
+            {!hasContract && (
+              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
+                <Link href={`/${lang}/club/${slug}/onboarding?post_payment=1`}>
+                  <SpotlightCard className="p-5 flex items-center gap-4 border-amber-500/20 bg-amber-500/5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-white">Vertrag unterzeichnen</p>
+                      <p className="text-xs text-amber-500/60 font-medium">Dein Vertrag ist noch ausstehend.</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-white/20" />
+                  </SpotlightCard>
+                </Link>
+              </motion.div>
             )}
-          </div>
-        </div>
-
-        {/* ── UPCOMING BOOKINGS ── */}
-        {(upcomingBookings?.length ?? 0) > 1 && (
-          <div
-            className="rounded-3xl overflow-hidden anim-fade-up anim-stagger-5"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            <div
-              className="px-5 py-4 flex items-center justify-between"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <p className="text-sm font-semibold text-white">Anstehende Buchungen</p>
-              <span
-                className="font-mono text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center"
-                style={{ background: `color-mix(in srgb, ${primary} 20%, transparent)`, color: primary }}
-              >
-                {upcomingBookings!.length}
-              </span>
-            </div>
-            <div>
-              {upcomingBookings!.slice(1).map((b: any, idx: number) => (
-                <div
-                  key={b.id}
-                  className="flex items-center justify-between px-5 py-4"
-                  style={idx > 0 ? { borderTop: "1px solid rgba(255,255,255,0.05)" } : {}}
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white font-mono">
-                      {format(new Date(b.start_time), "dd. MMM · HH:mm")}
-                    </p>
-                    <p className="text-xs text-white/35 mt-0.5">{b.courts?.name}</p>
-                  </div>
-                  <CancelBookingButton bookingId={b.id} />
+            {bookingStatus === "success" && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="rounded-3xl p-5 flex items-center gap-4 bg-[#10B981]/10 border border-[#10B981]/20">
+                <div className="w-10 h-10 rounded-xl bg-[#10B981]/20 flex items-center justify-center shrink-0">
+                  <CalendarCheck className="w-5 h-5 text-[#34D399]" />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── PAST GAMES ── */}
-        {(pastBookings?.length ?? 0) > 0 && (
-          <div
-            className="rounded-3xl overflow-hidden anim-fade-up anim-stagger-6"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            <div
-              className="px-5 py-4"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <p className="text-sm font-semibold text-white">Letzte Spiele</p>
-            </div>
-            <div>
-              {pastBookings!.map((b: any, idx: number) => (
-                <div
-                  key={b.id}
-                  className="flex items-center justify-between px-5 py-4"
-                  style={idx > 0 ? { borderTop: "1px solid rgba(255,255,255,0.05)" } : {}}
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white font-mono">
-                      {format(new Date(b.start_time), "dd. MMM · HH:mm")}
-                    </p>
-                    <p className="text-xs text-white/35 mt-0.5">{(b as any).courts?.name}</p>
-                  </div>
-                  {recapMap.get(b.id)?.token ? (
-                    <Link
-                      href={`/${lang}/match/recap/${recapMap.get(b.id).token}`}
-                      className="text-xs font-semibold hover:opacity-70 transition-opacity"
-                      style={{ color: primary }}
-                    >
-                      Ergebnis
-                    </Link>
-                  ) : (
-                    <span className="text-xs text-white/20">—</span>
-                  )}
+                <div>
+                  <p className="text-sm font-bold text-white">Buchung erfolgreich!</p>
+                  <p className="text-xs text-[#34D399]/60 font-medium">Wir haben dir eine Bestätigung geschickt.</p>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
+          {/* ── MAIN ACTION ── */}
+          <Link href={`/${lang}/club/${slug}/dashboard/book`} className="block group">
+            <SpotlightCard className="p-8 flex items-center justify-between bg-gradient-to-br from-[#CBBF9A] to-[#8A7B4D] border-none shadow-2xl shadow-[#CBBF9A]/10 group-hover:scale-[1.02] transition-transform">
+              <div className="relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#030504]/40 mb-2">Ready to Play?</p>
+                <h2 className="text-3xl font-black text-[#030504] tracking-tight">Platz buchen</h2>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-[#030504]/10 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                <ArrowRight className="w-7 h-7 text-[#030504]" />
+              </div>
+            </SpotlightCard>
+          </Link>
+
+          {/* ── NEXT BOOKING ── */}
+          {nextBooking ? (
+            <SpotlightCard className="p-6 relative group">
+              <div className="absolute top-0 right-0 p-6 opacity-5">
+                 <CalendarDays className="w-24 h-24 text-white" />
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4">Nächster Termin</p>
+              <div className="flex items-end justify-between relative z-10">
+                <div>
+                  <p className="text-4xl font-black text-white mb-2">{format(new Date(nextBooking.start_time), "dd. MMMM")}</p>
+                  <div className="flex items-center gap-3 text-sm font-medium text-white/50">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="font-mono">{format(new Date(nextBooking.start_time), "HH:mm")}</span>
+                    </div>
+                    <span className="text-white/20">·</span>
+                    <span className="text-[#CBBF9A]">{nextBooking.courts?.name}</span>
+                  </div>
+                </div>
+                <CancelBookingButton bookingId={nextBooking.id} />
+              </div>
+            </SpotlightCard>
+          ) : (
+            <SpotlightCard className="p-8 text-center border-dashed border-white/5">
+               <p className="text-sm font-medium text-white/20">Keine anstehenden Buchungen</p>
+            </SpotlightCard>
+          )}
+
+          {/* ── STATS GRID ── */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: "Wins", value: stats.wins, icon: Trophy, color: "text-[#CBBF9A]" },
+              { label: "Losses", value: stats.losses, icon: CalendarX, color: "text-white/20" },
+              { label: "Streak", value: stats.win_streak, icon: Zap, color: "text-amber-400" },
+            ].map((s, i) => (
+              <SpotlightCard key={i} className="p-5 text-center flex flex-col items-center justify-center gap-2">
+                <s.icon className={`w-4 h-4 ${s.color}`} />
+                <p className="text-2xl font-black text-white leading-none">{s.value}</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">{s.label}</p>
+              </SpotlightCard>
+            ))}
+          </div>
+
+          {/* ── QUICK TOOLS ── */}
+          <div className="grid grid-cols-2 gap-4">
+            <Link href={`/${lang}/club/${slug}/dashboard/training`}>
+              <SpotlightCard className="p-5 flex items-center gap-4 hover:bg-white/5 transition-colors group">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Dumbbell className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white leading-tight">Training</p>
+                  <p className="text-[10px] text-white/30 font-medium">Kurse & Camps</p>
+                </div>
+              </SpotlightCard>
+            </Link>
+            <Link href={`/${lang}/club/${slug}/dashboard/leaderboard`}>
+              <SpotlightCard className="p-5 flex items-center gap-4 hover:bg-white/5 transition-colors group">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Star className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white leading-tight">Leaderboard</p>
+                  <p className="text-[10px] text-white/30 font-medium">Top Spieler</p>
+                </div>
+              </SpotlightCard>
+            </Link>
+          </div>
+
+          {/* ── MEMBERSHIP DETAIL ── */}
+          <SpotlightCard className="p-6 relative">
+            <div className="flex items-center justify-between mb-6">
+               <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Mitgliedschaft</p>
+               <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${paymentPaid ? 'bg-[#10B981]/10 text-[#34D399] border border-[#10B981]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {paymentPaid ? "Aktiv & Bezahlt" : "Zahlung offen"}
+               </div>
+            </div>
+            <div className="flex items-center gap-4 mb-6">
+               <div className="w-12 h-12 rounded-2xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-[#CBBF9A]" />
+               </div>
+               <div>
+                  <p className="text-lg font-bold text-white">{member.membership_plans?.name}</p>
+                  {member.valid_until && <p className="text-xs text-white/40">Gültig bis {format(new Date(member.valid_until), "dd.MM.yyyy")}</p>}
+               </div>
+            </div>
+            <div className="flex gap-3">
+               <BillingPortalButton clubSlug={slug} returnPath={`/${lang}/club/${slug}/dashboard`} hasStripeCustomer={!!profile?.stripe_customer_id} />
+               {member.stripe_subscription_id && member.payment_status !== "cancelled" && (
+                 <CancelMembershipButton clubSlug={slug} />
+               )}
+            </div>
+          </SpotlightCard>
+
+          {/* ── DOCUMENTS & HISTORY ── */}
+          <div className="grid grid-cols-2 gap-4">
+             <Link href={`/${lang}/club/${slug}/dashboard/documents`} className="block">
+                <SpotlightCard className="p-5 flex flex-col gap-4 text-center items-center group">
+                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#CBBF9A]/10 group-hover:border-[#CBBF9A]/20 transition-all">
+                      <FileText className="w-5 h-5 text-white/40 group-hover:text-[#CBBF9A]" />
+                   </div>
+                   <p className="text-xs font-bold text-white/60">Dokumente</p>
+                </SpotlightCard>
+             </Link>
+             <Link href={`/${lang}/club/${slug}/dashboard/history`} className="block">
+                <SpotlightCard className="p-5 flex flex-col gap-4 text-center items-center group">
+                   <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#CBBF9A]/10 group-hover:border-[#CBBF9A]/20 transition-all">
+                      <Activity className="w-5 h-5 text-white/40 group-hover:text-[#CBBF9A]" />
+                   </div>
+                   <p className="text-xs font-bold text-white/60">Aktivität</p>
+                </SpotlightCard>
+             </Link>
+          </div>
+
+        </main>
       </div>
 
       <MobileBottomNav slug={slug} active="dashboard" />

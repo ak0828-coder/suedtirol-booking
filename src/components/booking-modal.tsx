@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Calendar } from "@/components/ui/calendar"
-import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -11,10 +10,11 @@ import {
 import { de, it, enUS } from "date-fns/locale"
 import { createBooking, getBookedSlots, createCheckoutSession, getBlockedDates, validateCreditCode } from "@/app/actions"
 import { generateTimeSlots, isDateBlocked } from "@/lib/utils"
-import { Loader2, ChevronLeft, ChevronRight, Clock, AlertTriangle, CheckCircle2, Ticket, CalendarDays, X } from "lucide-react"
+import { Loader2, ChevronLeft, ChevronRight, Clock, AlertTriangle, CheckCircle2, Ticket, CalendarDays, X, Zap, ShieldCheck, User } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { format } from "date-fns"
+import { motion, AnimatePresence } from "motion/react"
 
 interface BookingModalProps {
   courtId: string
@@ -27,6 +27,36 @@ interface BookingModalProps {
   isMember?: boolean
   memberPricingMode?: "full_price" | "discount_percent" | "member_price"
   memberPricingValue?: number
+}
+
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
+  }
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
+        style={{
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(var(--primary-rgb), 0.1), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
 }
 
 export function BookingModal({
@@ -63,16 +93,9 @@ export function BookingModal({
 
   const { t } = useI18n()
   const params = useParams()
-  const langRaw = params?.lang
-  const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
-  const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
+  const lang = (params?.lang as string) || "de"
   const calendarLocale = lang === "it" ? it : lang === "en" ? enUS : de
-
-  const toText = (value: any) => {
-    if (typeof value === "string") return value
-    if (value?.text) return String(value.text)
-    try { return JSON.stringify(value) } catch { return String(value) }
-  }
+  const dateLocale = lang === "it" ? it : lang === "en" ? enUS : de
 
   const resetModal = () => {
     setStep(1)
@@ -119,7 +142,7 @@ export function BookingModal({
       setDiscount(res.amount || 0)
       setVoucherSuccess(true)
     } else {
-      setVoucherError(res.error || t("booking.message.invalid_code", "Ungültiger Code"))
+      setVoucherError(res.error || t("booking.message.invalid_code"))
       setDiscount(0)
       setVoucherSuccess(false)
     }
@@ -141,12 +164,10 @@ export function BookingModal({
   const timeSlots = generateTimeSlots(startHour || 8, endHour || 22, durationMinutes)
   const activeBlock = date ? isDateBlocked(date, blockedPeriods) : null
 
-  const dateLocale = lang === "it" ? it : lang === "en" ? enUS : de
-
   const handleBook = async (paymentStatus: "paid_stripe" | "paid_cash") => {
     if (!date || !selectedTime) return
     if (!isMember && (!guestName.trim() || !guestEmail.trim())) {
-      setMessage(t("booking.message.name_email_required", "Bitte Name und E-Mail eingeben."))
+      setMessage(t("booking.message.name_email_required"))
       return
     }
     setIsBooking(true)
@@ -159,17 +180,17 @@ export function BookingModal({
     )
     setIsBooking(false)
     if (result.success) {
-      setMessage(t("booking.message.saved", "Buchung erfolgreich gespeichert."))
+      setMessage(t("booking.message.saved"))
       setTimeout(() => setIsOpen(false), 1200)
     } else {
-      setMessage(toText(result.error || t("booking.message.error", "Fehler bei der Buchung.")))
+      setMessage(String(result.error || t("booking.message.error")))
     }
   }
 
   const handlePayOnline = async () => {
     if (!date || !selectedTime) return
     if (!isMember && (!guestName.trim() || !guestEmail.trim())) {
-      setMessage(t("booking.message.name_email_required", "Bitte Name und E-Mail eingeben."))
+      setMessage(t("booking.message.name_email_required"))
       return
     }
     setIsBooking(true)
@@ -182,362 +203,174 @@ export function BookingModal({
     if (result?.url) {
       window.location.href = result.url
     } else if (result?.success) {
-      setMessage(t("booking.message.saved", "Buchung erfolgreich gespeichert."))
+      setMessage(t("booking.message.saved"))
       setTimeout(() => setIsOpen(false), 1200)
     } else {
-      setMessage(toText(result?.error || t("booking.message.checkout_error", "Fehler beim Checkout.")))
+      setMessage(String(result?.error || t("booking.message.checkout_error")))
       setIsBooking(false)
     }
   }
 
-  // Format date nicely
   const formattedDate = date ? format(date, "EEEE, d. MMMM", { locale: dateLocale }) : ""
-
-  const stepTitle = step === 1 ? "Datum wählen" : step === 2 ? "Uhrzeit wählen" : "Bestätigen"
+  const inputClasses = "w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/40 focus:ring-4 focus:ring-[#CBBF9A]/5 transition-all text-sm"
+  const labelClasses = "text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2 block px-1"
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full h-12 rounded-xl font-medium text-sm transition-all active:scale-[0.97] flex items-center justify-center gap-2 club-primary-bg text-white hover:opacity-90"
+        className="w-full h-14 rounded-2xl bg-white text-[#030504] font-black text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/5 flex items-center justify-center gap-2 mt-4"
       >
         <CalendarDays className="w-4 h-4" />
-        {t("booking.cta", "Platz buchen")}
+        {t("booking.cta")}
       </button>
 
-      <DialogContent
-        showCloseButton={false}
-        className="p-0 gap-0 w-full max-w-[min(448px,calc(100vw-1rem))] rounded-2xl sm:rounded-3xl overflow-hidden border-0 shadow-2xl max-h-[88dvh] flex flex-col"
-      >
+      <DialogContent showCloseButton={false} className="p-0 gap-0 w-full max-w-lg bg-[#0A0D0C] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         <DialogTitle className="sr-only">{courtName} buchen</DialogTitle>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            {step > 1 && (
-              <button
-                onClick={() => setStep((s) => (s - 1) as any)}
-                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"
-              >
-                <ChevronLeft className="w-4 h-4 text-slate-600" />
-              </button>
-            )}
-            <div>
-              <p className="text-xs text-slate-400 font-medium">
-                {courtName} · {durationMinutes} Min
-              </p>
-              <h2 className="text-base font-semibold text-slate-900 leading-tight">{stepTitle}</h2>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Step dots */}
-            <div className="flex gap-1">
-              {[1, 2, 3].map((s) => (
-                <div
-                  key={s}
-                  className={`h-1.5 rounded-full transition-all ${s === step ? "w-4 club-primary-bg" : s < step ? "w-1.5 bg-slate-300" : "w-1.5 bg-slate-200"}`}
-                />
-              ))}
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"
-            >
-              <X className="w-4 h-4 text-slate-500" />
-            </button>
-          </div>
+        <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between shrink-0">
+           <div className="flex items-center gap-4">
+              {step > 1 && (
+                <button onClick={() => setStep((s) => (s - 1) as any)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-colors">
+                   <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              <div>
+                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBBF9A]">{courtName}</p>
+                 <h2 className="text-xl font-black text-white">{step === 1 ? 'Datum wählen' : step === 2 ? 'Zeit wählen' : 'Abschließen'}</h2>
+              </div>
+           </div>
+           <button onClick={() => setIsOpen(false)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+           </button>
         </div>
 
-        {/* Content area */}
-        <div className="overflow-y-auto flex-1 overscroll-contain">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+           <AnimatePresence mode="wait">
+              {step === 1 && (
+                <motion.div key="step1" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                   <div className="rounded-3xl bg-white/5 border border-white/10 p-2">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(d) => { setDate(d); setStep(2) }}
+                        locale={calendarLocale}
+                        modifiers={{ blocked: (d) => !!isDateBlocked(d, blockedPeriods) }}
+                        modifiersStyles={{ blocked: { color: "#ef4444", textDecoration: "line-through", opacity: 0.5 } }}
+                        disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                        className="w-full text-white"
+                      />
+                   </div>
+                </motion.div>
+              )}
 
-          {/* STEP 1: Date */}
-          {step === 1 && (
-            <div className="px-4 pt-4 pb-6">
-              <div
-                className="rounded-2xl overflow-hidden"
-                style={{ ["--rdp-accent-color" as any]: "var(--club-primary)" }}
-              >
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(d) => {
-                    setDate(d)
-                    setSelectedTime(null)
-                  }}
-                  locale={calendarLocale}
-                  modifiers={{ blocked: (d) => !!isDateBlocked(d, blockedPeriods) }}
-                  modifiersStyles={{ blocked: { color: "#ef4444", textDecoration: "line-through", opacity: 0.5 } }}
-                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          )}
+              {step === 2 && (
+                <motion.div key="step2" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                   <div className="p-4 rounded-2xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center gap-3">
+                      <CalendarDays className="w-5 h-5 text-[#CBBF9A]" />
+                      <p className="text-sm font-bold text-white capitalize">{formattedDate}</p>
+                   </div>
 
-          {/* STEP 2: Time */}
-          {step === 2 && (
-            <div className="px-4 pt-4 pb-6">
-              {/* Date recap */}
-              <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <CalendarDays className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <span className="text-sm font-medium text-slate-700 capitalize">{formattedDate}</span>
-              </div>
+                   {activeBlock ? (
+                     <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-start gap-4">
+                        <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-1" />
+                        <div>
+                           <p className="text-sm font-bold text-white">Keine Buchung möglich</p>
+                           <p className="text-xs text-red-400/60 mt-1">{String(activeBlock.reason)}</p>
+                        </div>
+                     </div>
+                   ) : (
+                     <div className="grid grid-cols-3 gap-3">
+                        {timeSlots.map((time) => {
+                           const isBooked = bookedSlots.includes(time)
+                           const isSelected = selectedTime === time
+                           return (
+                             <button
+                               key={time}
+                               disabled={isBooked}
+                               onClick={() => { setSelectedTime(time); setStep(3) }}
+                               className={`h-14 rounded-2xl text-sm font-bold transition-all active:scale-95 ${
+                                 isBooked ? 'bg-white/5 text-white/10 cursor-not-allowed line-through' :
+                                 isSelected ? 'bg-[#CBBF9A] text-[#030504] shadow-xl shadow-[#CBBF9A]/20' :
+                                 'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10 hover:border-white/10'
+                               }`}
+                             >
+                                {time}
+                             </button>
+                           )
+                        })}
+                     </div>
+                   )}
+                </motion.div>
+              )}
 
-              {activeBlock ? (
-                <div className="rounded-2xl bg-red-50 border border-red-200 p-5 flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-semibold text-red-800">Keine Buchung möglich</p>
-                    <p className="text-xs text-red-600 mt-1">{toText(activeBlock.reason)}</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" /> Verfügbare Zeiten
-                    </p>
-                    {isLoadingSlots && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />}
-                  </div>
+              {step === 3 && (
+                <motion.div key="step3" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-8">
+                   <SpotlightCard className="p-6 space-y-4">
+                      <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                         <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Termin</p>
+                            <p className="text-sm font-bold text-white capitalize">{formattedDate}</p>
+                            <p className="text-xs text-white/40">{selectedTime} Uhr · {durationMinutes} Min</p>
+                         </div>
+                         <div className="text-right">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Preis</p>
+                            <div className="flex items-center gap-2 justify-end">
+                               {memberBasePrice !== price && <span className="text-xs text-white/20 line-through">{price}€</span>}
+                               <p className="text-2xl font-black text-white">{finalPrice}€</p>
+                            </div>
+                         </div>
+                      </div>
+                      {isMember && memberBasePrice !== price && (
+                        <div className="flex items-center gap-2 text-[#34D399]">
+                           <Zap className="w-3 h-3" fill="currentColor" />
+                           <span className="text-[10px] font-bold uppercase tracking-widest">Mitglieder-Vorteil aktiv</span>
+                        </div>
+                      )}
+                   </SpotlightCard>
 
-                  {timeSlots.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-8">{t("booking.time_empty", "Keine Spielzeiten verfügbar.")}</p>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-2">
-                      {timeSlots.map((time) => {
-                        const isBooked = bookedSlots.includes(time)
-                        const isSelected = selectedTime === time
-                        return (
-                          <button
-                            key={time}
-                            disabled={isBooked}
-                            onClick={() => setSelectedTime(time)}
-                            className={`h-12 rounded-xl text-sm font-medium transition-all active:scale-[0.96] ${
-                              isBooked
-                                ? "bg-slate-50 text-slate-300 line-through cursor-not-allowed"
-                                : isSelected
-                                  ? "club-primary-bg text-white shadow-sm"
-                                  : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
-                            }`}
-                          >
-                            {time}
+                   {!isMember && (
+                     <div className="space-y-4">
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-1">Deine Daten</h4>
+                        <div className="grid gap-4">
+                           <input type="text" placeholder="Dein Name" className={inputClasses} value={guestName} onChange={(e) => setGuestName(e.target.value)} />
+                           <input type="email" placeholder="E-Mail für Bestätigung" className={inputClasses} value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} />
+                        </div>
+                     </div>
+                   )}
+
+                   {message && (
+                     <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 ${message.includes('erfolgreich') ? 'bg-[#10B981]/10 text-[#34D399] border border-[#10B981]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                        {message.includes('erfolgreich') ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                        {message}
+                     </div>
+                   )}
+
+                   <div className="space-y-3">
+                      {finalPrice === 0 ? (
+                        <button onClick={() => handleBook("paid_stripe")} disabled={isBooking} className="w-full h-16 rounded-2xl bg-[#CBBF9A] text-[#030504] font-black text-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
+                           {isBooking ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Jetzt kostenlos buchen <ArrowRight className="w-5 h-5" /></>}
+                        </button>
+                      ) : (
+                        <>
+                          <button onClick={handlePayOnline} disabled={isBooking} className="w-full h-16 rounded-2xl bg-[#CBBF9A] text-[#030504] font-black text-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
+                             {isBooking ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Online zahlen ({finalPrice}€) <ArrowRight className="w-5 h-5" /></>}
                           </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* STEP 3: Confirm */}
-          {step === 3 && (
-            <div className="px-4 pt-4 pb-6 space-y-4">
-              {/* Booking summary card */}
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-3">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Deine Buchung</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Platz</span>
-                    <span className="text-sm font-semibold text-slate-900">{courtName}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Datum</span>
-                    <span className="text-sm font-semibold text-slate-900 capitalize">{formattedDate}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Uhrzeit</span>
-                    <span className="text-sm font-semibold text-slate-900">{selectedTime} Uhr · {durationMinutes} Min</span>
-                  </div>
-                  <div className="h-px bg-slate-200 my-1" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Preis</span>
-                    <div className="flex items-center gap-2">
-                      {memberBasePrice !== price && (
-                        <span className="text-xs text-slate-400 line-through">{price}€</span>
+                          <button onClick={() => handleBook("paid_cash")} disabled={isBooking} className="w-full h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 transition-all">
+                             Vor Ort bezahlen
+                          </button>
+                        </>
                       )}
-                      {discount > 0 && (
-                        <span className="text-xs text-slate-400 line-through">{memberBasePrice}€</span>
-                      )}
-                      <span className="text-lg font-bold text-slate-900">{finalPrice}€</span>
-                    </div>
-                  </div>
-                  {isMember && memberBasePrice !== price && (
-                    <p className="text-xs text-emerald-600 font-medium">
-                      Mitgliedervorteil aktiv ·{" "}
-                      {memberPricingMode === "discount_percent"
-                        ? `${memberPricingValue}% Rabatt`
-                        : memberPricingMode === "member_price"
-                          ? `Mitgliederpreis ${memberPricingValue}€`
-                          : "Mitgliedsstatus"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Guest info */}
-              {!isMember && (
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Deine Angaben</p>
-                  <input
-                    type="text"
-                    placeholder="Dein Name"
-                    className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
-                    value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
-                  />
-                  <input
-                    type="email"
-                    placeholder="E-Mail für Bestätigung"
-                    className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
-                    value={guestEmail}
-                    onChange={(e) => setGuestEmail(e.target.value)}
-                  />
-                </div>
+                      <p className="text-[10px] font-bold text-center text-white/20 uppercase tracking-[0.2em] pt-2 flex items-center justify-center gap-2">
+                         <ShieldCheck className="w-3 h-3" /> Gesicherte Buchung
+                      </p>
+                   </div>
+                </motion.div>
               )}
-
-              {/* Voucher */}
-              {!isMember && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <Ticket className="w-3.5 h-3.5" /> Gutschein / Guthaben
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Code eingeben..."
-                      className="flex-1 h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-slate-200"
-                      value={voucherCode}
-                      onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                      disabled={voucherSuccess}
-                    />
-                    {!voucherSuccess ? (
-                      <button
-                        onClick={checkVoucher}
-                        disabled={isValidatingVoucher || !voucherCode}
-                        className="px-4 h-11 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                      >
-                        {isValidatingVoucher ? <Loader2 className="w-4 h-4 animate-spin" /> : "Einlösen"}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => { setVoucherSuccess(false); setDiscount(0); setVoucherCode("") }}
-                        className="px-4 h-11 rounded-xl border border-red-200 bg-red-50 text-sm font-medium text-red-600 hover:bg-red-100"
-                      >
-                        Entfernen
-                      </button>
-                    )}
-                  </div>
-                  {voucherError && <p className="text-xs text-red-500">{voucherError}</p>}
-                  {voucherSuccess && (
-                    <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Gutschein über {discount}€ angewendet
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Error / success message */}
-              {message && (
-                <div className={`rounded-xl p-3 text-sm ${message.includes("erfolgreich") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-100"}`}>
-                  {message.includes("erfolgreich") && <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />}
-                  {message}
-                </div>
-              )}
-
-              {/* Payment buttons */}
-              <div className="space-y-2 pt-1">
-                {isMember ? (
-                  <>
-                    {finalPrice === 0 ? (
-                      <Button
-                        className="w-full h-12 rounded-xl club-primary-bg hover:opacity-90 font-medium"
-                        disabled={isBooking}
-                        onClick={() => handleBook("paid_stripe")}
-                      >
-                        {isBooking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-2" /> Jetzt kostenlos buchen</>}
-                      </Button>
-                    ) : (
-                      <>
-                        <Button
-                          className="w-full h-12 rounded-xl club-primary-bg hover:opacity-90 font-medium"
-                          disabled={isBooking}
-                          onClick={handlePayOnline}
-                        >
-                          {isBooking ? <Loader2 className="animate-spin" /> : `Online zahlen (${finalPrice}€)`}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="w-full h-12 rounded-xl font-medium"
-                          disabled={isBooking}
-                          onClick={() => handleBook("paid_cash")}
-                        >
-                          Vor Ort bezahlen
-                        </Button>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {isFullyCovered ? (
-                      <Button
-                        className="w-full h-12 rounded-xl club-primary-bg hover:opacity-90 font-medium"
-                        disabled={isBooking}
-                        onClick={() => handleBook("paid_stripe")}
-                      >
-                        {isBooking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-2" /> Jetzt kostenlos buchen</>}
-                      </Button>
-                    ) : (
-                      <Button
-                        className="w-full h-12 rounded-xl club-primary-bg hover:opacity-90 font-medium"
-                        disabled={isBooking}
-                        onClick={handlePayOnline}
-                      >
-                        {isBooking ? <Loader2 className="animate-spin" /> : `Online zahlen (${finalPrice}€)`}
-                      </Button>
-                    )}
-                    {!voucherSuccess && (
-                      <Button
-                        variant="outline"
-                        className="w-full h-12 rounded-xl font-medium"
-                        disabled={isBooking}
-                        onClick={() => handleBook("paid_cash")}
-                      >
-                        Vor Ort bezahlen
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+           </AnimatePresence>
         </div>
-
-        {/* Footer CTA (for steps 1 & 2) */}
-        {step < 3 && (
-          <div className="px-4 py-4 border-t border-slate-100 flex-shrink-0 bg-white">
-            {step === 1 && (
-              <Button
-                className="w-full h-12 rounded-xl club-primary-bg hover:opacity-90 font-medium gap-2"
-                disabled={!date}
-                onClick={() => setStep(2)}
-              >
-                Weiter <ChevronRight className="w-4 h-4" />
-              </Button>
-            )}
-            {step === 2 && (
-              <Button
-                className="w-full h-12 rounded-xl club-primary-bg hover:opacity-90 font-medium gap-2"
-                disabled={!selectedTime || !!activeBlock}
-                onClick={() => setStep(3)}
-              >
-                Weiter zur Bestätigung <ChevronRight className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   )

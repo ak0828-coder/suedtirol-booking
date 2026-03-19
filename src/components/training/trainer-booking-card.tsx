@@ -1,17 +1,40 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { createTrainerCheckoutSession } from "@/app/actions"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { useI18n } from "@/components/i18n/locale-provider"
+import { motion, AnimatePresence } from "motion/react"
+import { CalendarDays, Clock, User, CheckCircle2, AlertCircle, Loader2, ArrowRight } from "lucide-react"
+
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
+  }
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
+        style={{
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(var(--primary-rgb), 0.1), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
+}
 
 export function TrainerBookingCard({
   clubSlug,
@@ -31,31 +54,11 @@ export function TrainerBookingCard({
   const [open, setOpen] = useState(false)
   const { t } = useI18n()
 
-  const availabilityText = Array.isArray(trainer.availability) && trainer.availability.length > 0
-    ? trainer.availability
-        .map((slot: any) => {
-          const dayMap: Record<number, string> = {
-            0: t("days.short.0", "So"),
-            1: t("days.short.1", "Mo"),
-            2: t("days.short.2", "Di"),
-            3: t("days.short.3", "Mi"),
-            4: t("days.short.4", "Do"),
-            5: t("days.short.5", "Fr"),
-            6: t("days.short.6", "Sa"),
-          }
-          const label = dayMap[Number(slot.day)] || ""
-          if (!label || !slot.start || !slot.end) return ""
-          return `${label} ${slot.start}-${slot.end}`
-        })
-        .filter(Boolean)
-        .join(" · ")
-    : ""
   const imageUrl = trainer.image_url || trainer.imageUrl || trainer.image || ""
 
   const handleBooking = () => {
     if (!date || !time) {
-      setError(t("trainer.booking.error_missing", "Bitte Datum und Zeit wählen."))
-      setSuccess(null)
+      setError(t("trainer.booking.error_missing"))
       return
     }
     setError(null)
@@ -65,101 +68,138 @@ export function TrainerBookingCard({
       if (res?.url) {
         window.location.href = res.url
       } else if (res?.success) {
-        setSuccess(t("trainer.booking.success", "Traineranfrage gesendet. Du bekommst eine Bestätigung per E-Mail."))
+        setSuccess(t("trainer.booking.success"))
         setDate("")
         setTime("")
+        setTimeout(() => setOpen(false), 2000)
       } else if (res?.error) {
         setError(res.error)
       }
     })
   }
 
+  const inputClasses = "w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white placeholder:text-white/20 outline-none focus:border-[#CBBF9A]/40 focus:ring-4 focus:ring-[#CBBF9A]/5 transition-all text-sm"
+  const labelClasses = "text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2 block px-1"
+
   return (
-    <div id={cardId} className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
-      <div className="flex items-center gap-4">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={`${trainer.first_name} ${trainer.last_name}`}
-            className="w-14 h-14 rounded-2xl object-cover border border-slate-200/60"
-          />
-        ) : (
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-600">
-            {trainer.first_name?.[0]}
-            {trainer.last_name?.[0]}
+    <>
+      <SpotlightCard className="p-6">
+        <div className="flex items-center gap-5 mb-6">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={`${trainer.first_name} ${trainer.last_name}`}
+              className="w-16 h-16 rounded-2xl object-cover border border-white/10 shadow-2xl"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <User className="w-8 h-8 text-white/20" />
+            </div>
+          )}
+          <div>
+            <h3 className="text-xl font-bold text-white leading-tight">
+              {trainer.first_name} {trainer.last_name}
+            </h3>
+            <p className="text-sm text-white/40 mt-1 line-clamp-1">{trainer.bio || t("trainer.card.profile")}</p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full h-12 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white hover:bg-white/10 hover:border-[#CBBF9A]/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+        >
+          {t("trainer.card.cta")}
+          <ArrowRight className="w-4 h-4 text-[#CBBF9A]" />
+        </button>
+      </SpotlightCard>
+
+      <AnimatePresence>
+        {open && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+              className="absolute inset-0 bg-[#030504]/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-[#0A0D0C] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 md:p-10">
+                <div className="flex items-center gap-4 mb-8">
+                   <div className="w-12 h-12 rounded-2xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
+                      <CalendarDays className="w-6 h-6 text-[#CBBF9A]" />
+                   </div>
+                   <div>
+                      <h2 className="text-2xl font-black text-white">{t("trainer.modal.title")}</h2>
+                      <p className="text-sm text-white/40">{trainer.first_name} {trainer.last_name}</p>
+                   </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelClasses}>{t("trainer.modal.date")}</label>
+                      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClasses} />
+                    </div>
+                    <div>
+                      <label className={labelClasses}>{t("trainer.modal.time")}</label>
+                      <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputClasses} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClasses}>{t("trainer.modal.duration")}</label>
+                    <div className="relative">
+                       <input 
+                        type="number" 
+                        value={duration} 
+                        min={30} 
+                        step={30} 
+                        onChange={(e) => setDuration(Number(e.target.value))} 
+                        className={inputClasses} 
+                       />
+                       <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-white/20 uppercase tracking-widest">Min</div>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> {error}
+                    </div>
+                  )}
+
+                  {success && (
+                    <div className="p-4 rounded-xl bg-[#10B981]/10 border border-[#10B981]/20 text-[#34D399] text-xs font-medium flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" /> {success}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={() => setOpen(false)}
+                      className="flex-1 h-14 rounded-2xl bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition-colors"
+                    >
+                      {t("training.course.cancel")}
+                    </button>
+                    <button
+                      onClick={handleBooking}
+                      disabled={pending}
+                      className="flex-[2] h-14 rounded-2xl bg-[#CBBF9A] text-[#030504] font-bold text-sm hover:scale-105 transition-transform shadow-xl shadow-[#CBBF9A]/10 flex items-center justify-center gap-2"
+                    >
+                      {pending ? <Loader2 className="w-5 h-5 animate-spin" /> : t("trainer.modal.cta")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         )}
-        <div>
-          <div className="text-lg font-semibold text-slate-900 leading-tight">
-            {trainer.first_name} {trainer.last_name}
-          </div>
-          <div className="text-sm text-slate-500">{trainer.bio || t("trainer.card.profile", "Trainerprofil")}</div>
-        </div>
-      </div>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="rounded-full w-full">{t("trainer.card.cta", "Trainer buchen")}</Button>
-        </DialogTrigger>
-        <DialogContent className="w-[calc(100%-1rem)] max-w-[calc(100%-1rem)] sm:max-w-[520px] bg-white text-slate-900 max-h-[92vh] overflow-y-auto overflow-x-hidden rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {t("trainer.modal.title", "Trainerstunde buchen")} – {trainer.first_name} {trainer.last_name}
-            </DialogTitle>
-            <DialogDescription>
-              {t("trainer.modal.subtitle", "Wähle Datum, Uhrzeit und Dauer. Die Buchung wird erst nach Trainerbestätigung fix.")}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {availabilityText ? (
-              <div className="rounded-xl border border-slate-200/60 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                {t("trainer.modal.available", "Verfügbar:")} {availabilityText}
-              </div>
-            ) : null}
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="space-y-1">
-                <div className="text-xs text-slate-500">{t("trainer.modal.date", "Datum")}</div>
-                <input
-                  type="date"
-                  className="border rounded-xl px-3 py-2 w-full bg-white"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs text-slate-500">{t("trainer.modal.time", "Uhrzeit")}</div>
-                <input
-                  type="time"
-                  className="border rounded-xl px-3 py-2 w-full bg-white"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs text-slate-500">{t("trainer.modal.duration", "Dauer (Min)")}</div>
-                <input
-                  type="number"
-                  className="border rounded-xl px-3 py-2 w-full bg-white"
-                  value={duration}
-                  min={30}
-                  step={30}
-                  onChange={(e) => setDuration(Number(e.target.value))}
-                />
-              </div>
-              <div className="text-xs text-slate-500 flex items-end">{t("trainer.modal.step", "Schritte à 30 Min")}</div>
-            </div>
-
-            {error ? <div className="text-xs text-red-500">{error}</div> : null}
-            {success ? <div className="text-xs text-emerald-600">{success}</div> : null}
-
-            <Button className="rounded-full w-full" onClick={handleBooking} disabled={pending}>
-              {pending ? t("trainer.modal.loading", "Weiter...") : t("trainer.modal.cta", "Training buchen")}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+      </AnimatePresence>
+    </>
   )
 }

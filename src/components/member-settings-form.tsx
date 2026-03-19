@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { updateLeaderboardOptOut } from "@/app/actions"
 import { useI18n } from "@/components/i18n/locale-provider"
+import { CheckCircle2, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react"
+import { motion, AnimatePresence } from "motion/react"
 
 type MemberSettingsFormProps = {
   clubSlug: string
@@ -13,60 +14,78 @@ type MemberSettingsFormProps = {
 export function MemberSettingsForm({ clubSlug, initialOptOut }: MemberSettingsFormProps) {
   const [optOut, setOptOut] = useState(initialOptOut)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [status, setStatus] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const { t } = useI18n()
 
   const handleToggle = async () => {
     setSaving(true)
-    setMessage(null)
+    setStatus(null)
     const next = !optOut
     const res = await updateLeaderboardOptOut(clubSlug, next)
     if (res?.success) {
       setOptOut(next)
-      setMessage(next
-        ? t("member_settings.opt_out_on", "Du bist jetzt aus der Rangliste ausgeblendet.")
-        : t("member_settings.opt_out_off", "Du bist jetzt in der Rangliste sichtbar.")
-      )
+      setStatus({ 
+        type: 'success', 
+        text: next ? t("member_settings.opt_out_on") : t("member_settings.opt_out_off") 
+      })
     } else {
-      setMessage(res?.error || t("member_settings.save_error", "Fehler beim Speichern."))
+      setStatus({ 
+        type: 'error', 
+        text: res?.error || t("member_settings.save_error") 
+      })
     }
     setSaving(false)
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-white/40">
-        {t("member_settings.leaderboard_desc", "Du kannst entscheiden, ob du in der Club-Rangliste sichtbar bist.")}
+    <div className="space-y-6">
+      <p className="text-sm text-white/40 leading-relaxed">
+        {t("member_settings.leaderboard_desc")}
       </p>
-      <div
-        className="flex items-center justify-between rounded-2xl px-4 py-3"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <div>
-          <div className="text-sm font-medium text-white/80">
-            {t("member_settings.visibility", "Sichtbarkeit")}
+      
+      <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${optOut ? 'bg-white/5 text-white/20' : 'bg-[#10B981]/10 text-[#34D399]'}`}>
+            {optOut ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </div>
-          <div className="text-xs text-white/35">
-            {optOut
-              ? t("member_settings.hidden", "Ausgeblendet")
-              : t("member_settings.visible", "Sichtbar")}
+          <div>
+            <div className="text-sm font-bold text-white">
+              {t("member_settings.visibility")}
+            </div>
+            <div className={`text-[10px] font-bold uppercase tracking-widest ${optOut ? 'text-white/30' : 'text-[#34D399]'}`}>
+              {optOut ? t("member_settings.hidden") : t("member_settings.visible")}
+            </div>
           </div>
         </div>
-        <Button
-          variant={optOut ? "outline" : "default"}
+
+        <button
           onClick={handleToggle}
           disabled={saving}
-          className="rounded-full"
+          className={`h-10 px-6 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center min-w-[120px] ${
+            optOut 
+              ? 'bg-white/10 text-white hover:bg-white/20' 
+              : 'bg-[#10B981] text-[#030504] hover:scale-105 shadow-lg shadow-[#10B981]/10'
+          }`}
         >
-          {optOut
-            ? t("member_settings.activate", "Aktivieren")
-            : t("member_settings.deactivate", "Deaktivieren")}
-        </Button>
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (optOut ? t("member_settings.activate") : t("member_settings.deactivate"))}
+        </button>
       </div>
-      {message && <div className="text-xs text-white/40">{message}</div>}
+
+      <AnimatePresence>
+        {status && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0 }}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-medium ${
+              status.type === 'success' ? 'bg-[#10B981]/10 text-[#34D399] border border-[#10B981]/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            }`}
+          >
+            {status.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {status.text}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

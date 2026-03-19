@@ -1,246 +1,194 @@
-import { createClient } from "@/lib/supabase/server"
-import { getAdminClient } from "@/lib/supabase/admin"
-import { notFound } from "next/navigation"
+"use client"
+
+import { createClient } from "@/lib/supabase/client"
+import { notFound, useParams } from "next/navigation"
 import { MemberSettingsForm } from "@/components/member-settings-form"
 import { ProfileForm } from "@/components/profile-form"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import Link from "next/link"
-import { User, Settings, Trophy, AlertTriangle, ChevronLeft } from "lucide-react"
-import { getDictionary } from "@/lib/dictionaries"
-import { createTranslator } from "@/lib/translator"
-import { getProfile } from "@/app/actions"
+import { User, Settings, Trophy, AlertTriangle, ChevronLeft, ShieldCheck, Mail, Lock, Loader2 } from "lucide-react"
+import { useI18n } from "@/components/i18n/locale-provider"
 import { DeleteAccountButton } from "@/components/dashboard/delete-account-button"
 import { getReadableTextColor } from "@/lib/color"
+import { useEffect, useState, useRef } from "react"
+import { motion } from "motion/react"
 
-export default async function MemberSettingsPage({
-  params,
-}: {
-  params: Promise<{ lang: string; slug: string }>
-}) {
-  const { slug, lang } = await params
-  const dict = await getDictionary(lang as any)
-  const t = createTranslator(dict)
-  const supabase = await createClient()
+// --- Reusable Premium Components ---
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return notFound()
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
 
-  const { data: club } = await supabase
-    .from("clubs")
-    .select("id, name, primary_color")
-    .eq("slug", slug)
-    .single()
-
-  if (!club) return notFound()
-
-  const adminClient = getAdminClient()
-  const { data: member } = await adminClient
-    .from("club_members")
-    .select("leaderboard_opt_out, status")
-    .eq("club_id", club.id)
-    .eq("user_id", user.id)
-    .single()
-
-  if (!member) return notFound()
-
-  const profile = await getProfile()
-  const primary = club.primary_color || "#0f172a"
-  const primaryFg = getReadableTextColor(primary)
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
+  }
 
   return (
     <div
-      className="min-h-screen pb-36"
-      style={{
-        background: "#09090b",
-        ["--club-primary" as any]: primary,
-        ["--club-primary-foreground" as any]: primaryFg,
-      }}
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
     >
-      {/* Ambient top glow */}
       <div
-        className="fixed top-0 left-0 right-0 h-64 pointer-events-none"
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
         style={{
-          background: `radial-gradient(ellipse 60% 100% at 50% 0%, color-mix(in srgb, ${primary} 10%, transparent) 0%, transparent 100%)`,
-          zIndex: 0,
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(var(--primary-rgb), 0.15), transparent 40%)`,
         }}
       />
+      {children}
+    </div>
+  )
+}
 
-      {/* Sticky header */}
-      <div
-        className="sticky top-0 z-20 border-b"
-        style={{
-          background: "rgba(9,9,11,0.88)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderColor: "rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="max-w-xl mx-auto px-4 py-4 flex items-center gap-3.5">
-          <Link
-            href={`/${lang}/club/${slug}/dashboard`}
-            className="w-10 h-10 rounded-2xl flex items-center justify-center transition-colors"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.09)",
-            }}
-          >
-            <ChevronLeft className="w-5 h-5 text-white/70" />
+function hexToRgb(hex: string) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : "31, 61, 43"
+}
+
+export default function MemberSettingsPage() {
+  const params = useParams()
+  const slug = params?.slug as string
+  const lang = params?.lang as string
+  const { t } = useI18n()
+  const supabase = createClient()
+
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: club } = await supabase.from("clubs").select("*").eq("slug", slug).single()
+      if (!club) return
+
+      const [{ data: member }, { data: profile }] = await Promise.all([
+        supabase.from("club_members").select("leaderboard_opt_out, status").eq("club_id", club.id).eq("user_id", user.id).single(),
+        supabase.from("profiles").select("*").eq("id", user.id).single()
+      ])
+
+      setData({ club, member, profile, user })
+      setLoading(false)
+    }
+    load()
+  }, [slug])
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#030504] flex items-center justify-center">
+      <Loader2 className="w-8 h-8 text-white/20 animate-spin" />
+    </div>
+  )
+
+  const { club, member, profile, user } = data
+  const primary = club.primary_color || "#1F3D2B"
+  const primaryRGB = hexToRgb(primary)
+
+  return (
+    <div
+      className="min-h-screen bg-[#030504] text-[#F9F8F4] selection:bg-[#CBBF9A] selection:text-[#030504] pb-32"
+      style={{
+        ["--club-primary" as any]: primary,
+        ["--primary-rgb" as any]: primaryRGB,
+      }}
+    >
+      {/* Background Decor */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#0A1410] via-[#030504] to-[#030504]" />
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05] }}
+          transition={{ duration: 15, repeat: Infinity }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[500px] rounded-full blur-[120px]"
+          style={{ background: `rgba(${primaryRGB}, 0.2)` }}
+        />
+      </div>
+
+      {/* Header */}
+      <header className="sticky top-0 z-50 py-4 bg-[#030504]/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-xl mx-auto px-6 flex items-center gap-4">
+          <Link href={`/${lang}/club/${slug}/dashboard`} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors group">
+            <ChevronLeft className="w-5 h-5 text-white/40 group-hover:text-white" />
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-white tracking-tight">
-              {t("member_settings.title", "Einstellungen")}
-            </h1>
-            <p className="label-caps text-white/30 mt-0.5">{club.name}</p>
+            <h1 className="text-xl font-black tracking-tight">{t("member_settings.title")}</h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#CBBF9A]">{club.name}</p>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="relative z-10 max-w-xl mx-auto px-4 pt-5 space-y-4">
-        {/* Profile card */}
-        <div
-          className="rounded-3xl overflow-hidden anim-fade-up"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div
-            className="h-[2px]"
-            style={{ background: `linear-gradient(90deg, ${primary}, transparent)` }}
-          />
-          <div className="p-6">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{
-                  background: `color-mix(in srgb, ${primary} 18%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${primary} 30%, transparent)`,
-                }}
-              >
-                <User className="w-4 h-4" style={{ color: primary }} />
-              </div>
-              <span className="font-semibold text-white text-sm">
-                {t("member_settings.profile_title", "Persönliche Daten")}
-              </span>
+      <main className="px-4 max-w-xl mx-auto pt-8 space-y-6">
+        {/* Profile */}
+        <SpotlightCard className="p-8">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-[#CBBF9A]/10 border border-[#CBBF9A]/20 flex items-center justify-center">
+              <User className="w-5 h-5 text-[#CBBF9A]" />
             </div>
-            <ProfileForm profile={profile} />
+            <h2 className="text-lg font-bold text-white">{t("member_settings.profile_title")}</h2>
           </div>
-        </div>
+          <ProfileForm profile={profile} />
+        </SpotlightCard>
 
-        {/* Leaderboard card */}
-        <div
-          className="rounded-3xl overflow-hidden anim-fade-up anim-stagger-1"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div
-            className="h-[2px]"
-            style={{ background: `linear-gradient(90deg, ${primary}, transparent)` }}
-          />
-          <div className="p-6">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{
-                  background: `color-mix(in srgb, ${primary} 18%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${primary} 30%, transparent)`,
-                }}
-              >
-                <Trophy className="w-4 h-4" style={{ color: primary }} />
-              </div>
-              <span className="font-semibold text-white text-sm">
-                {t("member_settings.leaderboard_title", "Rangliste")}
-              </span>
+        {/* Leaderboard */}
+        <SpotlightCard className="p-8">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+              <Trophy className="w-5 h-5 text-blue-400" />
             </div>
-            <MemberSettingsForm
-              clubSlug={slug}
-              initialOptOut={!!member.leaderboard_opt_out}
-            />
+            <h2 className="text-lg font-bold text-white">{t("member_settings.leaderboard_title")}</h2>
           </div>
-        </div>
+          <MemberSettingsForm clubSlug={slug} initialOptOut={!!member.leaderboard_opt_out} />
+        </SpotlightCard>
 
-        {/* Account card */}
-        <div
-          className="rounded-3xl overflow-hidden anim-fade-up anim-stagger-2"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div
-            className="h-[2px]"
-            style={{ background: `linear-gradient(90deg, ${primary}, transparent)` }}
-          />
-          <div className="p-6">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{
-                  background: `color-mix(in srgb, ${primary} 18%, transparent)`,
-                  border: `1px solid color-mix(in srgb, ${primary} 30%, transparent)`,
-                }}
-              >
-                <Settings className="w-4 h-4" style={{ color: primary }} />
-              </div>
-              <span className="font-semibold text-white text-sm">
-                {t("member_settings.account_title", "Account")}
-              </span>
+        {/* Account & Security */}
+        <SpotlightCard className="p-8">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-purple-400" />
             </div>
-            <div className="space-y-4">
-              <div>
-                <p className="label-caps text-white/30 mb-1">
-                  {t("member_settings.email_label", "E-Mail")}
-                </p>
-                <p className="text-sm font-medium text-white/80">{user.email}</p>
-              </div>
-              <Link
-                href={`/${lang}/change-password`}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-colors"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.09)",
-                  color: "rgba(255,255,255,0.7)",
-                }}
-              >
-                {t("member_settings.change_password", "Passwort ändern")}
-              </Link>
-            </div>
+            <h2 className="text-lg font-bold text-white">{t("member_settings.account_title")}</h2>
           </div>
-        </div>
+          
+          <div className="space-y-6">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-white/20" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{t("member_settings.email_label")}</p>
+                    <p className="text-sm font-medium text-white/80">{user.email}</p>
+                  </div>
+               </div>
+            </div>
 
-        {/* Danger zone card */}
-        <div
-          className="rounded-3xl overflow-hidden anim-fade-up anim-stagger-3"
-          style={{
-            background: "rgba(239,68,68,0.04)",
-            border: "1px solid rgba(239,68,68,0.15)",
-          }}
-        >
-          <div
-            className="h-[2px]"
-            style={{ background: "linear-gradient(90deg, rgba(239,68,68,0.6), transparent)" }}
-          />
-          <div className="p-6">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-red-500/10 border border-red-500/20">
-                <AlertTriangle className="w-4 h-4 text-red-400" />
-              </div>
-              <span className="font-semibold text-red-400 text-sm">
-                Datenschutz &amp; Account löschen
-              </span>
-            </div>
-            <p className="text-sm text-white/35 mb-4 leading-relaxed">
-              Du hast das Recht, die Löschung aller deiner personenbezogenen Daten zu beantragen (DSGVO Art. 17).
-              Alle Mitgliedschaften und Buchungen werden dabei anonymisiert.
-            </p>
-            <DeleteAccountButton lang={lang} />
+            <Link href={`/${lang}/change-password`} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group">
+               <div className="flex items-center gap-3">
+                  <Lock className="w-4 h-4 text-white/20" />
+                  <span className="text-sm font-bold text-white">{t("member_settings.change_password")}</span>
+               </div>
+               <ChevronRight className="w-4 h-4 text-white/20 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
-        </div>
-      </div>
+        </SpotlightCard>
+
+        {/* Danger Zone */}
+        <SpotlightCard className="p-8 border-red-500/20 bg-red-500/5">
+           <div className="flex items-center gap-3 mb-6">
+             <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+               <AlertTriangle className="w-5 h-5 text-red-500" />
+             </div>
+             <h2 className="text-lg font-bold text-red-500">Datenschutz & Account</h2>
+           </div>
+           <p className="text-sm text-red-500/60 mb-8 leading-relaxed">
+              Du hast das Recht, die Löschung aller deiner personenbezogenen Daten zu beantragen. 
+              Dieser Vorgang kann nicht rückgängig gemacht werden.
+           </p>
+           <DeleteAccountButton lang={lang} />
+        </SpotlightCard>
+      </main>
 
       <MobileBottomNav slug={slug} active="settings" />
     </div>

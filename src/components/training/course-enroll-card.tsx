@@ -1,10 +1,41 @@
 "use client"
 
-import { useTransition, useState } from "react"
+import { useTransition, useState, useRef } from "react"
 import { createCourseCheckoutSession, joinCourseWaitlist } from "@/app/actions"
-import { Button } from "@/components/ui/button"
 import { useParams } from "next/navigation"
 import { useI18n } from "@/components/i18n/locale-provider"
+import { motion, AnimatePresence } from "motion/react"
+import { CalendarDays, Clock, Users, ArrowRight, X, Check, Loader2, Info, ChevronRight } from "lucide-react"
+
+function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const divRef = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!divRef.current) return
+    const div = divRef.current
+    const rect = div.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
+  }
+
+  return (
+    <div
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
+        style={{
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(var(--primary-rgb), 0.1), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
+}
 
 export function CourseEnrollCard({
   clubSlug,
@@ -22,8 +53,7 @@ export function CourseEnrollCard({
   const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "joined">("idle")
   const { t } = useI18n()
   const params = useParams()
-  const langRaw = params?.lang
-  const lang = typeof langRaw === "string" ? langRaw : Array.isArray(langRaw) ? langRaw[0] : "de"
+  const lang = (params?.lang as string) || "de"
   const locale = lang === "it" ? "it-IT" : lang === "en" ? "en-US" : "de-DE"
 
   const sessions = Array.isArray(course.sessions) ? course.sessions : []
@@ -32,65 +62,7 @@ export function CourseEnrollCard({
     .slice()
     .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
   const upcoming = sortedSessions.filter((s: any) => new Date(s.start_time) >= now)
-  const displaySessions = (upcoming.length > 0 ? upcoming : sortedSessions).slice(0, 3)
   const nextSession = upcoming[0] || sortedSessions[0] || null
-
-  const sessionSignature = (() => {
-    if (sortedSessions.length < 2) return ""
-    const keys = new Set<string>()
-    for (const s of sortedSessions) {
-      const d = new Date(s.start_time)
-      const day = d.getDay()
-      const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-      const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-      keys.add(`${day}-${start}-${end}`)
-    }
-    if (keys.size !== 1) return ""
-    const dayNames = [
-      t("days.short.0", "So"),
-      t("days.short.1", "Mo"),
-      t("days.short.2", "Di"),
-      t("days.short.3", "Mi"),
-      t("days.short.4", "Do"),
-      t("days.short.5", "Fr"),
-      t("days.short.6", "Sa"),
-    ]
-    const [key] = Array.from(keys)
-    const [day, start, end] = key.split("-")
-    return `${t("training.course.weekly", "W�chentlich")} ${dayNames[Number(day)]} ${start}-${end}`
-  })()
-
-  const miniCalendar = (() => {
-    if (!nextSession) return null
-    const toDateKey = (d: Date) => {
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, "0")
-      const dayNum = String(d.getDate()).padStart(2, "0")
-      return `${y}-${m}-${dayNum}`
-    }
-    const base = new Date(nextSession.start_time)
-    const dayNames = [
-      t("days.short.1", "Mo"),
-      t("days.short.2", "Di"),
-      t("days.short.3", "Mi"),
-      t("days.short.4", "Do"),
-      t("days.short.5", "Fr"),
-      t("days.short.6", "Sa"),
-      t("days.short.0", "So"),
-    ]
-    const weekStart = new Date(base)
-    const day = weekStart.getDay()
-    const diff = (day + 6) % 7
-    weekStart.setDate(weekStart.getDate() - diff)
-    const days = Array.from({ length: 7 }).map((_, idx) => {
-      const d = new Date(weekStart)
-      d.setDate(weekStart.getDate() + idx)
-      const dateKey = toDateKey(d)
-      const daySessions = sortedSessions.filter((s: any) => toDateKey(new Date(s.start_time)) === dateKey)
-      return { d, daySessions }
-    })
-    return { dayNames, days, toDateKey }
-  })()
 
   const pricingMode = course.pricing_mode || "full_course"
   const totalPrice = pricingMode === "per_session"
@@ -120,374 +92,180 @@ export function CourseEnrollCard({
   }
 
   return (
-    <div id={cardId} className="rounded-3xl border border-slate-200/60 bg-white p-5 shadow-sm space-y-4">
-      <div>
-        <div className="flex items-start justify-between gap-2">
-          <div className="text-lg font-semibold text-slate-900 tracking-tight">{course.title}</div>
+    <>
+      <SpotlightCard className="p-6 h-full flex flex-col justify-between">
+        <div className="space-y-6">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+               <h3 className="text-xl font-bold text-white tracking-tight">{course.title}</h3>
+               <p className="text-sm text-white/40 line-clamp-2">{course.description || t("training.course.description_fallback")}</p>
+            </div>
+            {isCourseFull && (
+              <span className="px-2 py-1 rounded-lg bg-red-500/10 text-red-400 text-[9px] font-black uppercase tracking-widest border border-red-500/20">
+                {t("training.course.sold_out")}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-6">
+             <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-white/20" />
+                <span className="text-xs font-bold text-white/60">{confirmedCount}/{maxParticipants || '∞'}</span>
+             </div>
+             <div className="flex items-center gap-2">
+                <div className="text-xs font-black text-[#CBBF9A]">
+                   {course.price ? `${course.price}€` : t("training.course.free")}
+                </div>
+                {pricingMode === "per_session" && <span className="text-[9px] font-bold text-white/20 uppercase tracking-tighter">/ Termin</span>}
+             </div>
+          </div>
+
+          {nextSession && (
+            <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#10B981]/10 flex items-center justify-center">
+                     <CalendarDays className="w-4 h-4 text-[#34D399]" />
+                  </div>
+                  <div>
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{t("training.course.next")}</p>
+                     <p className="text-xs font-bold text-white">{new Date(nextSession.start_time).toLocaleDateString(locale)}</p>
+                  </div>
+               </div>
+               <div className="text-right">
+                  <p className="text-xs font-mono text-white/60">{new Date(nextSession.start_time).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</p>
+               </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8">
           {isCourseFull ? (
-            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
-              {t("training.course.sold_out", "Ausgebucht")}
-            </span>
-          ) : null}
+            <button
+              onClick={() => {
+                if (waitlistStatus === "joined") return
+                startTransition(async () => {
+                  const res = await joinCourseWaitlist(clubSlug, course.id)
+                  if (res?.success) setWaitlistStatus("joined")
+                })
+              }}
+              className={`w-full h-12 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                waitlistStatus === "joined" ? 'bg-[#10B981]/10 text-[#34D399]' : 'bg-white/5 text-white hover:bg-white/10'
+              }`}
+            >
+              {waitlistStatus === "joined" ? <><Check className="w-4 h-4" /> Warteliste beigetreten</> : t("training.course.join_waitlist")}
+            </button>
+          ) : (
+            <button
+              onClick={() => setOpen(true)}
+              className="w-full h-12 bg-white text-[#030504] rounded-xl text-sm font-bold hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-xl shadow-white/5"
+            >
+              {t("training.course.cta")}
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        <div className="text-sm text-slate-500">{course.description || t("training.course.description_fallback", "Kursbeschreibung")}</div>
-      </div>
-      <div className="text-sm text-slate-600">
-        {t("training.course.price", "Preis")}: {course.price ? `${course.price} EUR` : t("training.course.free", "Kostenlos")}
-        {pricingMode === "per_session" ? ` ${t("training.course.per_session", "pro Termin")}` : ""}
-      </div>
-      {sessionSignature ? (
-        <div className="text-xs text-slate-500">{sessionSignature}</div>
-      ) : null}
-      {nextSession ? (
-        <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-xs">
-          <div className="text-emerald-700 font-semibold">{t("training.course.next", "N�chster Termin")}</div>
-          <div className="text-emerald-700">
-            {new Date(nextSession.start_time).toLocaleDateString(locale)}{" "}
-            {new Date(nextSession.start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-          </div>
-        </div>
-      ) : null}
-      {displaySessions.length > 0 ? (
-        <div className="text-xs text-slate-500">
-          {t("training.course.upcoming", "N�chste Termine")}: {" "}
-          {displaySessions.map((s: any, idx: number) => {
-            const d = new Date(s.start_time)
-            const dateStr = d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })
-            const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-            const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-            return `${dateStr} ${start}-${end}${idx < displaySessions.length - 1 ? " | " : ""}`
-          })}
-          {sortedSessions.length > displaySessions.length
-            ? ` (+${sortedSessions.length - displaySessions.length} ${t("training.course.more", "weitere")})`
-            : ""}
-        </div>
-      ) : (
-        <div className="text-xs text-slate-500">{t("training.course.upcoming_empty", "Termine folgen")}</div>
-      )}
-      {miniCalendar ? (
-        <div className="rounded-xl border border-slate-200/60 bg-white p-3">
-          <div className="text-[11px] font-semibold text-slate-500 mb-2">
-            {t("training.course.calendar_week", "Kalender (Woche)")}
-          </div>
-          <div className="grid grid-cols-7 gap-2 text-[10px]">
-            {miniCalendar.dayNames.map((d) => (
-              <div key={d} className="text-center font-semibold text-slate-400">{d}</div>
-            ))}
-            {miniCalendar.days.map(({ d, daySessions }) => {
-              const isNext = nextSession && miniCalendar.toDateKey(d) === miniCalendar.toDateKey(new Date(nextSession.start_time))
-              return (
-                <div
-                  key={d.toISOString()}
-                  className={`rounded-lg border p-2 min-h-[52px] text-center ${
-                    daySessions.length > 0 ? "bg-slate-50 border-slate-200/60" : "bg-white border-slate-100"
-                  } ${isNext ? "ring-2 ring-emerald-200" : ""}`}
-                >
-                  <div className="text-[10px] text-slate-500">{d.getDate().toString().padStart(2, "0")}</div>
-                  {daySessions.length > 0 ? (
-                    <div className="mt-1 text-[10px] text-slate-600">
-                      {new Date(daySessions[0].start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                  ) : (
-                    <div className="mt-1 text-[10px] text-slate-300">-</div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
-      {error ? <div className="text-xs text-red-500">{error}</div> : null}
-      {isCourseFull ? (
-        waitlistStatus === "joined" ? (
-          <div className="rounded-full bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-700 text-center">
-            {t("training.course.waitlist_joined", "Du bist auf der Warteliste.")}
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            className="rounded-full w-full"
-            disabled={pending}
-            onClick={() => {
-              setError(null)
-              startTransition(async () => {
-                const res = await joinCourseWaitlist(clubSlug, course.id)
-                if (res?.success) {
-                  setWaitlistStatus("joined")
-                } else if (res?.error) {
-                  setError(res.error)
-                }
-              })
-            }}
-          >
-            {t("training.course.join_waitlist", "Warteliste beitreten")}
-          </Button>
-        )
-      ) : (
-        <Button className="rounded-full w-full" onClick={() => setOpen(true)}>
-          {t("training.course.cta", "Details & anmelden")}
-        </Button>
-      )}
+      </SpotlightCard>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-5xl rounded-3xl bg-white shadow-xl p-6 space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-xl font-semibold text-slate-900">{course.title}</div>
-                <div className="text-sm text-slate-500">{course.description || t("training.course.description_fallback", "Kursbeschreibung")}</div>
-                {pricingMode === "per_session" ? (
-                  <div className="mt-2 text-xs text-slate-500">
-                    {t("training.course.selection", "Auswahl")}: {selected.length} {t("training.course.of", "von")} {sortedSessions.length} {t("training.course.sessions", "Terminen")}
-                  </div>
-                ) : null}
-              </div>
-              <button
-                className="text-slate-400 hover:text-slate-600"
-                onClick={() => {
-                  setOpen(false)
-                  setSelected([])
-                }}
-              >
-                {t("training.course.close", "Schlie�en")}
-              </button>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">{t("training.course.seats", "Pl�tze")}</div>
-                    <div className="font-semibold text-slate-900">
-                      {course.confirmed_count ?? 0}/{course.max_participants ?? "-"}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      {t("training.course.seats_left", "Noch")} {Math.max(0, (course.max_participants ?? 0) - (course.confirmed_count ?? 0))} {t("training.course.seats_free", "frei")}
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">{t("training.course.price", "Preis")}</div>
-                    <div className="font-semibold text-slate-900">
-                      {course.price ? `${course.price} EUR` : t("training.course.free", "Kostenlos")}
-                      {pricingMode === "per_session" ? ` / ${t("training.course.session", "Termin")}` : ""}
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">{t("training.course.lead", "Leitung")}</div>
-                    <div className="font-semibold text-slate-900">
-                      {course.trainer_name || t("training.course.club_fallback", "Verein")}
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-3">
-                    <div className="text-xs text-slate-500">{t("training.course.period", "Zeitraum")}</div>
-                    <div className="font-semibold text-slate-900">
-                      {course.start_date || "-"} {t("training.course.to", "bis")} {course.end_date || "-"}
-                    </div>
-                  </div>
+      <AnimatePresence>
+        {open && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(false)} className="absolute inset-0 bg-[#030504]/90 backdrop-blur-md" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-4xl bg-[#0A0D0C] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="p-8 md:p-12 overflow-y-auto">
+                <div className="flex justify-between items-start mb-12">
+                   <div>
+                      <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-4">{course.title}</h2>
+                      <p className="text-white/40 text-lg font-light max-w-2xl">{course.description}</p>
+                   </div>
+                   <button onClick={() => setOpen(false)} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-colors">
+                      <X className="w-6 h-6" />
+                   </button>
                 </div>
 
-                {miniCalendar ? (
-                  <div className="rounded-xl border border-slate-200/60 bg-white p-3">
-                    <div className="text-[11px] font-semibold text-slate-500 mb-2">
-                      {t("training.course.calendar_week", "Kalender (Woche)")}
-                    </div>
-                    <div className="grid grid-cols-7 gap-2 text-[10px]">
-                      {miniCalendar.dayNames.map((d) => (
-                        <div key={d} className="text-center font-semibold text-slate-400">{d}</div>
-                      ))}
-                      {miniCalendar.days.map(({ d, daySessions }) => {
-                        const isNext = nextSession && miniCalendar.toDateKey(d) === miniCalendar.toDateKey(new Date(nextSession.start_time))
-                        return (
-                          <div
-                            key={d.toISOString()}
-                            className={`rounded-lg border p-2 min-h-[52px] text-center ${
-                              daySessions.length > 0 ? "bg-slate-50 border-slate-200/60" : "bg-white border-slate-100"
-                            } ${isNext ? "ring-2 ring-emerald-200" : ""}`}
-                          >
-                            <div className="text-[10px] text-slate-500">{d.getDate().toString().padStart(2, "0")}</div>
-                            {daySessions.length > 0 ? (
-                              <div className="mt-1 text-[10px] text-slate-600">
-                                {new Date(daySessions[0].start_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
-                              </div>
-                            ) : (
-                              <div className="mt-1 text-[10px] text-slate-300">-</div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ) : null}
+                <div className="grid lg:grid-cols-[1fr_0.8fr] gap-12">
+                   <div className="space-y-8">
+                      <div className="grid grid-cols-2 gap-4">
+                         <SpotlightCard className="p-5">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Preis</p>
+                            <p className="text-2xl font-black text-white">{course.price ? `${course.price}€` : 'Gratis'}</p>
+                            <p className="text-[10px] font-bold text-[#CBBF9A] uppercase tracking-tighter">{pricingMode === 'per_session' ? 'Pro Termin' : 'Gesamtpaket'}</p>
+                         </SpotlightCard>
+                         <SpotlightCard className="p-5">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Leitung</p>
+                            <p className="text-xl font-bold text-white truncate">{course.trainer_name || 'Club Team'}</p>
+                         </SpotlightCard>
+                      </div>
 
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-slate-900">{t("training.course.all_sessions", "Alle Termine")}</div>
-                  {sortedSessions.length === 0 ? (
-                    <div className="text-sm text-slate-500">{t("training.course.upcoming_empty", "Termine folgen")}</div>
-                  ) : (
-                    <div className="max-h-48 overflow-auto space-y-1 text-sm">
-                      {sortedSessions.map((s: any) => {
-                        const d = new Date(s.start_time)
-                        const dateStr = d.toLocaleDateString(locale)
-                        const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-                        const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-                        const court = s.courts?.name || t("training.course.court", "Platz")
-                        const isNext = nextSession && s.id === nextSession.id
-                        return (
-                          <div
-                            key={s.id}
-                            className={`flex items-center justify-between border-b border-slate-100 py-1 ${
-                              isNext ? "text-emerald-700 font-semibold" : ""
-                            }`}
-                          >
-                            <div>{dateStr}</div>
-                            <div className="text-slate-500">{start}-{end}</div>
-                            <div className="text-slate-500">{court}</div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
+                      <div className="space-y-4">
+                         <h4 className="text-sm font-bold uppercase tracking-widest text-white/60 px-2">Termine</h4>
+                         <div className="space-y-3">
+                            {sortedSessions.map((s: any) => {
+                               const isSelected = selected.includes(s.id)
+                               const isFull = Number(s.booked_count || 0) >= maxParticipants
+                               return (
+                                 <div 
+                                  key={s.id} 
+                                  onClick={() => {
+                                    if (pricingMode !== 'per_session' || (isFull && !isSelected)) return
+                                    setSelected(prev => isSelected ? prev.filter(id => id !== s.id) : [...prev, s.id])
+                                  }}
+                                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                                    isSelected ? 'bg-[#CBBF9A]/10 border-[#CBBF9A]/40' : 'bg-white/5 border-white/5 hover:border-white/10'
+                                  } ${isFull && pricingMode === 'per_session' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                 >
+                                    <div className="flex items-center gap-4">
+                                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-[#CBBF9A] text-[#030504]' : 'bg-white/5 text-white/20'}`}>
+                                          {isSelected ? <Check className="w-5 h-5" /> : <CalendarDays className="w-5 h-5" />}
+                                       </div>
+                                       <div>
+                                          <p className="text-sm font-bold text-white">{new Date(s.start_time).toLocaleDateString(locale, { weekday: 'long', day: '2-digit', month: 'long' })}</p>
+                                          <p className="text-xs text-white/40">{new Date(s.start_time).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} · {s.courts?.name}</p>
+                                       </div>
+                                    </div>
+                                    {pricingMode === 'full_course' && <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest px-3">Inklusive</span>}
+                                 </div>
+                               )
+                            })}
+                         </div>
+                      </div>
+                   </div>
 
-              <div className="space-y-4">
-                <div className="rounded-xl border border-slate-200/60 bg-white p-4">
-                  <div className="text-sm font-semibold text-slate-900">{t("training.course.selection_title", "Deine Auswahl")}</div>
-                  <div className="text-xs text-slate-500 mb-3">
-                    {pricingMode === "per_session"
-                      ? t("training.course.selection_hint", "W�hle die Termine, an denen du teilnehmen m�chtest.")
-                      : t("training.course.selection_full", "Dieser Kurs wird als Gesamtpaket gebucht.")}
-                  </div>
-                  {pricingMode === "per_session" ? (
-                    <div className="text-xs font-semibold text-slate-700 mb-2">
-                      {selected.length} {t("training.course.of", "von")} {sortedSessions.length} {t("training.course.selected", "Terminen ausgew�hlt")}
-                    </div>
-                  ) : null}
-
-                  {pricingMode === "per_session" ? (
-                    <div className="flex items-center gap-2 mb-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-full text-xs"
-                        onClick={() => {
-                          const selectable = sortedSessions.filter((s: any) => {
-                            const max = Number(course.max_participants || 0)
-                            const booked = Number(s.booked_count || 0)
-                            return !max || booked < max
-                          })
-                          setSelected(selectable.map((s: any) => s.id))
-                        }}
-                      >
-                        {t("training.course.select_available", "Alle freien")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-full text-xs"
-                        onClick={() => setSelected([])}
-                      >
-                        {t("training.course.clear_selection", "Auswahl leeren")}
-                      </Button>
-                    </div>
-                  ) : null}
-
-                  <div className="max-h-80 overflow-auto space-y-2">
-                    {sortedSessions.map((s: any) => {
-                      const d = new Date(s.start_time)
-                      const dateStr = d.toLocaleDateString(locale)
-                      const start = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-                      const end = new Date(s.end_time).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-                      const court = s.courts?.name || t("training.course.court", "Platz")
-                      const max = Number(course.max_participants || 0)
-                      const booked = Number(s.booked_count || 0)
-                      const remaining = max ? Math.max(0, max - booked) : null
-                      const isFull = remaining === 0
-                      const isSelected = selected.includes(s.id)
-                      return (
-                        <label
-                          key={s.id}
-                          className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm ${
-                            isSelected ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200/60 bg-white"
-                          } ${isFull && pricingMode === "per_session" ? "opacity-50" : ""}`}
-                        >
-                          <div>
-                            <div className="font-medium text-slate-900">{dateStr}</div>
-                            <div className="text-xs text-slate-500">{start}-{end} � {court}</div>
-                            <div className="text-xs text-slate-500">
-                              {max ? `${remaining} ${t("training.course.seats_free", "frei")}` : t("training.course.no_limit", "Keine Begrenzung")}
+                   <div className="space-y-8">
+                      <SpotlightCard className="p-8 sticky top-0 bg-[#CBBF9A] border-none text-[#030504]">
+                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] mb-6 opacity-40">Zusammenfassung</h4>
+                         <div className="space-y-4 mb-8">
+                            <div className="flex justify-between items-end border-b border-black/5 pb-4">
+                               <p className="text-sm font-bold">Auswahl</p>
+                               <p className="text-xl font-black">{pricingMode === 'per_session' ? `${selected.length} Termine` : 'Gesamter Kurs'}</p>
                             </div>
-                          </div>
-                          {pricingMode === "per_session" ? (
-                            <input
-                              type="checkbox"
-                              disabled={isFull && !isSelected}
-                              checked={isSelected}
-                              onChange={() => {
-                                setSelected((prev) =>
-                                  prev.includes(s.id) ? prev.filter((id) => id !== s.id) : [...prev, s.id]
-                                )
-                              }}
-                            />
-                          ) : (
-                            <div className="text-xs text-slate-500">{t("training.course.included", "Im Paket")}</div>
-                          )}
-                        </label>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200/60 bg-slate-50 p-4 sticky top-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="text-slate-600">{t("training.course.selected_label", "ausgew�hlt")}</div>
-                    <div className="font-semibold text-slate-900">
-                      {pricingMode === "per_session"
-                        ? `${selected.length} ${t("training.course.sessions_short", "Termin(e)")}`
-                        : `${sortedSessions.length} ${t("training.course.sessions_label", "Termine")}`}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-2">
-                    <div className="text-slate-600">{t("training.course.total", "Gesamt")}</div>
-                    <div className="font-semibold text-slate-900">
-                      {totalPrice > 0 ? `${totalPrice.toFixed(2).replace(".", ",")} EUR` : t("training.course.free", "Kostenlos")}
-                    </div>
-                  </div>
-                  {pricingMode === "per_session" && selected.length === 0 ? (
-                    <div className="text-xs text-rose-600 mt-2">{t("training.course.select_min", "Bitte mindestens einen Termin w�hlen.")}</div>
-                  ) : null}
+                            <div className="flex justify-between items-end">
+                               <p className="text-sm font-bold">Gesamtpreis</p>
+                               <p className="text-4xl font-black">{totalPrice.toFixed(2).replace('.', ',')}€</p>
+                            </div>
+                         </div>
+                         <button
+                          onClick={handleEnroll}
+                          disabled={pending || (pricingMode === "per_session" && selected.length === 0)}
+                          className="w-full h-16 rounded-2xl bg-[#030504] text-white font-black text-lg hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                         >
+                            {pending ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Anmeldung abschließen <ArrowRight className="w-5 h-5" /></>}
+                         </button>
+                         <p className="mt-6 text-[10px] font-bold text-center opacity-40 uppercase tracking-widest flex items-center justify-center gap-2">
+                            <ShieldCheck className="w-3 h-3" /> Sichere Zahlung via Stripe
+                         </p>
+                      </SpotlightCard>
+                   </div>
                 </div>
               </div>
-            </div>
-
-            {error ? <div className="text-xs text-red-500">{error}</div> : null}
-
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                className="rounded-full"
-                onClick={() => {
-                  setOpen(false)
-                  setSelected([])
-                }}
-              >
-                {t("training.course.cancel", "Abbrechen")}
-              </Button>
-              <Button
-                className="rounded-full"
-                onClick={handleEnroll}
-                disabled={pending || (pricingMode === "per_session" && selected.length === 0)}
-              >
-                {pending
-                  ? t("training.course.loading", "Weiter...")
-                  : pricingMode === "per_session"
-                    ? t("training.course.book_sessions", "Termine buchen")
-                    : t("training.course.book_course", "Kurs buchen")}
-              </Button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      ) : null}
-    </div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
