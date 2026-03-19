@@ -38,50 +38,27 @@ const BASE_URL = "https://avaimo.com"
 
 function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const divRef = useRef<HTMLDivElement>(null)
-  const [isFocused, setIsFocused] = useState(false)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [opacity, setOpacity] = useState(0)
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!divRef.current || isFocused) return
+    if (!divRef.current) return
     const div = divRef.current
     const rect = div.getBoundingClientRect()
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top })
-  }
-
-  const handleFocus = () => {
-    setIsFocused(true)
-    setOpacity(1)
-  }
-
-  const handleBlur = () => {
-    setIsFocused(false)
-    setOpacity(0)
-  }
-
-  const handleMouseEnter = () => {
-    setOpacity(1)
-  }
-
-  const handleMouseLeave = () => {
-    setOpacity(0)
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    div.style.setProperty("--mouse-x", `${x}px`)
+    div.style.setProperty("--mouse-y", `${y}px`)
   }
 
   return (
     <div
       ref={divRef}
       onMouseMove={handleMouseMove}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] ${className}`}
+      className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] group/spotlight ${className}`}
     >
       <div
-        className="pointer-events-none absolute -inset-px opacity-0 transition duration-300"
+        className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100"
         style={{
-          opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(203,191,154,0.1), transparent 40%)`,
+          background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(203,191,154,0.1), transparent 40%)`,
         }}
       />
       {children}
@@ -99,6 +76,7 @@ function FloatingElement({ children, delay = 0, yOffset = 20, duration = 4 }: { 
         ease: "easeInOut",
         delay: delay,
       }}
+      style={{ willChange: "transform" }}
     >
       {children}
     </motion.div>
@@ -159,7 +137,7 @@ export default function Home() {
             </div>
 
             <motion.div
-              style={{ opacity, scale, y }}
+              style={{ opacity, scale, y, willChange: "transform, opacity" }}
               className="max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center"
             >
               {/* Left: Text Content */}
