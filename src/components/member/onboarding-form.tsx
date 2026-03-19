@@ -8,6 +8,7 @@ import { createMembershipCheckout, submitMembershipSignature, updateProfile } fr
 import { Eraser, Loader2, PenLine, ChevronRight, CheckCircle2, ShieldCheck, Mail, User, MapPin, Phone, Zap, FileText } from "lucide-react"
 import { useI18n } from "@/components/i18n/locale-provider"
 import { useParams, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { motion, AnimatePresence } from "motion/react"
 
 // --- Reusable Premium Components ---
